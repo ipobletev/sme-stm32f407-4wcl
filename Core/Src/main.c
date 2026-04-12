@@ -92,6 +92,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -163,6 +164,16 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+int _write(int file, char *ptr, int len)
+{
+  if ((file == 1) || (file == 2)) // stdout, stderr
+  {
+    UART_DMA_Write(&huart1, (uint8_t *)ptr, (uint16_t)len);
+    return len;
+  }
+  return -1;
+}
+
 int __io_putchar(int ch)
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
@@ -203,6 +214,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    for (volatile int i = 0; i < 500000; i++); // Busy-wait for fast blink
   }
   /* USER CODE END Error_Handler_Debug */
 }

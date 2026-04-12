@@ -26,6 +26,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -119,7 +121,7 @@ void StartDefaultTask(void *argument)
   uint8_t sw3_prev = GPIO_PIN_SET;
 
   /* Infinite loop */
-  printf("UART1 Test OK - System Started\r\n");
+  printf("UART1 DMA (backed) Test OK - System Started\r\n");
   for(;;)
   {
     /* Read Current Button States */
@@ -131,7 +133,7 @@ void StartDefaultTask(void *argument)
     if (k1_state == GPIO_PIN_RESET && k1_prev == GPIO_PIN_SET)
     {
        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-       printf("K1 Pressed: LED Toggled\r\n");
+       printf("K1 Pressed: LED Toggled - Counter: %d\r\n", xTaskGetTickCount());
     }
     k1_prev = k1_state;
 
@@ -141,7 +143,7 @@ void StartDefaultTask(void *argument)
        HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
        osDelay(100);
        HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-       printf("K2 Pressed: Buzzer Beep\r\n");
+       printf("K2 Pressed: Buzzer Beep - Tick: %lu\r\n", (unsigned long)osKernelGetTickCount());
     }
     k2_prev = k2_state;
 
@@ -155,6 +157,9 @@ void StartDefaultTask(void *argument)
          if(i==0) osDelay(50);
        }
        printf("SW3 Pressed: Double Beep\r\n");
+       
+       /* UART3 DMA Test - Direct HAL usage */
+       UART_Printf_DMA(&huart3, "UART3 DMA View: SW3 Pressed at %lu ms\r\n", (unsigned long)osKernelGetTickCount());
     }
     sw3_prev = sw3_state;
 
