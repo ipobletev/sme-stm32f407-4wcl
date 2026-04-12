@@ -114,11 +114,47 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  uint8_t k1_prev = GPIO_PIN_SET;
+  uint8_t k2_prev = GPIO_PIN_SET;
+  uint8_t sw3_prev = GPIO_PIN_SET;
+
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-    osDelay(500);
+    /* Read Current Button States */
+    GPIO_PinState k1_state = HAL_GPIO_ReadPin(USER_K1_BUTTON_GPIO_Port, USER_K1_BUTTON_Pin);
+    GPIO_PinState k2_state = HAL_GPIO_ReadPin(USER_K2_BUTTON_GPIO_Port, USER_K2_BUTTON_Pin);
+    GPIO_PinState sw3_state = HAL_GPIO_ReadPin(USER_SW3_GPIO_Port, USER_SW3_Pin);
+
+    /* USER_K1 Logic: Toggle LED on press */
+    if (k1_state == GPIO_PIN_RESET && k1_prev == GPIO_PIN_SET)
+    {
+       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
+    }
+    k1_prev = k1_state;
+
+    /* USER_K2 Logic: Short beep on press */
+    if (k2_state == GPIO_PIN_RESET && k2_prev == GPIO_PIN_SET)
+    {
+       HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+       osDelay(100);
+       HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+    }
+    k2_prev = k2_state;
+
+    /* USER_SW3 Logic: Double beep on press */
+    if (sw3_state == GPIO_PIN_RESET && sw3_prev == GPIO_PIN_SET)
+    {
+       for(int i=0; i<2; i++) {
+         HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+         osDelay(50);
+         HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+         if(i==0) osDelay(50);
+       }
+    }
+    sw3_prev = sw3_state;
+
+    osDelay(50); /* Poll every 50ms */
   }
   /* USER CODE END StartDefaultTask */
 }
