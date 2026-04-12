@@ -43,6 +43,7 @@ extern UART_HandleTypeDef huart3;
 void MX_USART1_UART_Init(void);
 void MX_USART3_UART_Init(void);
 
+/* USER CODE BEGIN Prototypes */
 void UART_Printf_DMA(UART_HandleTypeDef *huart, const char *fmt, ...);
 void UART_DMA_Write(UART_HandleTypeDef *huart, uint8_t *data, uint16_t len);
 /* USER CODE END Prototypes */

@@ -53,7 +53,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 3000 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -133,7 +133,7 @@ void StartDefaultTask(void *argument)
     if (k1_state == GPIO_PIN_RESET && k1_prev == GPIO_PIN_SET)
     {
        HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-       printf("K1 Pressed: LED Toggled - Counter: %d\r\n", xTaskGetTickCount());
+       printf("K1 Pressed: LED Toggled - Counter: %lu\r\n", (unsigned long)xTaskGetTickCount());
     }
     k1_prev = k1_state;
 
