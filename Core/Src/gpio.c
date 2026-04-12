@@ -73,13 +73,13 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : USER_SW3_Pin */
   GPIO_InitStruct.Pin = USER_SW3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_SW3_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : USER_K2_BUTTON_Pin USER_K1_BUTTON_Pin */
   GPIO_InitStruct.Pin = USER_K2_BUTTON_Pin|USER_K1_BUTTON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
 }
