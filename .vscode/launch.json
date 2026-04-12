@@ -5,14 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/Debug/sme-stm32f407-4wcl.elf",
-            "name": "Debug with ST-Link",
+            "type": "stlinkgdbtarget",
             "request": "launch",
-            "type": "cortex-debug",
-            "runToEntryPoint": "main",
-            "showDevDebugOutput": "none",
-            "servertype": "stlink"
+            "name": "STM32 Debug (ST-Link GDB Server)",
+            "origin": "snippet",
+            "cwd": "${workspaceFolder}",
+            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
+            "runEntry": "main",
+            "imagesAndSymbols": [
+                {
+                    "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
+                }
+            ]
+        },
+        {
+            "type": "stlinkgdbtarget",
+            "request": "launch",
+            "name": "STM32 Program (Flash & Run)",
+            "cwd": "${workspaceFolder}",
+            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
+            "runEntry": "Reset_Handler",
+            "stopAtEntry": false,
+            "imagesAndSymbols": [
+                {
+                    "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
+                }
+            ]
         }
     ]
 }

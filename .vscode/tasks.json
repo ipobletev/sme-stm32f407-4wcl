@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "cmake",
+            "command": "build",
+            "targets": [
+                "all"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build & Flash",
+            "type": "shell",
+            "dependsOn": [
+                "Build"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": "\"${env:ProgramFiles}\\STMicroelectronics\\STM32Cube\\STM32CubeProgrammer\\bin\\STM32_Programmer_CLI.exe\" -c port=SWD -w \"${workspaceFolder}\\build\\Debug\\${workspaceFolderBasename}.bin\" 0x08000000 -v -rst",
+            "problemMatcher": []
+        }
+    ]
+}
