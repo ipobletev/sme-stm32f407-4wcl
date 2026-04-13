@@ -29,6 +29,7 @@
 #include <string.h>
 #include "usart.h"
 #include "adc.h"
+#include "app_tasks.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,17 +49,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-extern ADC_HandleTypeDef hadc1;
-uint16_t adc_value[3] = {0, 0, 0};
-float battery_volt = 0.0f;
+
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 3000 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -96,11 +88,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  App_Tasks_Init();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -116,77 +107,10 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+__weak void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  uint8_t k1_prev = GPIO_PIN_SET;
-  uint8_t k2_prev = GPIO_PIN_SET;
-  uint8_t sw3_prev = GPIO_PIN_SET;
-  uint32_t last_print_tick = 0;
-
-  /* Initial ADC DMA Start */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_value, 3);
-
-  /* Infinite loop */
-  printf("UART1 DMA (backed) Test OK - System Started\r\n");
-  for(;;)
-  {
-    /* Read Current Button States */
-    GPIO_PinState k1_state = HAL_GPIO_ReadPin(USER_K1_BUTTON_GPIO_Port, USER_K1_BUTTON_Pin);
-    GPIO_PinState k2_state = HAL_GPIO_ReadPin(USER_K2_BUTTON_GPIO_Port, USER_K2_BUTTON_Pin);
-    GPIO_PinState sw3_state = HAL_GPIO_ReadPin(USER_SW3_GPIO_Port, USER_SW3_Pin);
-
-    /* USER_K1 Logic: Toggle LED on press */
-    if (k1_state == GPIO_PIN_RESET && k1_prev == GPIO_PIN_SET)
-    {
-       HAL_GPIO_TogglePin(USER_LED_GPIO_Port, USER_LED_Pin);
-       printf("K1 Pressed: LED Toggled - Counter: %lu\r\n", (unsigned long)xTaskGetTickCount());
-    }
-    k1_prev = k1_state;
-
-    /* USER_K2 Logic: Short beep on press */
-    if (k2_state == GPIO_PIN_RESET && k2_prev == GPIO_PIN_SET)
-    {
-       HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-       osDelay(100);
-       HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-       printf("K2 Pressed: Buzzer Beep - Tick: %lu\r\n", (unsigned long)osKernelGetTickCount());
-    }
-    k2_prev = k2_state;
-
-    /* USER_SW3 Logic: Double beep on press */
-    if (sw3_state == GPIO_PIN_RESET && sw3_prev == GPIO_PIN_SET)
-    {
-       for(int i=0; i<2; i++) {
-         HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-         osDelay(50);
-         HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-         if(i==0) osDelay(50);
-       }
-       printf("SW3 Pressed: Double Beep\r\n");
-       
-       /* UART3 DMA Test - Direct HAL usage */
-       UART_Printf_DMA(&huart3, "UART3 DMA View: SW3 Pressed at %lu ms\r\n", (unsigned long)osKernelGetTickCount());
-    }
-    sw3_prev = sw3_state;
-
-    /* Battery Measurement Logic */
-    if(adc_value[1] != 0 && adc_value[1] != 4095) {	// Filter out invalid readings
-        /* 1210.0 is the internal reference voltage (mV), 100k + 10k divider means measured voltage is 1/11th */
-        float volt = 1210.0f / ((float)adc_value[1]) * ((float)adc_value[0]) * 11.0f ; 
-        volt = volt > 20000 ? 0 : volt;		// Voltage should not exceed 20V for this car
-        battery_volt = battery_volt == 0 ? volt : battery_volt * 0.95f + volt * 0.05f;	// Smoothing filter
-    }
-    
-    /* Print Battery Voltage periodically (every 1s) */
-    if (osKernelGetTickCount() - last_print_tick >= 1000) {
-        last_print_tick = osKernelGetTickCount();
-        printf("Battery Volt: %.2f mV | Raw: BATT:%u, VREF:%u, TEMP:%u\r\n", 
-               battery_volt, adc_value[0], adc_value[1], adc_value[2]);
-    }
-
-    osDelay(50); /* Poll every 50ms */
-  }
+  /* Logic moved to Application/Main/Src/app_main.c */
   /* USER CODE END StartDefaultTask */
 }
 
@@ -194,4 +118,3 @@ void StartDefaultTask(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

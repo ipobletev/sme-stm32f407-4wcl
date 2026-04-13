@@ -45,11 +45,30 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    Application/Tasks/Src/manager_task.c
+    Application/Tasks/Src/controller_task.c
+    Application/Tasks/Src/app_tasks.c
+    Application/Tasks/Src/uart_listener_task.c
+    Application/MainLogic/Src/app_state_machine.c
+    Drivers/BSP/Led/Src/bsp_led.c
+    Drivers/BSP/Button/Src/bsp_button.c
+    Drivers/BSP/Buzzer/Src/bsp_buzzer.c
+    Drivers/BSP/Console/Src/bsp_console.c
+    Application/Modules/ConsoleDebug/Src/debug_module.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    Application/Tasks/Inc
+    Application/MainLogic/Inc
+    Drivers/BSP/Inc
+    Drivers/BSP/Led/Inc
+    Drivers/BSP/Button/Inc
+    Drivers/BSP/Buzzer/Inc
+    Drivers/BSP/Console/Inc
+    Application/Modules/ConsoleDebug/Inc
+    Application/Config
 )
 
 # Add project symbols (macros)
