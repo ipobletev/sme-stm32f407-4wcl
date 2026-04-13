@@ -29,7 +29,7 @@
 #include <string.h>
 #include "usart.h"
 #include "adc.h"
-#include "app_tasks.h"
+#include "app_rtos.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,7 +91,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  App_Tasks_Init();
+  App_RTOS_Init();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

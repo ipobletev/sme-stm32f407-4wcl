@@ -22,6 +22,7 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     int len = 0;
     const char *level_str = "";
     const char *color_str = "";
+    (void)color_str;
 
     switch (level) {
         case DEBUG_LEVEL_ERROR:

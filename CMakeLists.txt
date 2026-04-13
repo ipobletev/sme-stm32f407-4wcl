@@ -45,11 +45,14 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    Application/Tasks/Src/manager_task.c
-    Application/Tasks/Src/controller_task.c
-    Application/Tasks/Src/app_tasks.c
-    Application/Tasks/Src/uart_listener_task.c
+    Application/RTOSLogic/Src/task_manager.c
+    Application/RTOSLogic/Src/task_controller.c
+    Application/RTOSLogic/Src/app_rtos.c
+    Application/RTOSLogic/Src/timer_heartbeat.c
+    Application/RTOSLogic/Src/task_default.c
+    Application/RTOSLogic/Src/task_uart_listener.c
     Application/MainLogic/Src/app_state_machine.c
+    Application/MainLogic/Src/control_board.c
     Drivers/BSP/Led/Src/bsp_led.c
     Drivers/BSP/Button/Src/bsp_button.c
     Drivers/BSP/Buzzer/Src/bsp_buzzer.c
@@ -60,7 +63,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    Application/Tasks/Inc
+    Application/RTOSLogic/Inc
     Application/MainLogic/Inc
     Drivers/BSP/Inc
     Drivers/BSP/Led/Inc

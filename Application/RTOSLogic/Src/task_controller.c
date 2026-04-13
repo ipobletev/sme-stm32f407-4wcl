@@ -1,10 +1,8 @@
-#include "app_tasks.h"
+#include "app_rtos.h"
 #include "bsp_button.h"
 #include "debug_module.h"
 #include <stdio.h>
 #include <string.h>
-
-#define LOG_TAG "CONTROLLER"
 
 #define LOG_TAG "CONTROLLER"
 

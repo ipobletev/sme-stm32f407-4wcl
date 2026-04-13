@@ -1,15 +1,23 @@
-#include "app_tasks.h"
-#include <stdio.h>
+#include "app_rtos.h"
+#include "config.h"
 
-/* Handles for RTOS objects */
+/* --- RTOS OBJECT HANDLES --- */
+
+/* Message Queues */
 osMessageQueueId_t stateMsgQueueHandle;
 osMessageQueueId_t uartEventQueueHandle;
+
+/* Thread Handles */
 osThreadId_t managerTaskHandle;
 osThreadId_t controllerTaskHandle;
 osThreadId_t defaultTaskHandle;
 osThreadId_t uartListenerTaskHandle;
 
-/* Task Attributes */
+/* Timer Handles */
+osTimerId_t heartbeatTimerHandle;
+
+/* --- TASK ATTRIBUTES --- */
+
 const osThreadAttr_t managerTask_attributes = {
   .name = "ManagerTask",
   .stack_size = 512 * 4,
@@ -38,28 +46,20 @@ const osThreadAttr_t uartListenerTask_attributes = {
  * @brief Initialize all application RTOS resources.
  * This is called from Core/Src/freertos.c
  */
-void App_Tasks_Init(void) {
-    /* Create Queues */
+void App_RTOS_Init(void) {
+    /* 1. Create Queues */
     stateMsgQueueHandle = osMessageQueueNew(10, sizeof(StateChangeMsg_t), NULL);
     uartEventQueueHandle = osMessageQueueNew(10, sizeof(StateChangeMsg_t), NULL);
     
-    /* Create Threads */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-    managerTaskHandle = osThreadNew(StartManagerTask, NULL, &managerTask_attributes);
-    controllerTaskHandle = osThreadNew(StartControllerTask, NULL, &controllerTask_attributes);
+    /* 2. Create Threads (Tasks) */
+    defaultTaskHandle      = osThreadNew(StartDefaultTask,      NULL, &defaultTask_attributes);
+    managerTaskHandle      = osThreadNew(StartManagerTask,      NULL, &managerTask_attributes);
+    controllerTaskHandle   = osThreadNew(StartControllerTask,   NULL, &controllerTask_attributes);
     uartListenerTaskHandle = osThreadNew(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
-}
 
-/**
- * @brief  Function implementing the defaultTask thread (Heartbeat).
- * @param  argument: Not used
- */
-void StartDefaultTask(void *argument)
-{
-  printf("Application Main Task Started (Tasks Layer)\r\n");
-  for(;;)
-  {
-    printf("Alive (Tasks Layer)\r\n");
-    osDelay(1000);
-  }
+    /* 3. Create and Start Timers */
+    heartbeatTimerHandle = osTimerNew(HeartbeatTimerCallback, osTimerPeriodic, NULL, NULL);
+    if (heartbeatTimerHandle != NULL) {
+        osTimerStart(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
+    }
 }

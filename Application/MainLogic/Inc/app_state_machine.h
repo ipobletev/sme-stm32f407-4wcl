@@ -8,8 +8,7 @@ typedef enum {
     STATE_INIT = 0,
     STATE_IDLE,
     STATE_ACTIVE,
-    STATE_FAULT,
-    STATE_MAX
+    STATE_FAULT
 } SystemState_t;
 
 typedef enum {
