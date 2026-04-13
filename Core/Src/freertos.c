@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "usart.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +48,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+extern ADC_HandleTypeDef hadc1;
+uint16_t adc_value[3] = {0, 0, 0};
+float battery_volt = 0.0f;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -119,6 +122,10 @@ void StartDefaultTask(void *argument)
   uint8_t k1_prev = GPIO_PIN_SET;
   uint8_t k2_prev = GPIO_PIN_SET;
   uint8_t sw3_prev = GPIO_PIN_SET;
+  uint32_t last_print_tick = 0;
+
+  /* Initial ADC DMA Start */
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_value, 3);
 
   /* Infinite loop */
   printf("UART1 DMA (backed) Test OK - System Started\r\n");
@@ -162,6 +169,21 @@ void StartDefaultTask(void *argument)
        UART_Printf_DMA(&huart3, "UART3 DMA View: SW3 Pressed at %lu ms\r\n", (unsigned long)osKernelGetTickCount());
     }
     sw3_prev = sw3_state;
+
+    /* Battery Measurement Logic */
+    if(adc_value[1] != 0 && adc_value[1] != 4095) {	// Filter out invalid readings
+        /* 1210.0 is the internal reference voltage (mV), 100k + 10k divider means measured voltage is 1/11th */
+        float volt = 1210.0f / ((float)adc_value[1]) * ((float)adc_value[0]) * 11.0f ; 
+        volt = volt > 20000 ? 0 : volt;		// Voltage should not exceed 20V for this car
+        battery_volt = battery_volt == 0 ? volt : battery_volt * 0.95f + volt * 0.05f;	// Smoothing filter
+    }
+    
+    /* Print Battery Voltage periodically (every 1s) */
+    if (osKernelGetTickCount() - last_print_tick >= 1000) {
+        last_print_tick = osKernelGetTickCount();
+        printf("Battery Volt: %.2f mV | Raw: BATT:%u, VREF:%u, TEMP:%u\r\n", 
+               battery_volt, adc_value[0], adc_value[1], adc_value[2]);
+    }
 
     osDelay(50); /* Poll every 50ms */
   }
