@@ -10,7 +10,7 @@
 /* Thread notification flag */
 #define RX_EVENT_FLAG 0x01
 
-static osThreadId_t listener_task_id;
+static osal_thread_h listener_task_id;
 
 /**
  * @brief Helper to publish events to the central controller
@@ -19,10 +19,10 @@ static void publish_event(SystemEvent_t event)
 {
     StateChangeMsg_t msg;
     msg.event = event;
-    msg.timestamp = osKernelGetTickCount();
+    msg.timestamp = osal_get_tick();
     
-    osStatus_t status = osMessageQueuePut(uartEventQueueHandle, &msg, 0U, 0U);
-    if (status != osOK) {
+    osal_status_t status = osal_queue_put(uartEventQueueHandle, &msg, 0U);
+    if (status != OSAL_OK) {
         LOG_ERROR(LOG_TAG, "Failed to publish event %d", event);
     }
 }
@@ -33,7 +33,7 @@ static void publish_event(SystemEvent_t event)
 static void bsp_rx_callback(uint16_t size)
 {
     /* Notify the task that data is ready */
-    osThreadFlagsSet(listener_task_id, RX_EVENT_FLAG);
+    osal_thread_flags_set(listener_task_id, RX_EVENT_FLAG);
 }
 
 /**
@@ -41,7 +41,7 @@ static void bsp_rx_callback(uint16_t size)
  */
 void StartUARTListenerTask(void *argument)
 {
-    listener_task_id = osThreadGetId();
+    listener_task_id = osal_thread_get_self();
     LOG_INFO(LOG_TAG, "UART Listener Task Started (Clean Architecture)");
 
     /* Initialize BSP Rx and register our local bridge callback */
@@ -52,7 +52,7 @@ void StartUARTListenerTask(void *argument)
     for(;;)
     {
         /* Wait for notification from BSP callback */
-        uint32_t flags = osThreadFlagsWait(RX_EVENT_FLAG, osFlagsWaitAny, osWaitForever);
+        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, OSAL_WAIT_FOREVER);
         
         if (flags & RX_EVENT_FLAG)
         {
@@ -90,3 +90,4 @@ void StartUARTListenerTask(void *argument)
         }
     }
 }
+

@@ -51,8 +51,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Application/RTOSLogic/Src/timer_heartbeat.c
     Application/RTOSLogic/Src/task_default.c
     Application/RTOSLogic/Src/task_uart_listener.c
+    Application/Modules/OSAL/Src/osal_cmsis.c
     Application/MainLogic/Src/app_state_machine.c
     Application/MainLogic/Src/control_board.c
+    Application/MainLogic/Src/States/state_init.c
+    Application/MainLogic/Src/States/state_idle.c
+    Application/MainLogic/Src/States/state_active.c
+    Application/MainLogic/Src/States/state_fault.c
     Drivers/BSP/Led/Src/bsp_led.c
     Drivers/BSP/Button/Src/bsp_button.c
     Drivers/BSP/Buzzer/Src/bsp_buzzer.c
@@ -65,6 +70,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     Application/RTOSLogic/Inc
     Application/MainLogic/Inc
+    Application/MainLogic/Inc/States
+    Application/Modules/OSAL/Inc
     Drivers/BSP/Inc
     Drivers/BSP/Led/Inc
     Drivers/BSP/Button/Inc
@@ -73,6 +80,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Application/Modules/ConsoleDebug/Inc
     Application/Config
 )
+
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE

@@ -11,6 +11,7 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
     /* Keep task running, can be used for low priority background tasks or watchdog feeding */
-    osDelay(5000);
+    osal_delay(5000);
   }
 }
+

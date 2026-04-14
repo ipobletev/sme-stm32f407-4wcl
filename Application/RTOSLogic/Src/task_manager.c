@@ -13,7 +13,7 @@ void StartManagerTask(void *argument)
     for(;;)
     {
         /* Wait for a message from the Controller task, block indefinitely */
-        if (osMessageQueueGet(stateMsgQueueHandle, &msg, 0U, osWaitForever) == osOK)
+        if (osal_queue_get(stateMsgQueueHandle, &msg, OSAL_WAIT_FOREVER) == OSAL_OK)
         {
             printf("Manager: Processing Event %d collected at tick %lu\r\n", 
                    msg.event, (unsigned long)msg.timestamp);
@@ -23,3 +23,4 @@ void StartManagerTask(void *argument)
         }
     }
 }
+

@@ -11,10 +11,10 @@ static void publish_event(SystemEvent_t event)
 {
     StateChangeMsg_t msg;
     msg.event = event;
-    msg.timestamp = osKernelGetTickCount();
+    msg.timestamp = osal_get_tick();
     
-    osStatus_t status = osMessageQueuePut(stateMsgQueueHandle, &msg, 0U, 0U);
-    if (status != osOK) {
+    osal_status_t status = osal_queue_put(stateMsgQueueHandle, &msg, 0U);
+    if (status != OSAL_OK) {
         LOG_ERROR(LOG_TAG, "Failed to publish event %d", event);
     }
 }
@@ -34,9 +34,9 @@ void StartControllerTask(void *argument)
          * Wait for events from UART Listener with a 100ms timeout.
          * This timeout acts as our polling interval for buttons.
          */
-        osStatus_t status = osMessageQueueGet(uartEventQueueHandle, &uart_msg, NULL, 100U);
+        osal_status_t status = osal_queue_get(uartEventQueueHandle, &uart_msg, 100U);
         
-        if (status == osOK)
+        if (status == OSAL_OK)
         {
             LOG_INFO(LOG_TAG, "Centralized Event Received from UART: %d", uart_msg.event);
             /* Here you could add logic to filter or modify events before forwarding */
@@ -79,10 +79,6 @@ void StartControllerTask(void *argument)
             }
         }
         sw3_prev = sw3_pressed;
-
-        /* 
-         * Note: Removed explicit osDelay(100) because osMessageQueueGet 
-         * provides the timing (blocking up to 100ms).
-         */
     }
 }
+
