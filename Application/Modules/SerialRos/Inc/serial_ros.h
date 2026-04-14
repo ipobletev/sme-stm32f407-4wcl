@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "serial_ros_protocol.h"
 
 #define SERIAL_ROS_COMMS_TIMEOUT_MS  1000
 

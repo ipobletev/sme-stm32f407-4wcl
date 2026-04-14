@@ -14,6 +14,7 @@
 #define TOPIC_ID_CMD_VEL        0x03    /* Rx: Movement setpoints */
 #define TOPIC_ID_ARM_GOAL       0x04    /* Rx: Robotic arm joint targets */
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
+#define TOPIC_ID_CONFIG         0x06    /* Rx: System configuration (Mobility/Mode) */
 
 /* Tx (Virtual Published) Topics */
 #define TOPIC_ID_SYS_STATUS     0x81    /* Tx: System state, health, and battery */
