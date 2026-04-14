@@ -186,3 +186,43 @@ uint8_t RobotState_GetWatchdogArm(void) {
     }
     return wdg;
 }
+
+void RobotState_SetBatteryVoltage(float voltage) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Telemetry.battery_voltage = voltage;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.battery_voltage = voltage;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetBatteryCurrent(float current) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Telemetry.battery_current = current;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.battery_current = current;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetUCTemperature(float temp) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Telemetry.uc_temperature = temp;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.uc_temperature = temp;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetBoardTemperature(float temp) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Telemetry.board_temperature = temp;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.board_temperature = temp;
+        taskEXIT_CRITICAL();
+    }
+}

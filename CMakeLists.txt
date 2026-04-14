@@ -49,6 +49,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Application/RTOSLogic/Src/task_controller.c
     Application/RTOSLogic/Src/app_rtos.c
     Application/RTOSLogic/Src/timer_heartbeat.c
+    Application/RTOSLogic/Src/timer_system_sensors.c
     Application/RTOSLogic/Src/task_default.c
     Application/RTOSLogic/Src/task_uart_listener.c
     Application/RTOSLogic/Src/task_mobility.c
@@ -72,6 +73,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/BSP/Button/Src/bsp_button.c
     Drivers/BSP/Buzzer/Src/bsp_buzzer.c
     Drivers/BSP/Console/Src/bsp_console.c
+    Drivers/BSP/SystemSensors/Src/bsp_system_sensors.c
     Application/Modules/ConsoleDebug/Src/debug_module.c
 )
 
@@ -90,6 +92,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/BSP/Button/Inc
     Drivers/BSP/Buzzer/Inc
     Drivers/BSP/Console/Inc
+    Drivers/BSP/SystemSensors/Inc
     Application/Modules/ConsoleDebug/Inc
     Application/Config
 )

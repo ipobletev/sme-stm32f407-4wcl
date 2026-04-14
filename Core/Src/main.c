@@ -26,6 +26,8 @@
 #include "robot_state.h"
 #include "adc.h"
 #include "usart.h"
+#include "bsp_mcu_sensors.h"
+#include "bsp_battery.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -107,6 +109,9 @@ int main(void)
   if (huart1.gState == HAL_UART_STATE_ERROR) {
       RobotState_SetErrorFlag(ERR_HAL_UART);
   }
+
+  /* BSP System Sensors Init (Batt, Vref, Temp) */
+  BSP_SystemSensors_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */

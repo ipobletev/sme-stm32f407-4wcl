@@ -18,6 +18,7 @@ osal_thread_h armTaskHandle;
 
 /* Timer Handles */
 osal_timer_h heartbeatTimerHandle;
+osal_timer_h systemSensorsTimerHandle;
 
 /* --- TASK ATTRIBUTES (Generic) --- */
 
@@ -93,6 +94,14 @@ void App_RTOS_Init(void) {
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);
     if (heartbeatTimerHandle != NULL) {
         osal_status_t status = osal_timer_start(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
+        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
+    } else {
+        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
+    }
+
+    systemSensorsTimerHandle = osal_timer_create(SystemSensorsTimerCallback, OSAL_TIMER_PERIODIC, NULL);
+    if (systemSensorsTimerHandle != NULL) {
+        osal_status_t status = osal_timer_start(systemSensorsTimerHandle, SYSTEM_SENSORS_PERIOD_MS);
         if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
     } else {
         RobotState_SetErrorFlag(ERR_RTOS_TIMER);

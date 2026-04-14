@@ -73,6 +73,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Button/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Console/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/BSP/SystemSensors/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config"/>
 								</option>
@@ -179,6 +180,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Button/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Console/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/BSP/SystemSensors/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config"/>
 								</option>

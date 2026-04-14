@@ -101,6 +101,12 @@ MobilityState_t RobotState_GetMobilityState(void);
 void RobotState_SetArmState(ArmState_t state);
 ArmState_t RobotState_GetArmState(void);
 
+/* Telemetry Setters */
+void RobotState_SetBatteryVoltage(float voltage);
+void RobotState_SetBatteryCurrent(float current);
+void RobotState_SetUCTemperature(float temp);
+void RobotState_SetBoardTemperature(float temp);
+
 /* Watchdog API */
 void RobotState_FeedWatchdogMobility(void);
 uint8_t RobotState_GetWatchdogMobility(void);

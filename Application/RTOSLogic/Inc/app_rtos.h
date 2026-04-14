@@ -29,9 +29,11 @@ void StartArmTask(void *argument);
 
 /* --- TIMERS --- */
 extern osal_timer_h heartbeatTimerHandle;
+extern osal_timer_h systemSensorsTimerHandle;
 
 /* Soft-Timer Callback Prototypes */
 void HeartbeatTimerCallback(void *argument);
+void SystemSensorsTimerCallback(void *argument);
 
 #endif /* __APP_RTOS_H */
 
