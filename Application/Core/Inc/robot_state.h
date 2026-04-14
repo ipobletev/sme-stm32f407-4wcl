@@ -113,4 +113,9 @@ uint8_t RobotState_GetWatchdogMobility(void);
 void RobotState_FeedWatchdogArm(void);
 uint8_t RobotState_GetWatchdogArm(void);
 
+/* Command Setters (Rx from ROS) */
+void RobotState_SetTargetVelocity(float linear_x, float angular_z);
+void RobotState_SetTargetArmPose(float j1, float j2, float j3);
+void RobotState_SetTargetMobilityMode(uint8_t mode);
+
 #endif /* __ROBOT_STATE_H */

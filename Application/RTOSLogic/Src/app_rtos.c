@@ -1,20 +1,26 @@
 #include "app_rtos.h"
 #include "config.h"
 #include "robot_state.h"
+#include "serial_ros_protocol.h"
+#include "bsp_console.h"
 
 /* --- RTOS OBJECT HANDLES (Generic) --- */
 
 /* Message Queues */
 osal_queue_h stateMsgQueueHandle;
 osal_queue_h uartEventQueueHandle;
+osal_queue_h rosTxQueueHandle;
+osal_queue_h rosRxQueueHandle;
+osal_queue_h consoleTxQueueHandle;
+osal_queue_h consoleRxQueueHandle;
 
 /* Thread Handles */
 osal_thread_h managerTaskHandle;
 osal_thread_h controllerTaskHandle;
-osal_thread_h defaultTaskHandle;
 osal_thread_h uartListenerTaskHandle;
 osal_thread_h mobilityTaskHandle;
 osal_thread_h armTaskHandle;
+osal_thread_h serialRosTaskHandle;
 
 /* Timer Handles */
 osal_timer_h heartbeatTimerHandle;
@@ -58,6 +64,12 @@ const osal_thread_attr_t armTask_attributes = {
   .priority = OSAL_PRIO_NORMAL,
 };
 
+const osal_thread_attr_t serialRosTask_attributes = {
+  .name = "SerialRosTask",
+  .stack_size = 384 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
+
 
 /**
  * @brief Initialize all application RTOS resources using OSAL.
@@ -71,10 +83,19 @@ void App_RTOS_Init(void) {
     uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
     if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
-    /* 2. Create Threads (Tasks) */
-    defaultTaskHandle      = osal_thread_create(StartDefaultTask,      NULL, &defaultTask_attributes);
-    if (defaultTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    rosTxQueueHandle = osal_queue_create(10, sizeof(SerialRos_Packet_t));
+    if (rosTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
+    rosRxQueueHandle = osal_queue_create(10, sizeof(SerialRos_Packet_t));
+    if (rosRxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+
+    consoleTxQueueHandle = osal_queue_create(20, sizeof(Console_Packet_t));
+    if (consoleTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+
+    consoleRxQueueHandle = osal_queue_create(10, sizeof(Console_Packet_t));
+    if (consoleRxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+    
+    /* 2. Create Threads (Tasks) */
     managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
     if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
@@ -89,6 +110,9 @@ void App_RTOS_Init(void) {
 
     armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
     if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+
+    serialRosTaskHandle = osal_thread_create(StartSerialRosTask, NULL, &serialRosTask_attributes);
+    if (serialRosTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     /* 3. Create and Start Timers */
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);

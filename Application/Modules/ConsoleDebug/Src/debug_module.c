@@ -2,7 +2,8 @@
 #include "bsp_console.h"
 #include <stdarg.h>
 #include <string.h>
-#include "cmsis_os.h"
+#include <stdio.h>
+#include "app_rtos.h"
 
 #define DEBUG_BUF_SIZE 256
 
@@ -47,7 +48,7 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     }
 
     // Header formatting: [COLOR][TIMESTAMP][LEVEL][TAG] 
-    uint32_t ts = osKernelGetTickCount();
+    uint32_t ts = osal_get_tick();
 #ifdef APP_DEBUG_USE_COLORS
     len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "%s[%08lu][%s][%s] ", color_str, (unsigned long)ts, level_str, tag);
 #else
@@ -67,8 +68,14 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "\r\n");
 #endif
 
-    // Send to BSP
+    // Enqueue for transmission
     if (len > 0) {
-        BSP_Console_Send((uint8_t *)buffer, (uint16_t)len);
+        Console_Packet_t packet;
+        packet.size = (len > 128) ? 128 : (uint16_t)len;
+        memcpy(packet.data, buffer, packet.size);
+        
+        // Put in queue with 0 timeout to avoid blocking high priority tasks 
+        // if the console is too slow.
+        osal_queue_put(consoleTxQueueHandle, &packet, 0);
     }
 }

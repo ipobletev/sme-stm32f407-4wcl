@@ -28,7 +28,6 @@ static void publish_event(SystemEvent_t event, EventSource_t source)
     }
 }
 
-
 /**
  * @brief Bridge between BSP callback and RTOS Task
  */
@@ -44,64 +43,58 @@ static void bsp_rx_callback(uint16_t size)
 void StartUARTListenerTask(void *argument)
 {
     listener_task_id = osal_thread_get_self();
-    LOG_INFO(LOG_TAG, "UART Listener Task Started (Clean Architecture)");
+    LOG_INFO(LOG_TAG, "Console Dispatcher Task Started (TX/RX Queues)");
 
     /* Initialize BSP Rx and register our local bridge callback */
     BSP_Console_InitRx(bsp_rx_callback);
 
+    Console_Packet_t io_packet;
     char cmd_buffer[RX_BUF_SIZE];
 
     for(;;)
     {
-        /* Wait for notification from BSP callback */
-        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, OSAL_WAIT_FOREVER);
+        /* 1. Wait for RX event or 10ms timeout to poll TX queue */
+        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, 10U);
         
         if (flags & RX_EVENT_FLAG)
         {
             /* Copy data from BSP internal buffer */
-            BSP_Console_GetData((uint8_t *)cmd_buffer, RX_BUF_SIZE);
-            cmd_buffer[RX_BUF_SIZE - 1] = '\0';
+            uint16_t size = BSP_Console_GetData((uint8_t *)cmd_buffer, RX_BUF_SIZE);
+            if (size > 0) {
+                cmd_buffer[size < RX_BUF_SIZE ? size : RX_BUF_SIZE - 1] = '\0';
 
-            LOG_DEBUG(LOG_TAG, "Received: %s", cmd_buffer);
+                /* Put in RX queue for other tasks if they want raw access */
+                Console_Packet_t rx_pkg;
+                rx_pkg.size = (size > 128) ? 128 : size;
+                memcpy(rx_pkg.data, cmd_buffer, rx_pkg.size);
+                osal_queue_put(consoleRxQueueHandle, &rx_pkg, 0);
 
-            /* Parse Command */
-            if (strncmp(cmd_buffer, "EVENT:", 6) == 0) 
-            {
-                char *cmd = &cmd_buffer[6];
-                strtok(cmd, "\r\n ");
+                /* Parse Command (legacy logic for system events) */
+                if (strncmp(cmd_buffer, "EVENT:", 6) == 0) 
+                {
+                    char *cmd = &cmd_buffer[6];
+                    strtok(cmd, "\r\n ");
 
-                if (strcmp(cmd, "START") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: START (Manual)");
-                    publish_event(EVENT_START, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "STOP") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: STOP");
-                    publish_event(EVENT_STOP, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "MANUAL") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: MANUAL");
-                    publish_event(EVENT_MODE_MANUAL, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "AUTO") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: AUTO");
-                    publish_event(EVENT_MODE_AUTO, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "PAUSE") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: PAUSE");
-                    publish_event(EVENT_PAUSE, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "RESUME") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: RESUME");
-                    publish_event(EVENT_RESUME, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "ERROR") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: ERROR");
-                    publish_event(EVENT_ERROR, SRC_UART1_LOCAL);
-                } else if (strcmp(cmd, "RESET") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: RESET");
-                    publish_event(EVENT_RESET, SRC_UART1_LOCAL);
-                } else {
-                    LOG_WARNING(LOG_TAG, "Unknown PC command: '%s'", cmd);
+                    if (strcmp(cmd, "START") == 0)      publish_event(EVENT_START, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "STOP") == 0)  publish_event(EVENT_STOP, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "MANUAL") == 0) publish_event(EVENT_MODE_MANUAL, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "AUTO") == 0)   publish_event(EVENT_MODE_AUTO, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "PAUSE") == 0)  publish_event(EVENT_PAUSE, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "RESUME") == 0) publish_event(EVENT_RESUME, SRC_UART1_LOCAL);
+                    else if (strcmp(cmd, "RESET") == 0)  publish_event(EVENT_RESET, SRC_UART1_LOCAL);
                 }
             }
 
-
             /* Clear data and tell BSP we are ready for next packet */
             BSP_Console_AcceptNext();
+        }
+
+        /* 2. Process Outgoing Logs/Data (TX Queue) */
+        while (osal_queue_get(consoleTxQueueHandle, &io_packet, 0) == OSAL_OK) {
+            BSP_Console_Send(io_packet.data, io_packet.size);
+            // Small delay to allow DMA to start and avoid slamming HAL
+            // In a better implementation, we'd wait for a DMA-complete notification.
+            osal_delay(1);
         }
     }
 }

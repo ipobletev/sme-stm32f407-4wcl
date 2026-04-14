@@ -23,7 +23,6 @@ void HeartbeatTimerCallback(void *argument)
     /* Report Status via DEBUG COM with Stack Diagnostics */
     uint32_t stack_uart = osal_thread_get_stack_space(uartListenerTaskHandle);
     uint32_t stack_ctrl = osal_thread_get_stack_space(controllerTaskHandle);
-    uint32_t stack_def  = osal_thread_get_stack_space(defaultTaskHandle);
 
     uint64_t errs = RobotState_GetErrorFlags();
     char err_str[19];
@@ -31,7 +30,7 @@ void HeartbeatTimerCallback(void *argument)
     snprintf(err_str, sizeof(err_str), "0x%08lX%08lX", 
              (unsigned long)(errs >> 32), (unsigned long)(errs & 0xFFFFFFFF));
 
-    LOG_INFO(LOG_TAG, "HB: %lu | State: [SUP:%s MOB:%s ARM:%s] | Batt: %.2fV | MCU: %.1fC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu DEF:%lu]", 
+    LOG_INFO(LOG_TAG, "HB: %lu | State: [SUP:%s MOB:%s ARM:%s] | Batt: %.2fV | MCU: %.1fC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]", 
            (unsigned long)RobotState_GetHeartbeat(),
            Supervisor_StateToStr(RobotState_GetSystemState()),
            Mobility_StateToStr(RobotState_GetMobilityState()),
@@ -39,5 +38,5 @@ void HeartbeatTimerCallback(void *argument)
            RobotState_4wcl.Telemetry.battery_voltage,
            RobotState_4wcl.Telemetry.uc_temperature,
            err_str,
-           (unsigned long)stack_ctrl, (unsigned long)stack_uart, (unsigned long)stack_def);
+           (unsigned long)stack_ctrl, (unsigned long)stack_uart);
 }

@@ -35,4 +35,12 @@ uint16_t BSP_Console_GetData(uint8_t *dest, uint16_t max_len);
  */
 void BSP_Console_AcceptNext(void);
 
+/**
+ * @brief Container for Console packets in RTOS queues
+ */
+typedef struct {
+    uint8_t data[128];
+    uint16_t size;
+} Console_Packet_t;
+
 #endif /* __BSP_CONSOLE_H */

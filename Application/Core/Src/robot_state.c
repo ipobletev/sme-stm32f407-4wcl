@@ -226,3 +226,39 @@ void RobotState_SetBoardTemperature(float temp) {
         taskEXIT_CRITICAL();
     }
 }
+
+void RobotState_SetTargetVelocity(float linear_x, float angular_z) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Commands.target_linear_x = linear_x;
+        RobotState_4wcl.Commands.target_angular_z = angular_z;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Commands.target_linear_x = linear_x;
+        RobotState_4wcl.Commands.target_angular_z = angular_z;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetTargetArmPose(float j1, float j2, float j3) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Commands.target_arm_j1 = j1;
+        RobotState_4wcl.Commands.target_arm_j2 = j2;
+        RobotState_4wcl.Commands.target_arm_j3 = j3;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Commands.target_arm_j1 = j1;
+        RobotState_4wcl.Commands.target_arm_j2 = j2;
+        RobotState_4wcl.Commands.target_arm_j3 = j3;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetTargetMobilityMode(uint8_t mode) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        RobotState_4wcl.Commands.target_mobility_mode = mode;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Commands.target_mobility_mode = mode;
+        taskEXIT_CRITICAL();
+    }
+}
