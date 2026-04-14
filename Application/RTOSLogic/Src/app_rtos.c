@@ -20,25 +20,25 @@ osTimerId_t heartbeatTimerHandle;
 
 const osThreadAttr_t managerTask_attributes = {
   .name = "ManagerTask",
-  .stack_size = 512 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
 const osThreadAttr_t controllerTask_attributes = {
   .name = "ControllerTask",
-  .stack_size = 512 * 4,
+  .stack_size = 384 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 3000 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
 const osThreadAttr_t uartListenerTask_attributes = {
   .name = "UARTListenerTask",
-  .stack_size = 512 * 4,
+  .stack_size = 384 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
 

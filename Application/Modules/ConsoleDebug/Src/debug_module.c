@@ -2,6 +2,7 @@
 #include "bsp_console.h"
 #include <stdarg.h>
 #include <string.h>
+#include "cmsis_os.h"
 
 #define DEBUG_BUF_SIZE 256
 
@@ -45,11 +46,12 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
             return;
     }
 
-    // Header formatting: [COLOR][LEVEL][TAG] 
+    // Header formatting: [COLOR][TIMESTAMP][LEVEL][TAG] 
+    uint32_t ts = osKernelGetTickCount();
 #ifdef APP_DEBUG_USE_COLORS
-    len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "%s[%s][%s] ", color_str, level_str, tag);
+    len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "%s[%08lu][%s][%s] ", color_str, (unsigned long)ts, level_str, tag);
 #else
-    len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "[%s][%s] ", level_str, tag);
+    len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "[%08lu][%s][%s] ", (unsigned long)ts, level_str, tag);
 #endif
 
     // Message formatting

@@ -1,16 +1,44 @@
 #include "app_state_machine.h"
-#include "bsp_led.h"
+#include "States/state_handlers.h"
 #include <stdio.h>
 
 /* Internal Private State */
 static SystemState_t currentState = STATE_INIT;
 
 /**
+ * @brief Helper to handle state transitions with entry/exit actions.
+ */
+static void TransitionToState(SystemState_t newState) {
+    if (currentState == newState) return;
+
+    /* Call Exit Handler of current state */
+    switch (currentState) {
+        case STATE_INIT:   State_Init_OnExit();   break;
+        case STATE_IDLE:   State_Idle_OnExit();   break;
+        case STATE_ACTIVE: State_Active_OnExit(); break;
+        case STATE_FAULT:  State_Fault_OnExit();  break;
+        default: break;
+    }
+
+    currentState = newState;
+
+    /* Call Enter Handler of new state */
+    switch (currentState) {
+        case STATE_INIT:   State_Init_OnEnter();   break;
+        case STATE_IDLE:   State_Idle_OnEnter();   break;
+        case STATE_ACTIVE: State_Active_OnEnter(); break;
+        case STATE_FAULT:  State_Fault_OnEnter();  break;
+        default: break;
+    }
+}
+
+/**
  * @brief Initialize the state machine.
  */
 void SM_Init(void) {
     currentState = STATE_INIT;
-    printf("SM: Initialized to STATE_INIT\r\n");
+    State_Init_OnEnter();
+    printf("SM: Initialized\r\n");
 }
 
 /**
@@ -24,48 +52,47 @@ SystemState_t SM_GetCurrentState(void) {
  * @brief Process an incoming event and update the state machine.
  */
 void SM_ProcessEvent(SystemEvent_t event) {
-    /* State Machine Transition Logic */
+    SystemState_t nextState = currentState;
+
+    /* Transition Table Logic */
     switch (currentState)
     {
         case STATE_INIT:
             if (event == EVENT_START) {
-                currentState = STATE_IDLE;
-                printf("SM: Transition INIT -> IDLE\r\n");
+                nextState = STATE_IDLE;
             }
             break;
 
         case STATE_IDLE:
             if (event == EVENT_START) {
-                currentState = STATE_ACTIVE;
-                printf("SM: Transition IDLE -> ACTIVE\r\n");
-                BSP_LED_SetState(BSP_LED_USER, true);
+                nextState = STATE_ACTIVE;
             } else if (event == EVENT_ERROR) {
-                currentState = STATE_FAULT;
-                printf("SM: Transition IDLE -> FAULT\r\n");
+                nextState = STATE_FAULT;
             }
             break;
 
         case STATE_ACTIVE:
             if (event == EVENT_STOP) {
-                currentState = STATE_IDLE;
-                printf("SM: Transition ACTIVE -> IDLE\r\n");
-                BSP_LED_SetState(BSP_LED_USER, false);
+                nextState = STATE_IDLE;
             } else if (event == EVENT_ERROR) {
-                currentState = STATE_FAULT;
-                printf("SM: Transition ACTIVE -> FAULT\r\n");
-                BSP_LED_SetState(BSP_LED_USER, false);
+                nextState = STATE_FAULT;
             }
             break;
 
         case STATE_FAULT:
             if (event == EVENT_RESET) {
-                currentState = STATE_INIT;
-                printf("SM: Transition FAULT -> INIT (Reset)\r\n");
+                nextState = STATE_INIT;
             }
             break;
 
         default:
-            currentState = STATE_INIT;
+            nextState = STATE_INIT;
             break;
     }
+
+    /* Execute transition if state changed */
+    if (nextState != currentState) {
+        TransitionToState(nextState);
+    }
 }
+
