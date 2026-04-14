@@ -51,18 +51,24 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Application/RTOSLogic/Src/timer_heartbeat.c
     Application/RTOSLogic/Src/task_default.c
     Application/RTOSLogic/Src/task_uart_listener.c
+    Application/RTOSLogic/Src/task_mobility.c
+    Application/RTOSLogic/Src/task_arm.c
     Application/Modules/OSAL/Src/osal_cmsis.c
-    Application/MainLogic/Src/app_state_machine.c
-    Application/MainLogic/Src/control_board.c
-    Application/MainLogic/Src/States/state_init.c
-    Application/MainLogic/Src/States/state_idle.c
-    Application/MainLogic/Src/States/state_manual.c
-    Application/MainLogic/Src/States/state_auto.c
-    Application/MainLogic/Src/States/state_paused.c
-    Application/MainLogic/Src/States/state_fault.c
+
+    Application/MainLogic/Supervisor/Src/supervisor_fsm.c
+    Application/Core/Src/robot_state.c
+    Application/MainLogic/Supervisor/Src/States/state_init.c
+    Application/MainLogic/Supervisor/Src/States/state_idle.c
+    Application/MainLogic/Supervisor/Src/States/state_manual.c
+    Application/MainLogic/Supervisor/Src/States/state_auto.c
+    Application/MainLogic/Supervisor/Src/States/state_paused.c
+    Application/MainLogic/Supervisor/Src/States/state_fault.c
+    Application/MainLogic/Slaves/MobilityStateMachine/Src/mobility_fsm.c
+    Application/MainLogic/Slaves/ArmStateMachine/Src/arm_fsm.c
 
 
     Drivers/BSP/Led/Src/bsp_led.c
+
     Drivers/BSP/Button/Src/bsp_button.c
     Drivers/BSP/Buzzer/Src/bsp_buzzer.c
     Drivers/BSP/Console/Src/bsp_console.c
@@ -73,8 +79,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     Application/RTOSLogic/Inc
-    Application/MainLogic/Inc
-    Application/MainLogic/Inc/States
+    Application/Core/Inc
+    Application/MainLogic/Supervisor/Inc
+    Application/MainLogic/Supervisor/Inc/States
+    Application/MainLogic/Slaves/MobilityStateMachine/Inc
+    Application/MainLogic/Slaves/ArmStateMachine/Inc
     Application/Modules/OSAL/Inc
     Drivers/BSP/Inc
     Drivers/BSP/Led/Inc

@@ -1,6 +1,18 @@
-#include "app_state_machine.h"
+#include "supervisor_fsm.h"
 #include "States/state_handlers.h"
 #include <stdio.h>
+
+const char* Supervisor_StateToStr(SystemState_t state) {
+    switch(state) {
+        case STATE_INIT:   return "INIT";
+        case STATE_IDLE:   return "IDLE";
+        case STATE_MANUAL: return "MANUAL";
+        case STATE_AUTO:   return "AUTO";
+        case STATE_PAUSED: return "PAUSED";
+        case STATE_FAULT:  return "FAULT";
+        default:           return "UNKNOWN";
+    }
+}
 
 /* Internal Private State */
 static SystemState_t currentState = STATE_INIT;
@@ -39,25 +51,25 @@ static void TransitionToState(SystemState_t newState) {
 }
 
 /**
- * @brief Initialize the state machine.
+ * @brief Initialize the supervisor state machine.
  */
-void SM_Init(void) {
+void Supervisor_Init(void) {
     currentState = STATE_INIT;
     State_Init_OnEnter();
-    printf("SM: Initialized\r\n");
+    printf("Supervisor: Initialized\r\n");
 }
 
 /**
  * @brief Get the current state.
  */
-SystemState_t SM_GetCurrentState(void) {
+SystemState_t Supervisor_GetCurrentState(void) {
     return currentState;
 }
 
 /**
- * @brief Process an incoming event and update the state machine.
+ * @brief Process an incoming event and update the supervisor state machine.
  */
-void SM_ProcessEvent(SystemEvent_t event, uint8_t source) {
+void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     SystemState_t nextState = currentState;
 
     /* Transition Table Logic */
@@ -113,7 +125,7 @@ void SM_ProcessEvent(SystemEvent_t event, uint8_t source) {
                 if (source >= pauseAuthLevel) {
                     nextState = previousMode; // Restore where we were
                 } else {
-                    printf("SM: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pauseAuthLevel);
+                    printf("Supervisor: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pauseAuthLevel);
                 }
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;

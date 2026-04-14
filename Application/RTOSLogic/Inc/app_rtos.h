@@ -2,7 +2,7 @@
 #define __APP_RTOS_H
 
 #include "osal.h"
-#include "app_state_machine.h"
+#include "supervisor_fsm.h"
 
 /* --- RTOS INITIALIZATION --- */
 void App_RTOS_Init(void);
@@ -16,12 +16,16 @@ extern osal_thread_h managerTaskHandle;
 extern osal_thread_h controllerTaskHandle;
 extern osal_thread_h defaultTaskHandle;
 extern osal_thread_h uartListenerTaskHandle;
+extern osal_thread_h mobilityTaskHandle;
+extern osal_thread_h armTaskHandle;
 
 /* Thread Prototypes */
 void StartManagerTask(void *argument);
 void StartControllerTask(void *argument);
 void StartDefaultTask(void *argument);
 void StartUARTListenerTask(void *argument);
+void StartMobilityTask(void *argument);
+void StartArmTask(void *argument);
 
 /* --- TIMERS --- */
 extern osal_timer_h heartbeatTimerHandle;

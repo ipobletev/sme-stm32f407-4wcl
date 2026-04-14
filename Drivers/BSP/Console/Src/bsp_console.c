@@ -1,6 +1,6 @@
 #include "bsp_console.h"
 #include "usart.h"
-#include "control_board.h"
+#include "robot_state.h"
 #include <string.h>
 
 #define CONSOLE_RX_BUF_SIZE 128
@@ -23,7 +23,7 @@ void BSP_Console_InitRx(BSP_Console_Callback_t callback) {
     
     memset(console_rx_buf, 0, CONSOLE_RX_BUF_SIZE);
     if (HAL_UARTEx_ReceiveToIdle_DMA(&huart1, console_rx_buf, CONSOLE_RX_BUF_SIZE) != HAL_OK) {
-        ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_UART);
+        RobotState_SetErrorFlag(ERR_HAL_UART);
     }
     
     /* Disable Half Transfer Interrupt to only get event on Idle or Full buffer */

@@ -1,6 +1,6 @@
 #include "app_rtos.h"
 #include "config.h"
-#include "control_board.h"
+#include "robot_state.h"
 
 /* --- RTOS OBJECT HANDLES (Generic) --- */
 
@@ -13,6 +13,8 @@ osal_thread_h managerTaskHandle;
 osal_thread_h controllerTaskHandle;
 osal_thread_h defaultTaskHandle;
 osal_thread_h uartListenerTaskHandle;
+osal_thread_h mobilityTaskHandle;
+osal_thread_h armTaskHandle;
 
 /* Timer Handles */
 osal_timer_h heartbeatTimerHandle;
@@ -43,6 +45,19 @@ const osal_thread_attr_t uartListenerTask_attributes = {
   .priority = OSAL_PRIO_HIGH,
 };
 
+const osal_thread_attr_t mobilityTask_attributes = {
+  .name = "MobilityTask",
+  .stack_size = 512 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
+
+const osal_thread_attr_t armTask_attributes = {
+  .name = "ArmTask",
+  .stack_size = 512 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
+
+
 /**
  * @brief Initialize all application RTOS resources using OSAL.
  * This is the bridge between the Application logic and the actual RTOS.
@@ -50,31 +65,37 @@ const osal_thread_attr_t uartListenerTask_attributes = {
 void App_RTOS_Init(void) {
     /* 1. Create Queues */
     stateMsgQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
-    if (stateMsgQueueHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_QUEUE);
+    if (stateMsgQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
     uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
-    if (uartEventQueueHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_QUEUE);
+    if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     /* 2. Create Threads (Tasks) */
     defaultTaskHandle      = osal_thread_create(StartDefaultTask,      NULL, &defaultTask_attributes);
-    if (defaultTaskHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TASK);
+    if (defaultTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
-    if (managerTaskHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TASK);
+    if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
-    if (controllerTaskHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TASK);
+    if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     uartListenerTaskHandle = osal_thread_create(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
-    if (uartListenerTaskHandle == NULL) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TASK);
+    if (uartListenerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+
+    mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
+    if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+
+    armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
+    if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     /* 3. Create and Start Timers */
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);
     if (heartbeatTimerHandle != NULL) {
         osal_status_t status = osal_timer_start(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
-        if (status != OSAL_OK) ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TIMER);
+        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
     } else {
-        ERR_SET(ControlBoard_4wcl.error_flags, ERR_RTOS_TIMER);
+        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
     }
 }
 

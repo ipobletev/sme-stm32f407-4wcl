@@ -54,7 +54,7 @@ void StartControllerTask(void *argument)
         /* K1 corresponds to START or RESUME event (Defaulting to MANUAL) */
         if (k1_pressed && !k1_prev)
         {
-            if (SM_GetCurrentState() == STATE_PAUSED) {
+            if (Supervisor_GetCurrentState() == STATE_PAUSED) {
                 LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME");
                 publish_event(EVENT_RESUME, SRC_PHYSICAL);
             } else {

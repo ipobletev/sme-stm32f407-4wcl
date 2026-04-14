@@ -1,7 +1,7 @@
 #ifndef __STATE_HANDLERS_H
 #define __STATE_HANDLERS_H
 
-#include "app_state_machine.h"
+#include "supervisor_fsm.h"
 
 /* State Handler Interface */
 

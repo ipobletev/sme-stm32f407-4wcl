@@ -1,5 +1,6 @@
 #include "app_rtos.h"
-#include "control_board.h"
+#include "robot_state.h"
+#include "supervisor_fsm.h"
 #include "bsp_led.h"
 #include "debug_module.h"
 #include <stdio.h>
@@ -15,20 +16,26 @@ void HeartbeatTimerCallback(void *argument)
     /* Toggle User LED */
     BSP_LED_Toggle(BSP_LED_USER);
 
-    /* Update Control Board Status */
-    ControlBoard_4wcl.current_state = SM_GetCurrentState();
-    ControlBoard_4wcl.heartbeat_count++;
+    /* Update Robot State Status */
+    RobotState_UpdateSystemState(Supervisor_GetCurrentState());
+    RobotState_IncrementHeartbeat();
 
     /* Report Status via DEBUG COM with Stack Diagnostics */
     uint32_t stack_uart = osal_thread_get_stack_space(uartListenerTaskHandle);
     uint32_t stack_ctrl = osal_thread_get_stack_space(controllerTaskHandle);
     uint32_t stack_def  = osal_thread_get_stack_space(defaultTaskHandle);
 
-    LOG_INFO(LOG_TAG, "HB: %lu | State: %d | Errors: 0x%016llX | FreeStack: [CTRL:%lu UART:%lu DEF:%lu]", 
-           (unsigned long)ControlBoard_4wcl.heartbeat_count,
-           (int)ControlBoard_4wcl.current_state,
-           (unsigned long long)ControlBoard_4wcl.error_flags,
+    uint64_t errs = RobotState_GetErrorFlags();
+    char err_str[19];
+    /* Manually format to 0x + 16 hex chars to avoid %llX library issues */
+    snprintf(err_str, sizeof(err_str), "0x%08lX%08lX", 
+             (unsigned long)(errs >> 32), (unsigned long)(errs & 0xFFFFFFFF));
+
+    LOG_INFO(LOG_TAG, "HB: %lu | State: [SUP:%s MOB:%s ARM:%s] | Errors: %s | FreeStack: [CTRL:%lu UART:%lu DEF:%lu]", 
+           (unsigned long)RobotState_GetHeartbeat(),
+           Supervisor_StateToStr(RobotState_GetSystemState()),
+           Mobility_StateToStr(RobotState_GetMobilityState()),
+           Arm_StateToStr(RobotState_GetArmState()),
+           err_str,
            (unsigned long)stack_ctrl, (unsigned long)stack_uart, (unsigned long)stack_def);
 }
-
-

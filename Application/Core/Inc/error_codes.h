@@ -33,6 +33,10 @@
 #define ERR_OVER_TEMP    (1ULL << 33)  /* System temperature critical */
 #define ERR_HEARTBEAT    (1ULL << 34)  /* Internal task heartbeat lost */
 #define ERR_CONFIG_LOAD  (1ULL << 35)  /* Configuration parameters loading failure */
+#define ERR_MOB_DRIVE    (1ULL << 36)  /* Mobility local hardware drive error */
+#define ERR_MOB_STALL    (1ULL << 37)  /* Mobility task watchdog stall */
+#define ERR_ARM_SERVO    (1ULL << 38)  /* Robotic arm servo failure */
+#define ERR_ARM_STALL    (1ULL << 39)  /* Robotic arm task watchdog stall */
 
 /* 5. Critical / Fatal Errors (Bits 48-63) */
 #define ERR_SYS_PANIC    (1ULL << 63)  /* Unrecoverable system panic */

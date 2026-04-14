@@ -23,7 +23,7 @@
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
-#include "control_board.h"
+#include "robot_state.h"
 #include "adc.h"
 #include "usart.h"
 
@@ -102,10 +102,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   /* Post-Init Verification */
   if (HAL_ADC_GetState(&hadc1) == HAL_ADC_STATE_ERROR) {
-      ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_ADC);
+      RobotState_SetErrorFlag(ERR_HAL_ADC);
   }
   if (huart1.gState == HAL_UART_STATE_ERROR) {
-      ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_UART);
+      RobotState_SetErrorFlag(ERR_HAL_UART);
   }
   /* USER CODE END 2 */
 
@@ -217,7 +217,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  ERR_SET(ControlBoard_4wcl.error_flags, ERR_SYS_PANIC);
+  RobotState_SetErrorFlag(ERR_SYS_PANIC);
   
   __disable_irq();
   while (1)

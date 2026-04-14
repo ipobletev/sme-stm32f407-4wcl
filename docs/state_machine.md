@@ -1,98 +1,185 @@
 # System State Machine Documentation
 
-This document describes the Finite State Machine (FSM) architecture for the **sme-stm32f407-4wcl** control board. The system implements a dual-mode control strategy (Manual/Autonomous) with strict safety transitions and a hierarchical pause/resume system.
+This document describes the **Hierarchical Finite State Machine (HFSM)** architecture for the **sme-stm32f407-4wcl** control board. The system uses a **Supervisor-Subsystem** pattern to ensure centralized safety while allowing modular subsystem control.
 
-## 1. System States
+## 1. Architectural Overview
 
-| State | Description | Visual Feedback (LED) |
+The system is composed of one **Supervisor Controller** and multiple **Subsystem Slaves**.
+
+- **Supervisor FSM**: Orchestrates global operational modes (Manual, Auto, Fault) and enforces top-level safety transitions.
+- **Slave FSMs (Mobility/Arm)**: Manage specific hardware logic and kinematics. They run in dedicated RTOS tasks and react to the Supervisor FSM's state via a **Top-Down Override** mechanism.
+
+---
+
+## 2. Supervisor System FSM
+
+| State | Description | Global Impact |
 | :--- | :--- | :--- |
-| **STATE_INIT** | Initial power-on state. Hardware peripherals and OSAL initialization. | Off |
-| **STATE_IDLE** | System is ready and waiting for control requests. Safe state for mode switching. | Off |
-| **STATE_MANUAL** | **Manual Mode**: Direct operator control via physical buttons or manual UART commands. | Solid ON |
-| **STATE_AUTO** | **Autonomous Mode**: Control is delegated to ROS (Robot Operating System) via UART commands. | Blinking / ON |
-| **STATE_PAUSED**| **Temporary Halt**: System is paused but maintains the previous mode context. | Slow Pulse |
-| **STATE_FAULT** | **Critical Error**: System halted due to hardware or software failure. Awaiting Reset. | Fast Blink |
+| **STATE_INIT** | Power-on / Hardware Init. | Forces all slaves to **DISABLED**. |
+| **STATE_IDLE** | System ready. Safe standby. | Forces all slaves to **STOPPED** / **STDBY**. |
+| **STATE_MANUAL** | Operator driving mode. | Slaves follow local control commands. |
+| **STATE_AUTO** | ROS-driven autonomous mode. | Slaves follow ROS commands. |
+| **STATE_PAUSED**| Temporary halt (Manual/Auto). | Forces slaves to **STOP** (Holding positions). |
+| **STATE_FAULT** | Critical error detected. | Immediate **DISABLED** of all power systems. |
 
-## 2. System Events
+---
 
-| Event | Source | Resulting Action |
+## 3. Subsystem Slaves
+
+### 3.1 Mobility FSM
+Responsible for base movement and powertrain safety.
+
+| State | Description | Reacts to Supervisor |
 | :--- | :--- | :--- |
-| **EVENT_START** | K1 Button / UART `START` | Requests transition to **Manual** mode (or IDLE if in INIT). |
-| **EVENT_STOP** | K2 Button / UART `STOP` | **Global Safety Stop**: Forces return to IDLE from any state. |
-| **EVENT_MODE_AUTO** | UART `AUTO` | Requests transition to **Autonomous** mode. |
-| **EVENT_MODE_MANUAL**| UART `MANUAL` | Requests transition to **Manual** mode. |
-| **EVENT_PAUSE** | UART/Safety Sensor | Suspends current operation and enters **PAUSED** state. |
-| **EVENT_RESUME** | UART / Button | Attempts to return to the previous mode (Subject to Authority Check). |
-| **EVENT_ERROR** | Hardware / SW3 Pin | Triggers immediate transition to **FAULT**. |
-| **EVENT_RESET** | SW3 Button / UART `RESET` | Clears Faults and returns to INIT. |
+| **MOB_DISABLED** | Motors disabled / Signals cut. | Supervisor in **INIT** / **FAULT**. |
+| **MOB_STOPPED** | Velocity = 0. Encoders active. | Supervisor in **IDLE** / **PAUSED**. |
+| **MOB_MOVING** | Moving according to target. | Supervisor in **MANUAL** / **AUTO**. |
+| **MOB_FAULT** | Local hardware drive error. | Prevents movement. |
 
-## 3. Event Authority Levels
+### 3.2 Robotic Arm FSM
+Responsible for the 3-joint arm positioning.
 
-The system implements a hierarchical authority system for the **PAUSE/RESUME** logic. A `RESUME` event is only accepted if its source priority is equal to or higher than the source that triggered the `PAUSE`.
-
-| Level | Source | Description |
+| State | Description | Reacts to Supervisor |
 | :--- | :--- | :--- |
-| **3** | `SRC_PHYSICAL` | Physical On-Board Buttons (Highest priority). |
-| **2** | `SRC_UART1_LOCAL` | Local Operator Console. |
-| **1** | `SRC_UART3_ROS` | Remote Autonomous Control (Lowest priority). |
+| **ARM_DISABLED** | Servo power cut. | Supervisor in **INIT** / **FAULT**. |
+| **ARM_HOMING** | Seeking zero-reference. | Triggered after Supervisor becomes Active. |
+| **ARM_IDLE** | Position holding. | Supervisor in **IDLE** / **PAUSED**. |
+| **ARM_MOVING** | Executing trajectory. | Supervisor in **MANUAL** / **AUTO**. |
 
-## 4. Transition Matrix
+---
 
-The system enforces a **Mandatory IDLE passage** rule: you cannot switch directly between Manual and Autonomous modes without stopping first.
+## 4. Cross-Layer Logic (Safety Mechanisms)
 
-| Current State | Event | Next State | Logic / Notes |
+The system enforces safety via two mechanisms: **Top-Down Override** and **Bottom-Up Supervision (Node Guarding)**.
+
+### 4.1 Top-Down Override
+Subsystems do not transition independently of the Supervisor Controller's safety context:
+1.  **Fault Propagation**: If Supervisor enters `STATE_FAULT`, all slaves are immediately `DISABLED`.
+2.  **Pause Dynamics**: If Supervisor enters `STATE_PAUSED`, Mobility goes to `STOPPED` (zero velocity) and Arm goes to `IDLE` (holding current position).
+3.  **Homing Requirement**: The Arm subsystem cannot move (`MOVING`) until it successfully completes the `HOMING` routine, which is triggered when the Supervisor first enters an active mode (`MANUAL`/`AUTO`).
+
+### 4.2 Bottom-Up Supervision (Node Guarding)
+To ensure the Supervisor is always aware of slave status without allowing slaves to directly command the Supervisor FSM:
+1.  **Central Error Registry**: A shared 64-bit mask (`error_flags`) in the `RobotState` structure holds bit-flags for all hardware errors. Slaves set their corresponding bits if a local hardware failure is detected.
+2.  **Heartbeats (Watchdogs)**: Each slave increments a heartbeat counter at 50Hz.
+3.  **Cyclic Polling**: The Supervisor Manager task polls the error registry and heartbeat counters every 20ms. If a hardware error is set, or a slave heartbeat stalls for >500ms, the Supervisor transitions to `STATE_FAULT` (which then triggers the Top-Down shutdown).
+
+### 4.3 Command Source & Authority Hierarchy
+
+To prevent conflicting commands from different sources (e.g., a localized technician being overridden by a remote autonomous command), the system implements a **Hierarchical Authority Check**.
+
+Each event sent to the Supervisor includes an `EventSource_t` identifier with an assigned priority level.
+
+| Source | Level | Description | Authority |
+| :--- | :---: | :--- | :--- |
+| **SRC_INTERNAL_SUPERVISOR** | 4 | Internal safety monitors (watchdogs, temp). | **CRITICAL**: Highest priority. |
+| **SRC_PHYSICAL** | 3 | On-board physical buttons (K1, K2). | **SAFETY**: Physical operator control. |
+| **SRC_UART1_LOCAL** | 2 | Local Operator Console (UART1/USB). | **DEBUG**: Technician/Field control. |
+| **SRC_UART3_ROS** | 1 | Remote Autonomous Control (UART3). | **AUTO**: Standard operation. |
+| **SRC_UNKNOWN** | 0 | Unidentified sources. | Lowest priority. |
+
+#### Resume Logic (Safety Guard)
+When the system is in `STATE_PAUSED`, it records the authority level of the source that triggered the pause. A `RESUME` event will only be accepted if it comes from a source with **equal or higher authority**.
+
+*Example: If a technician pauses the robot via the **Local Console (Level 2)**, a remote **ROS command (Level 1)** cannot resume operation. Only the Console (Level 2) or a Physical Button (Level 3) can do so.*
+
+---
+
+---
+
+## 5. Transition Matrix (Supervisor)
+
+| Current State | Event | Next State | Notes |
 | :--- | :--- | :--- | :--- |
-| **STATE_INIT** | `EVENT_START` | **STATE_IDLE** | System goes to standby after init. |
-| **STATE_IDLE** | `EVENT_START` | **STATE_MANUAL** | Default start behavior. |
-| **STATE_IDLE** | `EVENT_MODE_AUTO` | **STATE_AUTO** | Swaps control authority to ROS. |
-| **STATE_IDLE** | `EVENT_ERROR` | **STATE_FAULT** | Hardware failure detected. |
-| **STATE_MANUAL** | `EVENT_STOP` | **STATE_IDLE** | Stop requested by operator. |
-| **STATE_MANUAL** | `EVENT_PAUSE` | **STATE_PAUSED** | Saves "Manual" as previous mode. |
-| **STATE_MANUAL** | `EVENT_ERROR` | **STATE_FAULT** | Error while driving manually. |
-| **STATE_AUTO** | `EVENT_STOP` | **STATE_IDLE** | Stop requested by ROS or Safety Button (K2). |
-| **STATE_AUTO** | `EVENT_PAUSE` | **STATE_PAUSED** | Saves "Auto" as previous mode. |
-| **STATE_AUTO** | `EVENT_ERROR` | **STATE_FAULT** | Error while in autonomous mode. |
-| **STATE_PAUSED** | `EVENT_STOP` | **STATE_IDLE** | **Global Override**: Always allowed. |
-| **STATE_PAUSED** | `EVENT_RESUME` | *Prev Mode* | Only if `source >= pauseAuthority`. |
-| **STATE_PAUSED** | `EVENT_ERROR` | **STATE_FAULT** | Error while paused. |
-| **STATE_FAULT** | `EVENT_RESET` | **STATE_INIT** | Reset logic triggers full re-init. |
+| **STATE_INIT** | `EVENT_START` | **STATE_IDLE** | Slaves remain disabled. |
+| **STATE_IDLE** | `EVENT_START` | **STATE_MANUAL** | Slaves begin wakeup (Homing Arm). |
+| **STATE_IDLE** | `EVENT_MODE_AUTO` | **STATE_AUTO** | Control authority to ROS. |
+| **STATE_MANUAL** | `EVENT_PAUSE` | **STATE_PAUSED** | `STOPPED` (Mob) / `IDLE` (Arm). |
+| **STATE_PAUSED** | `EVENT_RESUME` | *Prev Mode* | Resumes previous motion context. |
+| **ANY** | `EVENT_ERROR` | **STATE_FAULT** | **CRITICAL**: Full system shutdown. |
 
-## 5. Transition Diagram
+---
+
+## 6. Transition Matrix (Slaves)
+
+### 6.1 Mobility Subsystem
+| Current State | Condition / Event | Next State | Notes |
+| :--- | :--- | :--- | :--- |
+| **ANY** | Supervisor in `INIT` / `FAULT` | **MOB_DISABLED** | Safety: Motors powered off. |
+| **MOB_MOVING** | Supervisor in `IDLE` / `PAUSED` | **MOB_STOPPED** | Immediate halt (Top-down). |
+| **MOB_DISABLED** | Supervisor in `MANUAL` / `AUTO` | **MOB_STOPPED** | Wakeup sequence (Enabling drives). |
+| **MOB_STOPPED** | Velocity Targets != 0 | **MOB_MOVING** | Start trajectory execution. |
+| **MOB_MOVING** | Velocity Targets == 0 | **MOB_STOPPED** | Target reached / Stopped. |
+| **ANY** | Driver/Link Error | **MOB_FAULT** | Local hardware fault detected. |
+
+### 6.2 Robotic Arm Subsystem
+| Current State | Condition / Event | Next State | Notes |
+| :--- | :--- | :--- | :--- |
+| **ANY** | Supervisor in `INIT` / `FAULT` | **ARM_DISABLED** | Safety: Servos unpowered. |
+| **ARM_MOVING** | Supervisor in `IDLE` / `PAUSED` | **ARM_IDLE** | Holding current position (Top-down). |
+| **ARM_DISABLED** | Supervisor in `MANUAL` / `AUTO` | **ARM_HOMING** | Auto-calibration on activation. |
+| **ARM_HOMING** | Homing Finished | **ARM_IDLE** | Ready for trajectory commands. |
+| **ARM_IDLE** | Joint Targets Set | **ARM_MOVING** | Start IK trajectory. |
+| **ARM_MOVING** | Joint Targets Reached | **ARM_IDLE** | Position reached. |
+| **ANY** | Servo Stall / Error | **ARM_FAULT** | Critical joint/servo failure. |
+
+---
+
+## 7. System Interaction Diagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> STATE_INIT
-    STATE_INIT --> STATE_IDLE : EVENT_START
-    
-    STATE_IDLE --> STATE_MANUAL : EVENT_START\nEVENT_MODE_MANUAL
-    STATE_IDLE --> STATE_AUTO : EVENT_MODE_AUTO
-    
-    STATE_MANUAL --> STATE_IDLE : EVENT_STOP
-    STATE_MANUAL --> STATE_PAUSED : EVENT_PAUSE
-    
-    STATE_AUTO --> STATE_IDLE : EVENT_STOP
-    STATE_AUTO --> STATE_PAUSED : EVENT_PAUSE
-    
-    STATE_PAUSED --> STATE_IDLE : EVENT_STOP
-    STATE_PAUSED --> STATE_MANUAL : EVENT_RESUME\n(if prev was MANUAL)
-    STATE_PAUSED --> STATE_AUTO : EVENT_RESUME\n(if prev was AUTO)
-    
-    STATE_IDLE --> STATE_FAULT : EVENT_ERROR
-    STATE_MANUAL --> STATE_FAULT : EVENT_ERROR
-    STATE_AUTO --> STATE_FAULT : EVENT_ERROR
-    STATE_PAUSED --> STATE_FAULT : EVENT_ERROR
-    
-    STATE_FAULT --> STATE_INIT : EVENT_RESET
+    state "SUPERVISOR CONTROLLER" as Supervisor {
+        [*] --> STATE_INIT
+        STATE_INIT --> STATE_IDLE : START
+        STATE_IDLE --> STATE_MANUAL : START / MODE_MANUAL
+        STATE_IDLE --> STATE_AUTO : MODE_AUTO
+        
+        STATE_MANUAL --> STATE_PAUSED : PAUSE
+        STATE_AUTO --> STATE_PAUSED : PAUSE
+        
+        STATE_PAUSED --> STATE_IDLE : STOP
+        STATE_PAUSED --> STATE_MANUAL : RESUME (if prev was MAN)
+        STATE_PAUSED --> STATE_AUTO : RESUME (if prev was AUTO)
+
+        STATE_IDLE --> STATE_FAULT : ERROR
+        STATE_MANUAL --> STATE_FAULT : ERROR
+        STATE_AUTO --> STATE_FAULT : ERROR
+        STATE_PAUSED --> STATE_FAULT : ERROR
+        
+        STATE_FAULT --> STATE_INIT : RESET
+    }
+
+    state "MOBILITY SLAVE" as Mob {
+        [*] --> MOB_DISABLED
+        MOB_DISABLED --> MOB_STOPPED : Supervisor Active
+        MOB_STOPPED --> MOB_MOVING : Command > 0
+        MOB_MOVING --> MOB_STOPPED : Command = 0
+        MOB_STOPPED --> MOB_DISABLED : Supervisor Init/Fault
+        MOB_MOVING --> MOB_STOPPED : Supervisor Idle/Pause
+    }
+
+    state "ARM SLAVE" as Arm {
+        [*] --> ARM_DISABLED
+        ARM_DISABLED --> ARM_HOMING : Supervisor Active
+        ARM_HOMING --> ARM_IDLE : Done
+        ARM_IDLE --> ARM_MOVING : Target Set
+        ARM_MOVING --> ARM_IDLE : Done
+        ARM_IDLE --> ARM_DISABLED : Supervisor Init/Fault
+        ARM_MOVING --> ARM_IDLE : Supervisor Idle/Pause
+    }
 ```
 
 ---
 
-## 6. Implementation Details
+## 8. Implementation Details
 
-- **Headers**: [app_state_machine.h](../Application/MainLogic/Inc/app_state_machine.h)
-- **Core Logic**: [app_state_machine.c](../Application/MainLogic/Src/app_state_machine.c)
-- **Handlers**: Located in `Application/MainLogic/Src/States/` (e.g., [state_manual.c](../Application/MainLogic/Src/States/state_manual.c)).
+- **Supervisor FSM**: [supervisor_fsm.c](../Application/MainLogic/Supervisor/Src/supervisor_fsm.c)
+- **State Handlers**: [state_handlers.h](../Application/MainLogic/Supervisor/Inc/States/state_handlers.h)
+- **Robot State (Global)**: [robot_state.h](../Application/Core/Inc/robot_state.h)
+- **Mobility Subsystem**: [mobility_fsm.c](../Application/MainLogic/Slaves/MobilityStateMachine/Src/mobility_fsm.c)
+- **Arm Subsystem**: [arm_fsm.c](../Application/MainLogic/Slaves/ArmStateMachine/Src/arm_fsm.c)
+- **RTOS Tasks**: Managed in `Application/RTOSLogic/Src/`.
 
 > [!IMPORTANT]
-> **Safety Override**: The physical button **K2** is hard-coded in `task_controller.c` to trigger `EVENT_STOP`, ensuring that a human operator can always stop the vehicle regardless of the ROS connection status.
-
+> **Safety Priority**: The `K2` physical button and local error detections always trigger `EVENT_ERROR` in the Supervisor FSM, which cascadingly disables all hardware slaves within one RTOS tick (20ms).

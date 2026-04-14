@@ -1,11 +1,11 @@
 #include "States/state_handlers.h"
 #include "bsp_led.h"
-#include "control_board.h"
+#include "robot_state.h"
 #include <stdio.h>
 
 void State_Auto_OnEnter(void) {
-    printf("SM: Entering AUTO State (ROS Command)\r\n");
-    ControlBoard_4wcl.is_autonomous = 1;
+    printf("Supervisor: Entering AUTO State (ROS Command)\r\n");
+    RobotState_SetAutonomous(1);
     /* Auto Mode: Signal active heartbeat or specific feedback */
     BSP_LED_SetState(BSP_LED_USER, true);
 }

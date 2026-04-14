@@ -1,5 +1,5 @@
-#ifndef __APP_STATE_MACHINE_H
-#define __APP_STATE_MACHINE_H
+#ifndef __SUPERVISOR_FSM_H
+#define __SUPERVISOR_FSM_H
 
 #include <stdint.h>
 
@@ -28,9 +28,10 @@ typedef enum {
 /* Event Source Authority Levels (Higher = More Priority) */
 typedef enum {
     SRC_UNKNOWN = 0,
-    SRC_UART3_ROS = 1,   /* Level 1: Remote Autonomous Control */
-    SRC_UART1_LOCAL = 2, /* Level 2: Local Operator Console */
-    SRC_PHYSICAL = 3     /* Level 3: Physical On-Board Buttons */
+    SRC_UART3_ROS = 1,             /* Level 1: Remote Autonomous Control */
+    SRC_UART1_LOCAL = 2,           /* Level 2: Local Operator Console */
+    SRC_PHYSICAL = 3,              /* Level 3: Physical On-Board Buttons */
+    SRC_INTERNAL_SUPERVISOR = 4    /* Level 4: Internal Hardware/RTOS Monitor */
 } EventSource_t;
 
 /* Message structure for the queue */
@@ -40,10 +41,11 @@ typedef struct {
     uint8_t source;     /* EventSource_t who generated it */
 } StateChangeMsg_t;
 
-/* State Machine Interface */
-void SM_Init(void);
-void SM_ProcessEvent(SystemEvent_t event, uint8_t source);
-SystemState_t SM_GetCurrentState(void);
+/* Supervisor FSM Interface */
+const char* Supervisor_StateToStr(SystemState_t state);
+void Supervisor_Init(void);
+void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source);
+SystemState_t Supervisor_GetCurrentState(void);
 
-#endif /* __APP_STATE_MACHINE_H */
+#endif /* __SUPERVISOR_FSM_H */
 
