@@ -23,6 +23,9 @@
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
+#include "control_board.h"
+#include "adc.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -95,8 +98,15 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_ADC1_Init();
-  /* USER CODE BEGIN 2 */
 
+  /* USER CODE BEGIN 2 */
+  /* Post-Init Verification */
+  if (HAL_ADC_GetState(&hadc1) == HAL_ADC_STATE_ERROR) {
+      ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_ADC);
+  }
+  if (huart1.gState == HAL_UART_STATE_ERROR) {
+      ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_UART);
+  }
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -207,6 +217,8 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  ERR_SET(ControlBoard_4wcl.error_flags, ERR_SYS_PANIC);
+  
   __disable_irq();
   while (1)
   {
@@ -215,6 +227,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
+
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number

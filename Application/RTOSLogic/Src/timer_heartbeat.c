@@ -24,10 +24,11 @@ void HeartbeatTimerCallback(void *argument)
     uint32_t stack_ctrl = osal_thread_get_stack_space(controllerTaskHandle);
     uint32_t stack_def  = osal_thread_get_stack_space(defaultTaskHandle);
 
-    LOG_INFO(LOG_TAG, "HB: %lu | State: %d | Errors: 0x%02lX | FreeStack: [CTRL:%lu UART:%lu DEF:%lu]", 
+    LOG_INFO(LOG_TAG, "HB: %lu | State: %d | Errors: 0x%016llX | FreeStack: [CTRL:%lu UART:%lu DEF:%lu]", 
            (unsigned long)ControlBoard_4wcl.heartbeat_count,
            (int)ControlBoard_4wcl.current_state,
-           (unsigned long)ControlBoard_4wcl.error_flags,
+           (unsigned long long)ControlBoard_4wcl.error_flags,
            (unsigned long)stack_ctrl, (unsigned long)stack_uart, (unsigned long)stack_def);
 }
+
 

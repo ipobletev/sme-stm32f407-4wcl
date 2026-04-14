@@ -1,5 +1,6 @@
 #include "bsp_console.h"
 #include "usart.h"
+#include "control_board.h"
 #include <string.h>
 
 #define CONSOLE_RX_BUF_SIZE 128
@@ -21,11 +22,14 @@ void BSP_Console_InitRx(BSP_Console_Callback_t callback) {
     rx_callback = callback;
     
     memset(console_rx_buf, 0, CONSOLE_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, console_rx_buf, CONSOLE_RX_BUF_SIZE);
+    if (HAL_UARTEx_ReceiveToIdle_DMA(&huart1, console_rx_buf, CONSOLE_RX_BUF_SIZE) != HAL_OK) {
+        ERR_SET(ControlBoard_4wcl.error_flags, ERR_HAL_UART);
+    }
     
     /* Disable Half Transfer Interrupt to only get event on Idle or Full buffer */
     __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
 }
+
 
 uint16_t BSP_Console_GetData(uint8_t *dest, uint16_t max_len) {
     if (dest == NULL) return 0;
