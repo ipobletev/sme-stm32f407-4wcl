@@ -13,12 +13,21 @@ void State_Init_OnExit(void);
 void State_Idle_OnEnter(void);
 void State_Idle_OnExit(void);
 
-/* ACTIVE State */
-void State_Active_OnEnter(void);
-void State_Active_OnExit(void);
+/* MANUAL State */
+void State_Manual_OnEnter(void);
+void State_Manual_OnExit(void);
+
+/* AUTO State */
+void State_Auto_OnEnter(void);
+void State_Auto_OnExit(void);
+
+/* PAUSED State */
+void State_Paused_OnEnter(void);
+void State_Paused_OnExit(void);
 
 /* FAULT State */
 void State_Fault_OnEnter(void);
 void State_Fault_OnExit(void);
 
 #endif /* __STATE_HANDLERS_H */
+

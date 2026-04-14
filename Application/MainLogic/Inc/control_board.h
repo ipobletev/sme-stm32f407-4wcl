@@ -12,8 +12,8 @@ typedef struct {
     uint32_t heartbeat_count;
     /* Add other principal variables here */
     uint64_t error_flags;
+    uint8_t is_autonomous; /* 0: Manual, 1: Auto */
 } ControlBoard_t;
-
 
 extern ControlBoard_t ControlBoard_4wcl;
 

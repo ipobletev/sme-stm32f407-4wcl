@@ -19,7 +19,8 @@ void StartManagerTask(void *argument)
                    msg.event, (unsigned long)msg.timestamp);
 
             /* Delegate the transition logic to the State Machine module */
-            SM_ProcessEvent(msg.event);
+            SM_ProcessEvent(msg.event, msg.source);
+
         }
     }
 }

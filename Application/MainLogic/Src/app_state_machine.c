@@ -4,6 +4,8 @@
 
 /* Internal Private State */
 static SystemState_t currentState = STATE_INIT;
+static SystemState_t previousMode = STATE_IDLE; /* To restore after Pause */
+static uint8_t pauseAuthLevel = 0;              /* Authority level that triggered the pause */
 
 /**
  * @brief Helper to handle state transitions with entry/exit actions.
@@ -15,7 +17,9 @@ static void TransitionToState(SystemState_t newState) {
     switch (currentState) {
         case STATE_INIT:   State_Init_OnExit();   break;
         case STATE_IDLE:   State_Idle_OnExit();   break;
-        case STATE_ACTIVE: State_Active_OnExit(); break;
+        case STATE_MANUAL: State_Manual_OnExit(); break;
+        case STATE_AUTO:   State_Auto_OnExit();   break;
+        case STATE_PAUSED: State_Paused_OnExit(); break;
         case STATE_FAULT:  State_Fault_OnExit();  break;
         default: break;
     }
@@ -26,7 +30,9 @@ static void TransitionToState(SystemState_t newState) {
     switch (currentState) {
         case STATE_INIT:   State_Init_OnEnter();   break;
         case STATE_IDLE:   State_Idle_OnEnter();   break;
-        case STATE_ACTIVE: State_Active_OnEnter(); break;
+        case STATE_MANUAL: State_Manual_OnEnter(); break;
+        case STATE_AUTO:   State_Auto_OnEnter();   break;
+        case STATE_PAUSED: State_Paused_OnEnter(); break;
         case STATE_FAULT:  State_Fault_OnEnter();  break;
         default: break;
     }
@@ -51,7 +57,7 @@ SystemState_t SM_GetCurrentState(void) {
 /**
  * @brief Process an incoming event and update the state machine.
  */
-void SM_ProcessEvent(SystemEvent_t event) {
+void SM_ProcessEvent(SystemEvent_t event, uint8_t source) {
     SystemState_t nextState = currentState;
 
     /* Transition Table Logic */
@@ -64,16 +70,51 @@ void SM_ProcessEvent(SystemEvent_t event) {
             break;
 
         case STATE_IDLE:
-            if (event == EVENT_START) {
-                nextState = STATE_ACTIVE;
+            if (event == EVENT_START || event == EVENT_MODE_MANUAL) {
+                nextState = STATE_MANUAL;
+            } else if (event == EVENT_MODE_AUTO) {
+                nextState = STATE_AUTO;
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;
             }
             break;
-
-        case STATE_ACTIVE:
+        
+        case STATE_MANUAL:
             if (event == EVENT_STOP) {
                 nextState = STATE_IDLE;
+            } else if (event == EVENT_PAUSE) {
+                previousMode = STATE_MANUAL;
+                pauseAuthLevel = source;
+                nextState = STATE_PAUSED;
+            } else if (event == EVENT_ERROR) {
+                nextState = STATE_FAULT;
+            }
+            /* Transition to AUTO is IGNORED here (Requires STOP first) */
+            break;
+
+        case STATE_AUTO:
+            if (event == EVENT_STOP) {
+                nextState = STATE_IDLE;
+            } else if (event == EVENT_PAUSE) {
+                previousMode = STATE_AUTO;
+                pauseAuthLevel = source;
+                nextState = STATE_PAUSED;
+            } else if (event == EVENT_ERROR) {
+                nextState = STATE_FAULT;
+            }
+            /* Transition to MANUAL is IGNORED here (Requires STOP first) */
+            break;
+
+        case STATE_PAUSED:
+            if (event == EVENT_STOP) {
+                nextState = STATE_IDLE; // Global override
+            } else if (event == EVENT_RESUME) {
+                // Hierarchical Authority Check
+                if (source >= pauseAuthLevel) {
+                    nextState = previousMode; // Restore where we were
+                } else {
+                    printf("SM: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pauseAuthLevel);
+                }
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;
             }
@@ -84,6 +125,7 @@ void SM_ProcessEvent(SystemEvent_t event) {
                 nextState = STATE_INIT;
             }
             break;
+
 
         default:
             nextState = STATE_INIT;

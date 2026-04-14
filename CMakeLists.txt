@@ -56,8 +56,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Application/MainLogic/Src/control_board.c
     Application/MainLogic/Src/States/state_init.c
     Application/MainLogic/Src/States/state_idle.c
-    Application/MainLogic/Src/States/state_active.c
+    Application/MainLogic/Src/States/state_manual.c
+    Application/MainLogic/Src/States/state_auto.c
+    Application/MainLogic/Src/States/state_paused.c
     Application/MainLogic/Src/States/state_fault.c
+
+
     Drivers/BSP/Led/Src/bsp_led.c
     Drivers/BSP/Button/Src/bsp_button.c
     Drivers/BSP/Buzzer/Src/bsp_buzzer.c

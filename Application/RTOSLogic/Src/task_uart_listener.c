@@ -15,17 +15,19 @@ static osal_thread_h listener_task_id;
 /**
  * @brief Helper to publish events to the central controller
  */
-static void publish_event(SystemEvent_t event)
+static void publish_event(SystemEvent_t event, EventSource_t source)
 {
     StateChangeMsg_t msg;
     msg.event = event;
     msg.timestamp = osal_get_tick();
+    msg.source = source;
     
     osal_status_t status = osal_queue_put(uartEventQueueHandle, &msg, 0U);
     if (status != OSAL_OK) {
         LOG_ERROR(LOG_TAG, "Failed to publish event %d", event);
     }
 }
+
 
 /**
  * @brief Bridge between BSP callback and RTOS Task
@@ -69,21 +71,34 @@ void StartUARTListenerTask(void *argument)
                 strtok(cmd, "\r\n ");
 
                 if (strcmp(cmd, "START") == 0) {
-                    LOG_INFO(LOG_TAG, "PC Command: START");
-                    publish_event(EVENT_START);
+                    LOG_INFO(LOG_TAG, "PC Command: START (Manual)");
+                    publish_event(EVENT_START, SRC_UART1_LOCAL);
                 } else if (strcmp(cmd, "STOP") == 0) {
                     LOG_INFO(LOG_TAG, "PC Command: STOP");
-                    publish_event(EVENT_STOP);
+                    publish_event(EVENT_STOP, SRC_UART1_LOCAL);
+                } else if (strcmp(cmd, "MANUAL") == 0) {
+                    LOG_INFO(LOG_TAG, "PC Command: MANUAL");
+                    publish_event(EVENT_MODE_MANUAL, SRC_UART1_LOCAL);
+                } else if (strcmp(cmd, "AUTO") == 0) {
+                    LOG_INFO(LOG_TAG, "PC Command: AUTO");
+                    publish_event(EVENT_MODE_AUTO, SRC_UART1_LOCAL);
+                } else if (strcmp(cmd, "PAUSE") == 0) {
+                    LOG_INFO(LOG_TAG, "PC Command: PAUSE");
+                    publish_event(EVENT_PAUSE, SRC_UART1_LOCAL);
+                } else if (strcmp(cmd, "RESUME") == 0) {
+                    LOG_INFO(LOG_TAG, "PC Command: RESUME");
+                    publish_event(EVENT_RESUME, SRC_UART1_LOCAL);
                 } else if (strcmp(cmd, "ERROR") == 0) {
                     LOG_INFO(LOG_TAG, "PC Command: ERROR");
-                    publish_event(EVENT_ERROR);
+                    publish_event(EVENT_ERROR, SRC_UART1_LOCAL);
                 } else if (strcmp(cmd, "RESET") == 0) {
                     LOG_INFO(LOG_TAG, "PC Command: RESET");
-                    publish_event(EVENT_RESET);
+                    publish_event(EVENT_RESET, SRC_UART1_LOCAL);
                 } else {
                     LOG_WARNING(LOG_TAG, "Unknown PC command: '%s'", cmd);
                 }
             }
+
 
             /* Clear data and tell BSP we are ready for next packet */
             BSP_Console_AcceptNext();

@@ -7,11 +7,13 @@
 #define LOG_TAG "CONTROLLER"
 
 /* Helper to publish events */
-static void publish_event(SystemEvent_t event)
+static void publish_event(SystemEvent_t event, EventSource_t source)
 {
     StateChangeMsg_t msg;
     msg.event = event;
     msg.timestamp = osal_get_tick();
+    msg.source = source;
+
     
     osal_status_t status = osal_queue_put(stateMsgQueueHandle, &msg, 0U);
     if (status != OSAL_OK) {
@@ -24,8 +26,8 @@ void StartControllerTask(void *argument)
     LOG_INFO(LOG_TAG, "Controller Task Started.");
 
     bool k1_prev = false;
-    bool k2_prev = false;
     bool sw3_prev = false;
+
 
     for(;;)
     {
@@ -39,30 +41,45 @@ void StartControllerTask(void *argument)
         if (status == OSAL_OK)
         {
             LOG_INFO(LOG_TAG, "Centralized Event Received from UART: %d", uart_msg.event);
-            /* Here you could add logic to filter or modify events before forwarding */
-            publish_event(uart_msg.event);
+            /* Forward the event with its original source attached by the UART Listener */
+            publish_event(uart_msg.event, uart_msg.source);
         }
+
 
         /* Read Current Button States through BSP */
         bool k1_pressed = BSP_Button_GetState(BSP_BTN_K1);
         bool k2_pressed = BSP_Button_GetState(BSP_BTN_K2);
         bool sw3_pressed = BSP_Button_GetState(BSP_BTN_SW3);
 
-        /* K1 corresponds to START event */
+        /* K1 corresponds to START or RESUME event (Defaulting to MANUAL) */
         if (k1_pressed && !k1_prev)
         {
-            LOG_INFO(LOG_TAG, "K1 pressed, publishing EVENT_START");
-            publish_event(EVENT_START);
+            if (SM_GetCurrentState() == STATE_PAUSED) {
+                LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME");
+                publish_event(EVENT_RESUME, SRC_PHYSICAL);
+            } else {
+                LOG_INFO(LOG_TAG, "K1 pressed, requesting MANUAL mode");
+                publish_event(EVENT_START, SRC_PHYSICAL);
+            }
         }
         k1_prev = k1_pressed;
 
-        /* K2 corresponds to STOP event */
-        if (k2_pressed && !k2_prev)
-        {
-            LOG_INFO(LOG_TAG, "K2 pressed, publishing EVENT_STOP");
-            publish_event(EVENT_STOP);
+        /* K2 corresponds to PAUSE or STOP event (Timer logic) */
+        static uint32_t k2_press_ticks = 0;
+        if (k2_pressed) {
+            k2_press_ticks++;
+            if (k2_press_ticks == 10) { /* 10 ticks * 100ms = 1 second */
+                LOG_INFO(LOG_TAG, "K2 SAFETY long press (>1s), E-STOP triggered");
+                publish_event(EVENT_STOP, SRC_PHYSICAL);
+            }
+        } else {
+            if (k2_press_ticks > 0 && k2_press_ticks < 10) {
+                LOG_INFO(LOG_TAG, "K2 short press, PAUSE requested");
+                publish_event(EVENT_PAUSE, SRC_PHYSICAL);
+            }
+            k2_press_ticks = 0;
         }
-        k2_prev = k2_pressed;
+
 
         /* SW3 corresponds to ERROR or RESET */
         if (sw3_pressed && !sw3_prev)
@@ -70,14 +87,15 @@ void StartControllerTask(void *argument)
             static uint8_t error_flag = 0;
             if (!error_flag) {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_ERROR");
-                publish_event(EVENT_ERROR);
+                publish_event(EVENT_ERROR, SRC_PHYSICAL);
                 error_flag = 1;
             } else {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_RESET");
-                publish_event(EVENT_RESET);
+                publish_event(EVENT_RESET, SRC_PHYSICAL);
                 error_flag = 0;
             }
         }
+
         sw3_prev = sw3_pressed;
     }
 }
