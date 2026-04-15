@@ -38,7 +38,7 @@ extern osal_timer_h systemSensorsTimerHandle;
 
 /* Soft-Timer Callback Prototypes */
 void HeartbeatTimerCallback(void *argument);
-void SystemSensorsTimerCallback(void *argument);
+void SystemVariablesTimerCallback(void *argument);
 
 #endif /* __APP_RTOS_H */
 

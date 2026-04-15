@@ -123,7 +123,7 @@ void App_RTOS_Init(void) {
         RobotState_SetErrorFlag(ERR_RTOS_TIMER);
     }
 
-    systemSensorsTimerHandle = osal_timer_create(SystemSensorsTimerCallback, OSAL_TIMER_PERIODIC, NULL);
+    systemSensorsTimerHandle = osal_timer_create(SystemVariablesTimerCallback, OSAL_TIMER_PERIODIC, NULL);
     if (systemSensorsTimerHandle != NULL) {
         osal_status_t status = osal_timer_start(systemSensorsTimerHandle, SYSTEM_SENSORS_PERIOD_MS);
         if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);

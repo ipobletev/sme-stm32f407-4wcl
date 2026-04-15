@@ -14,18 +14,34 @@
 #define TOPIC_ID_CMD_VEL        0x03    /* Rx: Movement setpoints */
 #define TOPIC_ID_ARM_GOAL       0x04    /* Rx: Robotic arm joint targets */
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
-#define TOPIC_ID_CONFIG         0x06    /* Rx: System configuration (Mobility/Mode) */
 
 /* Tx (Virtual Published) Topics */
 #define TOPIC_ID_SYS_STATUS     0x81    /* Tx: System state, health, and battery */
 #define TOPIC_ID_IMU            0x82    /* Tx: IMU data */
 #define TOPIC_ID_ODOMETRY       0x83    /* Tx: Odometry data */
 
+/* --- sys_event payload IDs (maps event_id field to Supervisor FSM events) --- */
+typedef enum {
+    SYS_EVENT_START  = 0x01,
+    SYS_EVENT_STOP   = 0x02,
+    SYS_EVENT_PAUSE  = 0x03,
+    SYS_EVENT_RESUME = 0x04,
+    SYS_EVENT_RESET  = 0x05,
+} SysEventId_t;
+
 /* --- Message Structures (Packed) --- */
 #pragma pack(push, 1)
 
 /**
- * @brief Message: cmd_vel [Topic 0x01]
+ * @brief Message: autonomous [Topic 0x01]
+ * Requests a switch between Manual and Autonomous operation mode.
+ */
+typedef struct {
+    uint8_t is_autonomous;  /* 0: Manual, 1: Autonomous */
+} AutonomousMsg_t;
+
+/**
+ * @brief Message: cmd_vel [Topic 0x03]
  */
 typedef struct {
     float linear_x;
@@ -33,7 +49,7 @@ typedef struct {
 } CmdVelMsg_t;
 
 /**
- * @brief Message: arm_goal [Topic 0x02]
+ * @brief Message: arm_goal [Topic 0x04]
  */
 typedef struct {
     float j1;
@@ -49,12 +65,34 @@ typedef struct {
 } SysEventMsg_t;
 
 /**
- * @brief Message: sys_config [Topic 0x06]
+ * @brief Message: mobility_mode [Topic 0x02]
+ * Sets the kinematic model and optionally the autonomous flag.
  */
 typedef struct {
     uint8_t mobility_mode;  /* 0: Direct, 1: DiffDrive, 2: Ackermann, 3: Mecanum */
     uint8_t is_autonomous;  /* 0: Manual, 1: Auto */
 } SysConfigMsg_t;
+
+/**
+ * @brief Message: ImuMsg [Topic 0x82]
+ */
+typedef struct {
+    float roll, pitch, yaw;
+    float gyro_x, gyro_y, gyro_z;
+    float accel_x, accel_y, accel_z;
+} ImuMsg_t;
+
+/**
+ * @brief Message: OdometryMsg [Topic 0x83]
+ */
+typedef struct {
+    float linear_x;
+    float angular_z;
+    int32_t enc_1;
+    int32_t enc_2;
+    int32_t enc_3;
+    int32_t enc_4;
+} OdometryMsg_t;
 
 /**
  * @brief Message: system_status [Topic 0x81]
