@@ -3,9 +3,9 @@ import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User } from 'lu
 export default function PageSidebar({ collapsed }) {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', active: true },
-    { id: 'telemetry', icon: Gauge, label: 'Telemetry', active: false },
-    { id: 'terminal', icon: Terminal, label: 'Serial Log', active: false },
-    { id: 'settings', icon: Settings, label: 'Settings', active: false },
+    // { id: 'telemetry', icon: Gauge, label: 'Telemetry', active: false },
+    // { id: 'terminal', icon: Terminal, label: 'Serial Log', active: false },
+    // { id: 'settings', icon: Settings, label: 'Settings', active: false },
   ];
 
   return (
@@ -28,12 +28,12 @@ export default function PageSidebar({ collapsed }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="nav-item" title="Documentation">
+        {/* <button className="nav-item" title="Documentation">
           <HelpCircle size={20} />
         </button>
         <button className="nav-item user-profile" title="User Profile">
           <User size={20} />
-        </button>
+        </button> */}
       </div>
     </aside>
   );
