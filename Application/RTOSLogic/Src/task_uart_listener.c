@@ -65,7 +65,7 @@ void StartUARTListenerTask(void *argument)
 
                 /* Put in RX queue for other tasks if they want raw access */
                 Console_Packet_t rx_pkg;
-                rx_pkg.size = (size > 128) ? 128 : size;
+                rx_pkg.size = (size > 256) ? 256 : size;
                 memcpy(rx_pkg.data, cmd_buffer, rx_pkg.size);
                 osal_queue_put(consoleRxQueueHandle, &rx_pkg, 0);
 

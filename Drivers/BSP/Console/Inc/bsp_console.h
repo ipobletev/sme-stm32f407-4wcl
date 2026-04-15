@@ -39,7 +39,7 @@ void BSP_Console_AcceptNext(void);
  * @brief Container for Console packets in RTOS queues
  */
 typedef struct {
-    uint8_t data[128];
+    uint8_t data[256];
     uint16_t size;
 } Console_Packet_t;
 

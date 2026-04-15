@@ -30,13 +30,24 @@ void HeartbeatTimerCallback(void *argument)
     snprintf(err_str, sizeof(err_str), "0x%08lX%08lX", 
              (unsigned long)(errs >> 32), (unsigned long)(errs & 0xFFFFFFFF));
 
-    LOG_INFO(LOG_TAG, "HB: %lu | State: [SUP:%s MOB:%s ARM:%s] | Batt: %.2fV | MCU: %.1fC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]\n", 
+    /* Manually format floats to avoid %f library issues */
+    float batt = RobotState_4wcl.Telemetry.battery_voltage;
+    int batt_i = (int)batt;
+    int batt_f = (int)((batt - (float)batt_i) * 100.0f);
+    if (batt_f < 0) batt_f = -batt_f;
+
+    float temp = RobotState_4wcl.Telemetry.uc_temperature;
+    int temp_i = (int)temp;
+    int temp_f = (int)((temp - (float)temp_i) * 10.0f);
+    if (temp_f < 0) temp_f = -temp_f;
+
+    LOG_INFO(LOG_TAG, "HB: %lu | State: [SUP:%s MOB:%s ARM:%s] | Batt: %d.%02dV | MCU: %d.%01dC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]\r\n", 
            (unsigned long)RobotState_GetHeartbeat(),
            Supervisor_StateToStr(RobotState_GetSystemState()),
            Mobility_StateToStr(RobotState_GetMobilityState()),
            Arm_StateToStr(RobotState_GetArmState()),
-           RobotState_4wcl.Telemetry.battery_voltage,
-           RobotState_4wcl.Telemetry.uc_temperature,
+           batt_i, batt_f,
+           temp_i, temp_f,
            err_str,
            (unsigned long)stack_ctrl, (unsigned long)stack_uart);
 }
