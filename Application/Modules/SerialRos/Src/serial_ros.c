@@ -211,11 +211,13 @@ uint16_t SerialRos_BuildTelemetryPacket(uint8_t *out_buffer, uint16_t max_size)
     if (max_size < (4 + sizeof(SystemStatusMsg_t) + 2)) return 0;
 
     SystemStatusMsg_t status_msg;
-    status_msg.current_state   = (uint8_t)RobotState_GetSystemState();
     status_msg.error_flags     = RobotState_GetErrorFlags();
     status_msg.mcu_temp        = RobotState_4wcl.Telemetry.uc_temperature;
     status_msg.battery_voltage = RobotState_4wcl.Telemetry.battery_voltage;
-    status_msg.battery_current = RobotState_4wcl.Telemetry.battery_current;
+    status_msg.current_state   = (uint8_t)RobotState_GetSystemState();
+    status_msg.mobility_state  = (uint8_t)RobotState_GetMobilityState();
+    status_msg.arm_state       = (uint8_t)RobotState_GetArmState();
+    /* status_msg.battery_current = ... (Unsupported) */
 
     out_buffer[0] = SERIAL_ROS_SYNC1;
     out_buffer[1] = SERIAL_ROS_SYNC2;

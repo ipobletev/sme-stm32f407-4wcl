@@ -99,11 +99,13 @@ typedef struct {
  * Consolidated telemetry message.
  */
 typedef struct {
-    uint64_t error_flags;       /* 8-byte aligned */
-    float mcu_temp;             /* 4-byte aligned */
-    float battery_voltage;      /* 4-byte aligned */
-    float battery_current;      /* 4-byte aligned */
-    uint8_t current_state;      /* 1-byte aligned */
+    uint64_t error_flags;       /* 8-byte errors (at offset 0) */
+    float mcu_temp;             /* 4-byte float (at offset 8) */
+    float battery_voltage;      /* 4-byte float (at offset 12) */
+    uint8_t current_state;      /* 1-byte state (at offset 16) */
+    uint8_t mobility_state;     /* 1-byte mobility state (at offset 17) */
+    uint8_t arm_state;          /* 1-byte arm state (at offset 18) */
+    /* float battery_current; */ /* Unsupported by hardware */
 } SystemStatusMsg_t;
 
 #pragma pack(pop)

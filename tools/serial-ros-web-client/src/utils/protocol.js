@@ -82,11 +82,12 @@ export function parsePayload(topicId, data) {
     switch (topicId) {
       case TOPIC_IDS.TX.SYS_STATUS: // 0x81
         return {
-          state: view.getUint8(0),
-          errors: readUint64(view, 1),
-          temp: readFloat32(view, 9),
-          v_batt: readFloat32(view, 13),
-          i_batt: readFloat32(view, 17)
+          errors: readUint64(view, 0),
+          temp: readFloat32(view, 8),
+          v_batt: readFloat32(view, 12),
+          state: view.getUint8(16),
+          mobility_state: view.getUint8(17),
+          arm_state: view.getUint8(18)
         };
 
       case TOPIC_IDS.TX.IMU: // 0x82

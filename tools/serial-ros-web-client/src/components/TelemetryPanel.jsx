@@ -4,11 +4,31 @@ import ImuVisualizer from './ImuVisualizer';
 const STATE_NAMES = ['IDLE', 'READY', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
 const STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault'];
 
+const MOB_STATE_NAMES = ['DISABLED', 'STOPPED', 'MOVING', 'FAULT'];
+const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-fault'];
+
+const ARM_STATE_NAMES = ['DISABLED', 'HOMING', 'IDLE', 'MOVING', 'FAULT'];
+const ARM_STATE_CLASSES = ['state-idle', 'state-ready', 'state-ready', 'state-running', 'state-fault'];
+
 function getStateName(code) {
   return STATE_NAMES[code] || `UNK(${code})`;
 }
 function getStateClass(code) {
   return STATE_CLASSES[code] || 'state-idle';
+}
+
+function getMobStateName(code) {
+  return MOB_STATE_NAMES[code] || `UNK(${code})`;
+}
+function getMobStateClass(code) {
+  return MOB_STATE_CLASSES[code] || 'state-idle';
+}
+
+function getArmStateName(code) {
+  return ARM_STATE_NAMES[code] || `UNK(${code})`;
+}
+function getArmStateClass(code) {
+  return ARM_STATE_CLASSES[code] || 'state-idle';
 }
 
 function getBatteryPercent(voltage) {
@@ -53,9 +73,21 @@ export default function TelemetryPanel({ telemetry, frequencies }) {
               <>
                 <div className="telemetry-grid">
                   <div className="telemetry-item">
-                    <div className="label">State</div>
+                    <div className="label">System State</div>
                     <span className={`state-badge ${getStateClass(sysStatus.state)}`}>
                       {getStateName(sysStatus.state)}
+                    </span>
+                  </div>
+                  <div className="telemetry-item">
+                    <div className="label">Mobility</div>
+                    <span className={`state-badge ${getMobStateClass(sysStatus.mobility_state)}`}>
+                      {getMobStateName(sysStatus.mobility_state)}
+                    </span>
+                  </div>
+                  <div className="telemetry-item">
+                    <div className="label">Arm</div>
+                    <span className={`state-badge ${getArmStateClass(sysStatus.arm_state)}`}>
+                      {getArmStateName(sysStatus.arm_state)}
                     </span>
                   </div>
                   <div className="telemetry-item">
@@ -71,12 +103,6 @@ export default function TelemetryPanel({ telemetry, frequencies }) {
                     </div>
                     <div className="battery-bar">
                       <div className="battery-fill" style={{ width: `${batPct}%`, background: batColor }}></div>
-                    </div>
-                  </div>
-                  <div className="telemetry-item">
-                    <div className="label">Current</div>
-                    <div className="value value-rose">
-                      {fmt(sysStatus.i_batt, 2)}<span className="unit">A</span>
                     </div>
                   </div>
                 </div>
