@@ -22,9 +22,11 @@ void BSP_SerialRos_Init(SerialRos_RxCallback_t callback)
 
 HAL_StatusTypeDef BSP_SerialRos_Transmit(uint8_t *data, uint16_t size)
 {
-    /* Use the generic DMA write function or HAL directly */
-    return HAL_UART_Transmit_DMA(&huart3, data, size);
+    /* Use the thread-safe/buffer-safe DMA write function */
+    UART_DMA_Write(&huart3, data, size);
+    return HAL_OK;
 }
+
 
 /**
  * @brief This function handles USART3 global interrupt.

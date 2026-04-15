@@ -28,6 +28,7 @@
 #include "usart.h"
 #include "bsp_mcu_sensors.h"
 #include "bsp_battery.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -189,6 +190,31 @@ int _write(int file, char *ptr, int len)
     return len;
   }
   return -1;
+}
+
+/**
+  * @brief  FreeRTOS Stack Overflow Hook.
+  * @param  xTask : Handle of the task that overflowed its stack.
+  * @param  pcTaskName : Name of the task.
+  */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+  /* If this is called, then a task has indeed overflowed its stack. */
+  RobotState_SetErrorFlag(ERR_RTOS_TASK);
+  printf("\r\n--- STACK OVERFLOW: %s ---\r\n", pcTaskName);
+  Error_Handler();
+}
+
+/**
+  * @brief  FreeRTOS Malloc Failed Hook.
+  */
+void vApplicationMallocFailedHook(void)
+{
+  /* Called if a call to pvPortMalloc() fails because there is insufficient
+     free memory available in the FreeRTOS heap. */
+  RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+  printf("\r\n--- MALLOC FAILED ---\r\n");
+  Error_Handler();
 }
 /* USER CODE END 4 */
 
