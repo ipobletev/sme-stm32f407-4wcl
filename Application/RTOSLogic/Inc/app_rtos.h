@@ -35,10 +35,14 @@ void StartSerialRosTask(void *argument);
 /* --- TIMERS --- */
 extern osal_timer_h heartbeatTimerHandle;
 extern osal_timer_h systemSensorsTimerHandle;
+extern osal_timer_h imuTimerHandle;
+extern osal_timer_h odomTimerHandle;
 
 /* Soft-Timer Callback Prototypes */
 void HeartbeatTimerCallback(void *argument);
 void SystemVariablesTimerCallback(void *argument);
+void ImuTimerCallback(void *argument);
+void OdometryTimerCallback(void *argument);
 
 #endif /* __APP_RTOS_H */
 

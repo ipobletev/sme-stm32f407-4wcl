@@ -1,6 +1,7 @@
-// DEVICE CONFIG
 #define HEARTBEAT_PERIOD_MS       1000      // Used in HeartbeatTimerCallback()
 #define SYSTEM_SENSORS_PERIOD_MS  500       // Frequency to sample battery and sensors
+#define IMU_PUBLISH_PERIOD_MS     50        // 20Hz
+#define ODOM_PUBLISH_PERIOD_MS    100       // 10Hz
 
 // // DEVICE CONFIG
 // #define TIMEOUT_LAST_CMD_MS 250     // TIMEOUT CONFIG FOR CMD VEL. If no new command is received for this time, the motors will stop
