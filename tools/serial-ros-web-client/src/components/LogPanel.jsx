@@ -11,7 +11,7 @@ function topicLabel(id) {
 
 export default function LogPanel({ log, onClear }) {
   return (
-    <div className="card">
+    <div className="card log-panel-full">
       <div className="card-header">
         <h3><Terminal size={14} /> Packet Log</h3>
         <button className="btn btn-ghost btn-sm btn-icon" onClick={onClear} title="Clear log">
@@ -20,11 +20,11 @@ export default function LogPanel({ log, onClear }) {
       </div>
       <div className="card-body" style={{ padding: '8px 12px' }}>
         {log.length === 0 ? (
-          <div className="empty-state" style={{ padding: '24px 0' }}>
+          <div className="empty-state" style={{ padding: '16px 0' }}>
             <p style={{ fontSize: '0.72rem' }}>No packets captured yet</p>
           </div>
         ) : (
-          <div className="log-container">
+          <div className="log-container log-container-horiz">
             {log.map((entry, i) => (
               <div className="log-entry" key={i}>
                 <span className="log-time">{formatTime(entry.ts)}</span>

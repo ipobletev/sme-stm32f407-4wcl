@@ -118,7 +118,7 @@ export default function CommandPanel({ sendPacket, connected }) {
         </div>
       </div>
 
-      {/* Command Velocity */}
+      {/* Command Velocity — with sliders */}
       <div className="card">
         <div className="card-header">
           <h3><Joystick size={14} /> cmd_vel</h3>
@@ -151,7 +151,7 @@ export default function CommandPanel({ sendPacket, connected }) {
         </div>
       </div>
 
-      {/* Arm Goal */}
+      {/* Arm Goal — with sliders */}
       <div className="card">
         <div className="card-header">
           <h3><Cog size={14} /> arm_goal</h3>
@@ -166,7 +166,7 @@ export default function CommandPanel({ sendPacket, connected }) {
             <div className="slider-group" key={joint.label}>
               <div className="slider-label">
                 <span>{joint.label}</span>
-                <span className="slider-value">{joint.val.toFixed(1)}°</span>
+                <span className="slider-value">{joint.val.toFixed(2)}°</span>
               </div>
               <input type="range" min={-180} max={180} step={0.5} value={joint.val}
                 onChange={e => joint.set(Number(e.target.value))}

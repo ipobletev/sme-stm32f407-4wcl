@@ -1,7 +1,8 @@
 import { useRef, Suspense, useMemo } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, useGLTF, Grid, Center } from '@react-three/drei';
 import * as THREE from 'three';
+import { Target } from 'lucide-react';
 
 function RobotModel({ imu }) {
   const groupRef = useRef();
@@ -10,7 +11,6 @@ function RobotModel({ imu }) {
 
   const clonedScene = useMemo(() => {
     const clone = scene.clone(true);
-    // Apply a default material if meshes don't have visible ones
     clone.traverse((child) => {
       if (child.isMesh) {
         if (!child.material || child.material.opacity === 0) {
@@ -67,19 +67,53 @@ function LoadingFallback() {
 }
 
 export default function ImuVisualizer({ imu }) {
+  const controlsRef = useRef();
+  const cameraRef = useRef();
+
+  const handleResetView = () => {
+    if (controlsRef.current && cameraRef.current) {
+      // Reset camera position
+      cameraRef.current.position.set(3.0, 2.0, 3.0);
+      // Reset controls target
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  };
+
   return (
     <div className="imu-canvas-wrapper">
-      <Canvas>
-        <PerspectiveCamera makeDefault position={[1.5, 1.0, 1.5]} fov={45} />
-        <OrbitControls enableZoom={true} enablePan={true} />
+      <button 
+        className="reset-view-btn" 
+        onClick={handleResetView}
+        title="Centrar Cámara"
+      >
+        <Target size={14} />
+      </button>
+
+      <Canvas shadows>
+        <PerspectiveCamera 
+          ref={cameraRef}
+          makeDefault 
+          position={[3.0, 2.0, 3.0]} 
+          fov={45} 
+        />
+        <OrbitControls 
+          ref={controlsRef}
+          enableZoom={true} 
+          enablePan={true} 
+          makeDefault
+        />
+        
         <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} />
+        <directionalLight position={[5, 5, 5]} intensity={1.2} castShadow />
         <directionalLight position={[-3, 3, -3]} intensity={0.5} color="#818cf8" />
         <pointLight position={[0, -2, 0]} intensity={0.3} color="#22d3ee" />
         <hemisphereLight skyColor="#b1e1ff" groundColor="#444466" intensity={0.4} />
+        
         <Suspense fallback={<LoadingFallback />}>
           <RobotModel imu={imu} />
         </Suspense>
+        
         <Grid
           args={[10, 10]}
           cellSize={0.25}

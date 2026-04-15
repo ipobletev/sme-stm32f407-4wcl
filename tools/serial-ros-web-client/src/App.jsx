@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useSerial } from './hooks/useSerial';
 import Header from './components/Header';
+import PageSidebar from './components/PageSidebar';
 import TelemetryPanel from './components/TelemetryPanel';
 import CommandPanel from './components/CommandPanel';
 import LogPanel from './components/LogPanel';
+import ErrorLogPanel from './components/ErrorLogPanel';
 import { Activity } from 'lucide-react';
 import './index.css';
 
@@ -22,9 +25,16 @@ function FrequencyBar({ frequencies }) {
         const active = hz > 0;
         return (
           <div className="freq-chip" data-active={active ? 'true' : 'false'} key={tid}>
-            <Activity size={12} style={{ color: active ? 'var(--accent-cyan)' : 'var(--text-muted)' }} />
+            <Activity 
+              size={12} 
+              className={active ? 'icon-pulse' : ''}
+              style={{ color: active ? 'var(--accent-cyan)' : 'var(--accent-rose)' }} 
+            />
             <span className="topic-name">{TOPIC_LABELS[tid] || tid}</span>
-            <span className="freq-value" style={{ color: active ? 'var(--accent-emerald)' : 'var(--text-muted)' }}>
+            <span 
+              className="freq-value" 
+              style={{ color: active ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}
+            >
               {hz}
             </span>
             <span className="freq-unit">Hz</span>
@@ -37,18 +47,45 @@ function FrequencyBar({ frequencies }) {
 
 export default function App() {
   const { connected, connect, disconnect, sendPacket, telemetry, frequencies, log } = useSerial();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
-    <>
-      <Header connected={connected} onConnect={connect} onDisconnect={disconnect} />
-      <div className="app-layout">
-        <FrequencyBar frequencies={frequencies} />
-        <TelemetryPanel telemetry={telemetry} frequencies={frequencies} />
-        <div className="sidebar">
-          <CommandPanel sendPacket={sendPacket} connected={connected} />
-          <LogPanel log={log} onClear={() => {}} />
+    <div className="page-wrapper">
+      {/* Global Sidebar - Level Page */}
+      <PageSidebar collapsed={sidebarCollapsed} />
+
+      {/* Main Content Area */}
+      <main className="main-container">
+        <Header 
+          connected={connected} 
+          onConnect={connect} 
+          onDisconnect={disconnect} 
+          sendPacket={sendPacket}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+        />
+        
+        <div className="app-layout">
+          {/* Frequency bar — full width */}
+          <FrequencyBar frequencies={frequencies} />
+
+          {/* Main telemetry area */}
+          <TelemetryPanel telemetry={telemetry} frequencies={frequencies} />
+
+          {/* Right sidebar: scrollable control panel */}
+          <div className="sidebar">
+            <div className="sidebar-scroll">
+              <CommandPanel sendPacket={sendPacket} connected={connected} />
+            </div>
+          </div>
+
+          {/* Full-width bottom row: Packet Log + Error Log side by side */}
+          <div className="log-footer">
+            <LogPanel log={log} onClear={() => {}} />
+            <ErrorLogPanel sysStatus={telemetry.sysStatus} />
+          </div>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }
