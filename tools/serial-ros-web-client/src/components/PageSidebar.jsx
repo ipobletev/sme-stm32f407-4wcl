@@ -1,11 +1,11 @@
-import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User } from 'lucide-react';
+import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart } from 'lucide-react';
 
-export default function PageSidebar({ collapsed }) {
+export default function PageSidebar({ collapsed, activeTab, onTabChange }) {
   const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', active: true },
-    // { id: 'telemetry', icon: Gauge, label: 'Telemetry', active: false },
-    // { id: 'terminal', icon: Terminal, label: 'Serial Log', active: false },
-    // { id: 'settings', icon: Settings, label: 'Settings', active: false },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
+    // { id: 'telemetry', icon: Gauge, label: 'Telemetry' },
+    // { id: 'terminal', icon: Terminal, label: 'Serial Log' },
   ];
 
   return (
@@ -18,8 +18,9 @@ export default function PageSidebar({ collapsed }) {
         {navItems.map((item) => (
           <button 
             key={item.id} 
-            className={`nav-item ${item.active ? 'active' : ''}`}
+            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
             title={item.label}
+            onClick={() => onTabChange(item.id)}
           >
             <item.icon size={20} />
             <span className="nav-label">{item.label}</span>
@@ -28,12 +29,10 @@ export default function PageSidebar({ collapsed }) {
       </nav>
 
       <div className="sidebar-footer">
-        {/* <button className="nav-item" title="Documentation">
-          <HelpCircle size={20} />
-        </button>
-        <button className="nav-item user-profile" title="User Profile">
-          <User size={20} />
-        </button> */}
+        <div className="footer-status">
+          <div className="status-dot online"></div>
+          {!collapsed && <span className="status-text">System Online</span>}
+        </div>
       </div>
     </aside>
   );

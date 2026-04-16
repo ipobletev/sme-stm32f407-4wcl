@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useSerial } from './hooks/useSerial';
+import { useTelemetryHistory } from './hooks/useTelemetryHistory';
 import Header from './components/Header';
 import PageSidebar from './components/PageSidebar';
 import TelemetryPanel from './components/TelemetryPanel';
+import GraphsPanel from './components/GraphsPanel';
 import CommandPanel from './components/CommandPanel';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
@@ -47,12 +49,19 @@ function FrequencyBar({ frequencies }) {
 
 export default function App() {
   const { connected, linkActive, connect, disconnect, sendPacket, telemetry, frequencies, log } = useSerial();
+  const history = useTelemetryHistory(telemetry, 50);
+  
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
     <div className="page-wrapper">
       {/* Global Sidebar - Level Page */}
-      <PageSidebar collapsed={sidebarCollapsed} />
+      <PageSidebar 
+        collapsed={sidebarCollapsed} 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+      />
 
       {/* Main Content Area */}
       <main className="main-container">
@@ -70,21 +79,29 @@ export default function App() {
           {/* Frequency bar — full width */}
           <FrequencyBar frequencies={frequencies} />
 
-          {/* Main telemetry area */}
-          <TelemetryPanel telemetry={telemetry} frequencies={frequencies} />
+          {activeTab === 'dashboard' ? (
+            <>
+              {/* Main telemetry area */}
+              <TelemetryPanel telemetry={telemetry} frequencies={frequencies} />
 
-          {/* Right sidebar: scrollable control panel */}
-          <div className="sidebar">
-            <div className="sidebar-scroll">
-              <CommandPanel sendPacket={sendPacket} connected={connected} />
+              {/* Right sidebar: scrollable control panel */}
+              <div className="sidebar">
+                <div className="sidebar-scroll">
+                  <CommandPanel sendPacket={sendPacket} connected={connected} />
+                </div>
+              </div>
+
+              {/* Full-width bottom row: Packet Log + Error Log side by side */}
+              <div className="log-footer">
+                <LogPanel log={log} onClear={() => {}} />
+                <ErrorLogPanel sysStatus={telemetry.sysStatus} />
+              </div>
+            </>
+          ) : (
+            <div className="graphs-view">
+              <GraphsPanel history={history} />
             </div>
-          </div>
-
-          {/* Full-width bottom row: Packet Log + Error Log side by side */}
-          <div className="log-footer">
-            <LogPanel log={log} onClear={() => {}} />
-            <ErrorLogPanel sysStatus={telemetry.sysStatus} />
-          </div>
+          )}
         </div>
       </main>
     </div>
