@@ -4,7 +4,9 @@
 #include "i2c.h"
 #include "osal.h"
 
+#ifndef M_PI
 #define M_PI			(3.14159265358979323846f)
+#endif
 #define ONE_G			(9.807f)
 
 extern I2C_HandleTypeDef hi2c2;

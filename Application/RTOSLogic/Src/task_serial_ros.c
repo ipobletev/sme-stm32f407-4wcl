@@ -52,8 +52,6 @@ void StartSerialRosTask(void *argument) {
             
             /* Drain all other pending transmission packets immediately */
             while (osal_queue_get(rosTxQueueHandle, &tx_packet, 0) == OSAL_OK) {
-                // Small gap to prevent saturating the DMA interface
-                osal_delay(1); 
                 BSP_SerialRos_Transmit(tx_packet.data, tx_packet.size);
             }
         }

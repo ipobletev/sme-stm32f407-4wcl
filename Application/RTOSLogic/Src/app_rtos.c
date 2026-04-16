@@ -62,7 +62,7 @@ const osal_thread_attr_t uartListenerTask_attributes = {
 const osal_thread_attr_t serialRosTask_attributes = {
   .name = "SerialRosTask",
   .stack_size = 1536 * 4,
-  .priority = OSAL_PRIO_NORMAL,
+  .priority = OSAL_PRIO_HIGH,
 };
 
 const osal_thread_attr_t telemetryTask_attributes = {
@@ -91,7 +91,7 @@ void App_RTOS_Init(void) {
     // uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
     // if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
-    rosTxQueueHandle = osal_queue_create(10, sizeof(SerialRos_Packet_t));
+    rosTxQueueHandle = osal_queue_create(50, sizeof(SerialRos_Packet_t));
     if (rosTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
     rosRxQueueHandle = osal_queue_create(10, sizeof(SerialRos_Packet_t));
