@@ -7,7 +7,7 @@
 
 void StartMobilityTask(void *argument)
 {
-    LOG_INFO(LOG_TAG, "Mobility Logic Task Started.");
+    LOG_INFO(LOG_TAG, "Mobility Logic Task Started.\r\n");
 
     Mobility_Init();
 

@@ -3,6 +3,7 @@
 #include "robot_state.h"
 #include "serial_ros.h"
 #include "serial_ros_protocol.h"
+#include "mobility_fsm.h"
 #include "debug_module.h"
 #include "bsp_battery.h"
 #include "bsp_mcu_sensors.h"
@@ -30,6 +31,9 @@ void StartTelemetryTask(void *argument) {
     for (;;) {
         /* Maintain strict 10ms period */
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TELEMETRY_BASE_PERIOD_MS));
+
+        /* --- 0. SENSOR ACQUISITION (Decoupled from states) --- */
+        Mobility_UpdateMeasurements();
 
         /* --- 1. IMU TOPIC (100Hz) --- */
         ImuMsg_t imu_msg;
@@ -101,7 +105,7 @@ void StartTelemetryTask(void *argument) {
             snprintf(mcu_str, sizeof(mcu_str), "%d.%d", (int)mcu_t, (int)(mcu_t * 10) % 10);
 
             /* Periodically log board health to console */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]\n", 
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 Mobility_StateToStr(RobotState_GetMobilityState()),
                 Arm_StateToStr(RobotState_GetArmState()),

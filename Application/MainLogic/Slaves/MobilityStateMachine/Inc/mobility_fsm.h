@@ -15,7 +15,8 @@ typedef enum {
 /* Interaction Interface */
 const char* Mobility_StateToStr(MobilityState_t state);
 void Mobility_Init(void);
-void Mobility_ProcessLogic(void); /* Called from RTOS Task */
+void Mobility_ProcessLogic(void); /* Called from control task */
+void Mobility_UpdateMeasurements(void); /* Called from telemetry task */
 MobilityState_t Mobility_GetCurrentState(void);
 
 /* Command Interface (Called by UART ROS receiver) */

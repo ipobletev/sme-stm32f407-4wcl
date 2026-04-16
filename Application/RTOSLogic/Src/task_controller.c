@@ -17,13 +17,13 @@ static void publish_event(SystemEvent_t event, EventSource_t source)
     
     osal_status_t status = osal_queue_put(stateMsgQueueHandle, &msg, 0U);
     if (status != OSAL_OK) {
-        LOG_ERROR(LOG_TAG, "Failed to publish event %d", event);
+        LOG_ERROR(LOG_TAG, "Failed to publish event %d\r\n", event);
     }
 }
 
 void StartControllerTask(void *argument)
 {
-    LOG_INFO(LOG_TAG, "Controller Task Started.");
+    LOG_INFO(LOG_TAG, "Controller Task Started.\r\n");
 
     bool k1_prev = false;
     bool sw3_prev = false;
@@ -40,7 +40,7 @@ void StartControllerTask(void *argument)
         
         if (status == OSAL_OK)
         {
-            LOG_INFO(LOG_TAG, "Centralized Event Received from UART: %d", uart_msg.event);
+            LOG_INFO(LOG_TAG, "Centralized Event Received from UART: %d\r\n", uart_msg.event);
             /* Forward the event with its original source attached by the UART Listener */
             publish_event(uart_msg.event, uart_msg.source);
         }
@@ -55,10 +55,10 @@ void StartControllerTask(void *argument)
         if (k1_pressed && !k1_prev)
         {
             if (Supervisor_GetCurrentState() == STATE_PAUSED) {
-                LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME");
+                LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME\r\n");
                 publish_event(EVENT_RESUME, SRC_PHYSICAL);
             } else {
-                LOG_INFO(LOG_TAG, "K1 pressed, requesting MANUAL mode");
+                LOG_INFO(LOG_TAG, "K1 pressed, requesting MANUAL mode\r\n");
                 publish_event(EVENT_START, SRC_PHYSICAL);
             }
         }
@@ -69,12 +69,12 @@ void StartControllerTask(void *argument)
         if (k2_pressed) {
             k2_press_ticks++;
             if (k2_press_ticks == 10) { /* 10 ticks * 100ms = 1 second */
-                LOG_INFO(LOG_TAG, "K2 SAFETY long press (>1s), E-STOP triggered");
+                LOG_INFO(LOG_TAG, "K2 SAFETY long press (>1s), E-STOP triggered\r\n");
                 publish_event(EVENT_STOP, SRC_PHYSICAL);
             }
         } else {
             if (k2_press_ticks > 0 && k2_press_ticks < 10) {
-                LOG_INFO(LOG_TAG, "K2 short press, PAUSE requested");
+                LOG_INFO(LOG_TAG, "K2 short press, PAUSE requested\r\n");
                 publish_event(EVENT_PAUSE, SRC_PHYSICAL);
             }
             k2_press_ticks = 0;
@@ -86,11 +86,11 @@ void StartControllerTask(void *argument)
         {
             static uint8_t error_flag = 0;
             if (!error_flag) {
-                LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_ERROR");
+                LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_ERROR\r\n");
                 publish_event(EVENT_ERROR, SRC_PHYSICAL);
                 error_flag = 1;
             } else {
-                LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_RESET");
+                LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_RESET\r\n");
                 publish_event(EVENT_RESET, SRC_PHYSICAL);
                 error_flag = 0;
             }

@@ -47,11 +47,11 @@ const osal_thread_attr_t uartListenerTask_attributes = {
   .priority = OSAL_PRIO_HIGH,
 };
 
-// const osal_thread_attr_t mobilityTask_attributes = {
-//   .name = "MobilityTask",
-//   .stack_size = 1536 * 4,
-//   .priority = OSAL_PRIO_NORMAL,
-// };
+const osal_thread_attr_t mobilityTask_attributes = {
+  .name = "MobilityTask",
+  .stack_size = 1536 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
 
 // const osal_thread_attr_t armTask_attributes = {
 //   .name = "ArmTask",
@@ -113,8 +113,8 @@ void App_RTOS_Init(void) {
     uartListenerTaskHandle = osal_thread_create(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
     if (uartListenerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    // mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
-    // if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
+    if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     // armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
     // if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);

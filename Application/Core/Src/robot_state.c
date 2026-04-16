@@ -277,3 +277,47 @@ float RobotState_GetUCTemperature(void) {
     }
     return temp;
 }
+
+void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.enc_1 = enc1;
+        RobotState_4wcl.Telemetry.enc_2 = enc2;
+        RobotState_4wcl.Telemetry.enc_3 = enc3;
+        RobotState_4wcl.Telemetry.enc_4 = enc4;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.enc_1 = enc1;
+        RobotState_4wcl.Telemetry.enc_2 = enc2;
+        RobotState_4wcl.Telemetry.enc_3 = enc3;
+        RobotState_4wcl.Telemetry.enc_4 = enc4;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetMeasuredVelocity(float linear_x, float angular_z) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.measured_linear_x = linear_x;
+        RobotState_4wcl.Telemetry.measured_angular_z = angular_z;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.measured_linear_x = linear_x;
+        RobotState_4wcl.Telemetry.measured_angular_z = angular_z;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.measured_rps_1 = rps1;
+        RobotState_4wcl.Telemetry.measured_rps_2 = rps2;
+        RobotState_4wcl.Telemetry.measured_rps_3 = rps3;
+        RobotState_4wcl.Telemetry.measured_rps_4 = rps4;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.measured_rps_1 = rps1;
+        RobotState_4wcl.Telemetry.measured_rps_2 = rps2;
+        RobotState_4wcl.Telemetry.measured_rps_3 = rps3;
+        RobotState_4wcl.Telemetry.measured_rps_4 = rps4;
+        taskEXIT_CRITICAL();
+    }
+}

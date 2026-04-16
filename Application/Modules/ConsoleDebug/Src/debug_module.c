@@ -37,11 +37,11 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     va_end(args);
 
     // Enqueue for transmission
-    if (len > 0) {
+    if (len > 0 && len < DEBUG_BUF_SIZE) {
         Console_Packet_t packet;
         memset(&packet, 0, sizeof(Console_Packet_t));
         
-        packet.size = (len > 256) ? 256 : (uint16_t)len;
+        packet.size = (uint16_t)len;
         memcpy(packet.data, buffer, packet.size);
         
         osal_queue_put(consoleTxQueueHandle, &packet, 0);

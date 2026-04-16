@@ -29,7 +29,7 @@ static void bsp_rx_callback(uint8_t *data, uint16_t size) {
  */
 void StartSerialRosTask(void *argument) {
     serial_ros_task_id = osal_thread_get_self();
-    LOG_INFO(LOG_TAG, "SerialRos Task Multi-tasking dispatcher started");
+    LOG_INFO(LOG_TAG, "SerialRos Task Multi-tasking dispatcher started\r\n");
 
     /* Init Module and Hardware */
     SerialRos_Init();

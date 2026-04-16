@@ -7,7 +7,7 @@
 
 void StartArmTask(void *argument)
 {
-    LOG_INFO(LOG_TAG, "Robotic Arm Logic Task Started.");
+    LOG_INFO(LOG_TAG, "Robotic Arm Logic Task Started.\r\n");
 
     Arm_Init();
 

@@ -29,7 +29,7 @@ static void PerformCalibration(void) {
     float sum_ax = 0, sum_ay = 0, sum_az = 0;
     float sum_gx = 0, sum_gy = 0, sum_gz = 0;
 
-    LOG_INFO(LOG_TAG, "Stabilizing IMU...");
+    LOG_INFO(LOG_TAG, "Stabilizing IMU...\r\n");
     
     for (int i = 0; i < samples; i++) {
         if (BSP_IMU_ReadRaw(&raw) == IMU_OK) {
@@ -81,12 +81,12 @@ void StartImuTask(void *argument) {
     BSP_IMU_SetAccelFSR(1, &accel_sf);
     BSP_IMU_SetGyroFSR(7, &gyro_sf);
     
-    LOG_INFO(LOG_TAG, "IMU Official Driver Running (%s)", (BSP_IMU_GetDetectedType() == IMU_TYPE_QMI8658) ? "QMI8658" : "MPU6050");
+    LOG_INFO(LOG_TAG, "IMU Official Driver Running (%s)\r\n", (BSP_IMU_GetDetectedType() == IMU_TYPE_QMI8658) ? "QMI8658" : "MPU6050");
 
     /* 3. Initial Calibration (Stabilization) */
     PerformCalibration();
 
-    last_wake_time = osKernelGetTickCount();
+    last_wake_time = osal_get_tick();
 
     while (1) {
         /* Period: 10ms (100Hz) */

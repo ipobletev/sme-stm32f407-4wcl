@@ -43,7 +43,7 @@ static void bsp_rx_callback(uint16_t size)
 void StartUARTListenerTask(void *argument)
 {
     listener_task_id = osal_thread_get_self();
-    LOG_INFO(LOG_TAG, "Console Dispatcher Task Started (TX/RX Queues)");
+    LOG_INFO(LOG_TAG, "Console Dispatcher Task Started (TX/RX Queues)\r\n");
 
     /* Initialize BSP Rx and register our local bridge callback */
     BSP_Console_InitRx(bsp_rx_callback);

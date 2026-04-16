@@ -51,6 +51,10 @@ typedef struct {
         int32_t enc_2;
         int32_t enc_3;
         int32_t enc_4;
+        float measured_rps_1;
+        float measured_rps_2;
+        float measured_rps_3;
+        float measured_rps_4;
 
         /* Arm Feedback */
         float arm_j1_pos;
@@ -119,5 +123,10 @@ uint8_t RobotState_GetWatchdogArm(void);
 void RobotState_SetTargetVelocity(float linear_x, float angular_z);
 void RobotState_SetTargetArmPose(float j1, float j2, float j3);
 void RobotState_SetTargetMobilityMode(uint8_t mode);
+
+/* Mobility Feedback Setters */
+void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);
+void RobotState_SetMeasuredVelocity(float linear_x, float angular_z);
+void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4);
 
 #endif /* __ROBOT_STATE_H */
