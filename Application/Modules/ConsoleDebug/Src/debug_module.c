@@ -14,24 +14,16 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
 #endif
 
     char buffer[DEBUG_BUF_SIZE];
+    memset(buffer, 0, DEBUG_BUF_SIZE);
     int len = 0;
     const char *level_str = "";
 
     switch (level) {
-        case DEBUG_LEVEL_ERROR:
-            level_str = "ERROR";
-            break;
-        case DEBUG_LEVEL_WARN:
-            level_str = "WARN ";
-            break;
-        case DEBUG_LEVEL_INFO:
-            level_str = "INFO ";
-            break;
-        case DEBUG_LEVEL_DEBUG:
-            level_str = "DEBUG";
-            break;
-        default:
-            return;
+        case DEBUG_LEVEL_ERROR: level_str = "ERROR"; break;
+        case DEBUG_LEVEL_WARN:  level_str = "WARN "; break;
+        case DEBUG_LEVEL_INFO:  level_str = "INFO "; break;
+        case DEBUG_LEVEL_DEBUG: level_str = "DEBUG"; break;
+        default: return;
     }
 
     // Header formatting: [COLOR][TIMESTAMP][LEVEL][TAG] 
@@ -47,11 +39,11 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     // Enqueue for transmission
     if (len > 0) {
         Console_Packet_t packet;
+        memset(&packet, 0, sizeof(Console_Packet_t));
+        
         packet.size = (len > 256) ? 256 : (uint16_t)len;
         memcpy(packet.data, buffer, packet.size);
         
-        // Put in queue with 0 timeout to avoid blocking high priority tasks 
-        // if the console is too slow.
         osal_queue_put(consoleTxQueueHandle, &packet, 0);
     }
 }

@@ -1044,13 +1044,40 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-transform: uppercase;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1000px) {
-  .app-layout {
-    grid-template-columns: 1fr;
-    padding: 12px;
+/* Connection Badges */
+.connection-badge.robot-active {
+  background: rgba(0, 210, 255, 0.1);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  color: var(--accent-cyan);
+}
+
+.connection-badge.robot-inactive {
+  background: rgba(255, 71, 126, 0.1);
+  border: 1px solid rgba(255, 71, 126, 0.3);
+  color: var(--accent-rose);
+}
+
+.dot.pulse {
+  animation: dot-pulse 2s infinite;
+}
+
+@keyframes dot-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 210, 255, 0.7);
   }
-  .telemetry-row {
-    grid-template-columns: 1fr;
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(0, 210, 255, 0);
   }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 210, 255, 0);
+  }
+}
+
+.robot-inactive .dot {
+  background-color: var(--accent-rose) !important;
+  box-shadow: 0 0 8px var(--accent-rose) !important;
+  animation: none;
 }

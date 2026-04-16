@@ -21,18 +21,18 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "dma.h"
+#include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "robot_state.h"
-#include "adc.h"
-#include "usart.h"
-#include "bsp_mcu_sensors.h"
-#include "bsp_battery.h"
-#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "robot_state.h"
+#include "bsp_mcu_sensors.h"
+#include "bsp_battery.h"
+#include "bsp_console.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,7 +101,16 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_ADC1_Init();
-
+  MX_I2C2_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
+  MX_TIM5_Init();
+  MX_TIM9_Init();
+  MX_TIM10_Init();
+  MX_TIM11_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
   /* Post-Init Verification */
   if (HAL_ADC_GetState(&hadc1) == HAL_ADC_STATE_ERROR) {
@@ -199,9 +208,11 @@ int _write(int file, char *ptr, int len)
   */
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-  /* If this is called, then a task has indeed overflowed its stack. */
-  RobotState_SetErrorFlag(ERR_RTOS_TASK);
-  printf("\r\n--- STACK OVERFLOW: %s ---\r\n", pcTaskName);
+  /* If this is called, then a task has indeed overflowed its stack. 
+     Illegal to call printf or taskENTER_CRITICAL from here as it may 
+     be called from the context of the PendSV handler or during context switch. */
+  (void)xTask;
+  (void)pcTaskName;
   Error_Handler();
 }
 
@@ -258,7 +269,6 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number

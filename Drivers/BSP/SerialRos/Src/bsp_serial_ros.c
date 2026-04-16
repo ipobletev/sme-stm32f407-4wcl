@@ -32,7 +32,7 @@ HAL_StatusTypeDef BSP_SerialRos_Transmit(uint8_t *data, uint16_t size)
  * @brief This function handles USART3 global interrupt.
  * It detects the IDLE line to process incoming packets.
  */
-void USART3_IRQHandler(void)
+void BSP_SerialRos_IRQHandler(void)
 {
     if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE) != RESET)
     {
@@ -52,5 +52,4 @@ void USART3_IRQHandler(void)
         HAL_UART_DMAStop(&huart3);
         HAL_UART_Receive_DMA(&huart3, rx_dma_buffer, SERIAL_ROS_RX_BUF_SIZE);
     }
-    HAL_UART_IRQHandler(&huart3);
 }

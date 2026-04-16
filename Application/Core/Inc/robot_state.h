@@ -106,6 +106,8 @@ void RobotState_SetBatteryVoltage(float voltage);
 void RobotState_SetBatteryCurrent(float current);
 void RobotState_SetUCTemperature(float temp);
 void RobotState_SetBoardTemperature(float temp);
+float RobotState_GetBatteryVoltage(void);
+float RobotState_GetUCTemperature(void);
 
 /* Watchdog API */
 void RobotState_FeedWatchdogMobility(void);

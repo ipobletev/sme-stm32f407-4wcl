@@ -246,6 +246,7 @@ export function useSerial() {
     sendPacket,
     telemetry,
     frequencies,
+    linkActive: frequencies['0x81'] > 0,
     log,
   };
 }

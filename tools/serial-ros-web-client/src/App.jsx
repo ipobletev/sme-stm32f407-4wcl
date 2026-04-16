@@ -46,7 +46,7 @@ function FrequencyBar({ frequencies }) {
 }
 
 export default function App() {
-  const { connected, connect, disconnect, sendPacket, telemetry, frequencies, log } = useSerial();
+  const { connected, linkActive, connect, disconnect, sendPacket, telemetry, frequencies, log } = useSerial();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
@@ -58,6 +58,7 @@ export default function App() {
       <main className="main-container">
         <Header 
           connected={connected} 
+          linkActive={linkActive}
           onConnect={connect} 
           onDisconnect={disconnect} 
           sendPacket={sendPacket}

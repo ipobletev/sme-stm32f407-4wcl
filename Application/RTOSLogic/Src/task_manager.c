@@ -61,8 +61,8 @@ void StartManagerTask(void *argument)
             uint64_t current_errors = RobotState_GetErrorFlags();
             if (ERR_IS_ANY(current_errors))
             {
-                printf("Manager: CRITICAL HARDWARE FAULT DETECTED (Flags: 0x%llx). Triggering System Supervisor FAULT.\r\n",
-                       (unsigned long long)current_errors);
+                printf("Manager: CRITICAL HARDWARE FAULT DETECTED (Flags: 0x%08lX%08lX). Triggering System Supervisor FAULT.\r\n",
+                       (unsigned long)(current_errors >> 32), (unsigned long)(current_errors & 0xFFFFFFFF));
                 Supervisor_ProcessEvent(EVENT_ERROR, SRC_INTERNAL_SUPERVISOR);
             }
         }

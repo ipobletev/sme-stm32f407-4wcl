@@ -1,8 +1,15 @@
+# Force re-configure after telemetry refactor
 cmake_minimum_required(VERSION 3.22)
 project(sme-stm32f407-4wcl C CXX ASM)
 
-# Add all include directories
-include_directories(
+# Enable CMake support for ASM and C languages
+enable_language(C CXX ASM)
+
+# Add the executable target
+add_executable(${CMAKE_PROJECT_NAME})
+
+# Include directories
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Inc
     Drivers/STM32F4xx_HAL_Driver/Inc
     Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
@@ -30,5 +37,26 @@ include_directories(
     Application/Config
 )
 
-# This is a placeholder for source files and executable definition
-# to be expanded based on the full project structure if needed.
+# Custom Application Source Files
+file(GLOB_RECURSE APP_SOURCES 
+    "Application/*.c"
+    "Application/*.cpp"
+)
+
+# Custom BSP Source Files
+file(GLOB_RECURSE BSP_SOURCES 
+    "Drivers/BSP/*.c"
+)
+
+# Add custom sources to the target
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    ${APP_SOURCES}
+    ${BSP_SOURCES}
+)
+
+# Include the STM32CubeMX generated CMake logic
+# This will add MX_Include_Dirs, MX_Application_Src, STM32_Drivers_Src, etc.
+add_subdirectory(cmake/stm32cubemx)
+
+# The generated logic already calls target_sources and target_link_libraries
+# for ${CMAKE_PROJECT_NAME}, so we just need to ensure the order is correct.

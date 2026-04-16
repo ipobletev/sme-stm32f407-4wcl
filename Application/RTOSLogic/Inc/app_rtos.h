@@ -22,6 +22,7 @@ extern osal_thread_h uartListenerTaskHandle;
 extern osal_thread_h mobilityTaskHandle;
 extern osal_thread_h armTaskHandle;
 extern osal_thread_h serialRosTaskHandle;
+extern osal_thread_h telemetryTaskHandle;
 
 /* Thread Prototypes */
 void StartManagerTask(void *argument);
@@ -31,18 +32,13 @@ void StartUARTListenerTask(void *argument);
 void StartMobilityTask(void *argument);
 void StartArmTask(void *argument);
 void StartSerialRosTask(void *argument);
+void StartTelemetryTask(void *argument);
 
 /* --- TIMERS --- */
 extern osal_timer_h heartbeatTimerHandle;
-extern osal_timer_h systemSensorsTimerHandle;
-extern osal_timer_h imuTimerHandle;
-extern osal_timer_h odomTimerHandle;
 
 /* Soft-Timer Callback Prototypes */
 void HeartbeatTimerCallback(void *argument);
-void SystemVariablesTimerCallback(void *argument);
-void ImuTimerCallback(void *argument);
-void OdometryTimerCallback(void *argument);
 
 #endif /* __APP_RTOS_H */
 

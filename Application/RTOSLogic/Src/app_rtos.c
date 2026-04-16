@@ -21,54 +21,52 @@ osal_thread_h uartListenerTaskHandle;
 osal_thread_h mobilityTaskHandle;
 osal_thread_h armTaskHandle;
 osal_thread_h serialRosTaskHandle;
+osal_thread_h telemetryTaskHandle;
+osal_timer_h  heartbeatTimerHandle;
 
-/* Timer Handles */
-osal_timer_h heartbeatTimerHandle;
-osal_timer_h systemSensorsTimerHandle;
-osal_timer_h imuTimerHandle;
-osal_timer_h odomTimerHandle;
 
 /* --- TASK ATTRIBUTES (Generic) --- */
 
-const osal_thread_attr_t managerTask_attributes = {
-  .name = "ManagerTask",
-  .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_NORMAL,
-};
+// const osal_thread_attr_t managerTask_attributes = {
+//   .name = "ManagerTask",
+//   .stack_size = 1536 * 4,
+//   .priority = OSAL_PRIO_NORMAL,
+// };
 
-const osal_thread_attr_t controllerTask_attributes = {
-  .name = "ControllerTask",
-  .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_NORMAL,
-};
+// const osal_thread_attr_t controllerTask_attributes = {
+//   .name = "ControllerTask",
+//   .stack_size = 1536 * 4,
+//   .priority = OSAL_PRIO_NORMAL,
+// };
 
-const osal_thread_attr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_NORMAL,
-};
 
 const osal_thread_attr_t uartListenerTask_attributes = {
   .name = "UARTListenerTask",
-  .stack_size = 512 * 4,
+  .stack_size = 1536 * 4,
   .priority = OSAL_PRIO_HIGH,
 };
 
-const osal_thread_attr_t mobilityTask_attributes = {
-  .name = "MobilityTask",
-  .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_NORMAL,
-};
+// const osal_thread_attr_t mobilityTask_attributes = {
+//   .name = "MobilityTask",
+//   .stack_size = 1536 * 4,
+//   .priority = OSAL_PRIO_NORMAL,
+// };
 
-const osal_thread_attr_t armTask_attributes = {
-  .name = "ArmTask",
-  .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_NORMAL,
-};
+// const osal_thread_attr_t armTask_attributes = {
+//   .name = "ArmTask",
+//   .stack_size = 1536 * 4,
+//   .priority = OSAL_PRIO_NORMAL,
+// };
 
 const osal_thread_attr_t serialRosTask_attributes = {
   .name = "SerialRosTask",
-  .stack_size = 512 * 4,
+  .stack_size = 1536 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
+
+const osal_thread_attr_t telemetryTask_attributes = {
+  .name = "TelemetryTask",
+  .stack_size = 768 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
@@ -83,8 +81,8 @@ void App_RTOS_Init(void) {
     stateMsgQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
     if (stateMsgQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
-    uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
-    if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+    // uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
+    // if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     rosTxQueueHandle = osal_queue_create(10, sizeof(SerialRos_Packet_t));
     if (rosTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
@@ -99,55 +97,31 @@ void App_RTOS_Init(void) {
     if (consoleRxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     /* 2. Create Threads (Tasks) */
-    managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
-    if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    // managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
+    // if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
-    if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    // controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
+    // if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     uartListenerTaskHandle = osal_thread_create(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
     if (uartListenerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
-    if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    // mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
+    // if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
-    if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    // armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
+    // if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     serialRosTaskHandle = osal_thread_create(StartSerialRosTask, NULL, &serialRosTask_attributes);
     if (serialRosTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    /* 3. Create and Start Timers */
+    telemetryTaskHandle = osal_thread_create(StartTelemetryTask, NULL, &telemetryTask_attributes);
+    if (telemetryTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+
+    /* 3. Start Heartbeat Timer (1Hz) */
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);
     if (heartbeatTimerHandle != NULL) {
-        osal_status_t status = osal_timer_start(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
-        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    } else {
-        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    }
-
-    systemSensorsTimerHandle = osal_timer_create(SystemVariablesTimerCallback, OSAL_TIMER_PERIODIC, NULL);
-    if (systemSensorsTimerHandle != NULL) {
-        osal_status_t status = osal_timer_start(systemSensorsTimerHandle, SYSTEM_SENSORS_PERIOD_MS);
-        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    } else {
-        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    }
-
-    imuTimerHandle = osal_timer_create(ImuTimerCallback, OSAL_TIMER_PERIODIC, NULL);
-    if (imuTimerHandle != NULL) {
-        osal_status_t status = osal_timer_start(imuTimerHandle, IMU_PUBLISH_PERIOD_MS);
-        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    } else {
-        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    }
-
-    odomTimerHandle = osal_timer_create(OdometryTimerCallback, OSAL_TIMER_PERIODIC, NULL);
-    if (odomTimerHandle != NULL) {
-        osal_status_t status = osal_timer_start(odomTimerHandle, ODOM_PUBLISH_PERIOD_MS);
-        if (status != OSAL_OK) RobotState_SetErrorFlag(ERR_RTOS_TIMER);
-    } else {
-        RobotState_SetErrorFlag(ERR_RTOS_TIMER);
+        osal_timer_start(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
     }
 }
 

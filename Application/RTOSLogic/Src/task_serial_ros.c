@@ -43,8 +43,23 @@ void StartSerialRosTask(void *argument) {
     uint16_t local_rx_size;
 
     for (;;) {
-        /* 1. Wait for RX packet notification (short timeout to poll TX queue and periodic logic) */
-        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, 20U);
+        /* 1. Wait for TX data from other tasks (IMU, Odom, etc.) 
+         * This is now the primary blocking point for the task.
+         */
+        if (osal_queue_get(rosTxQueueHandle, &tx_packet, 10U) == OSAL_OK) {
+            /* Transmit the first packet */
+            BSP_SerialRos_Transmit(tx_packet.data, tx_packet.size);
+            
+            /* Drain all other pending transmission packets immediately */
+            while (osal_queue_get(rosTxQueueHandle, &tx_packet, 0) == OSAL_OK) {
+                // Small gap to prevent saturating the DMA interface
+                osal_delay(1); 
+                BSP_SerialRos_Transmit(tx_packet.data, tx_packet.size);
+            }
+        }
+
+        /* 2. Check for RX packet notifications (non-blocking) */
+        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, 0U);
 
         if (flags & RX_EVENT_FLAG) {
             /* Snapshot the shared RX buffer to minimize race conditions with next ISR */
@@ -56,26 +71,14 @@ void StartSerialRosTask(void *argument) {
             /* Process raw packet in the module */
             SerialRos_ProcessPacket(local_rx_buffer, local_rx_size);
             
-            /* Optional: Put the processed packet into the RX queue for other tasks */
+            /* Put the processed packet into the RX queue for other tasks */
             SerialRos_Packet_t rx_packet;
             rx_packet.size = (local_rx_size > 64) ? 64 : local_rx_size;
             memcpy(rx_packet.data, local_rx_buffer, rx_packet.size);
             osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
         }
 
-        /* 2. (DEPRECATED) Redundant telemetry removed. 
-         * System Status is now handled by the Periodic Timer at 2Hz (500ms) 
-         * to avoid high bus load during stability debugging.
-         */
-
-        /* 3. Send queued packets from other tasks (IMU, Odom, SystemStatus from Timer) */
-        while (osal_queue_get(rosTxQueueHandle, &tx_packet, 0) == OSAL_OK) {
-            BSP_SerialRos_Transmit(tx_packet.data, tx_packet.size);
-            // Small gap to prevent saturating the DMA interface if the queue is full
-            osal_delay(2); 
-        }
-
-        /* 4. Connection Monitoring (approx every 100ms) */
+        /* 3. Connection Monitoring (approx every 100ms) */
         uint32_t current_tick = osal_get_tick();
         if ((current_tick - last_conn_check_tick) >= 100) {
             last_conn_check_tick = current_tick;

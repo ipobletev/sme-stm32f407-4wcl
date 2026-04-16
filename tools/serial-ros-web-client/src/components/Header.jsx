@@ -3,6 +3,7 @@ import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 export default function Header({ 
   connected, 
+  linkActive,
   onConnect, 
   onDisconnect, 
   sendPacket, 
@@ -51,10 +52,18 @@ export default function Header({
           </button>
         )}
         
+        {/* Robot Link badge - Only visible if serial is connected */}
+        {connected && (
+          <div className={`connection-badge ${linkActive ? 'robot-active' : 'robot-inactive'}`}>
+            <span className="dot pulse"></span>
+            {linkActive ? 'Robot Link Active' : 'No Robot Heartbeat'}
+          </div>
+        )}
+
         {/* Connection status badge */}
         <div className={`connection-badge ${connected ? 'connected' : 'disconnected'}`}>
           <span className="dot"></span>
-          {connected ? 'Connected · 115200 bps' : 'Disconnected'}
+          {connected ? 'Serial Connected' : 'Serial Disconnected'}
         </div>
 
         {/* Connect/Disconnect Buttons */}
