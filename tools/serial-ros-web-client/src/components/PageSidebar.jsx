@@ -1,9 +1,10 @@
-import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart } from 'lucide-react';
+import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart, Network } from 'lucide-react';
 
 export default function PageSidebar({ collapsed, activeTab, onTabChange }) {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
+    { id: 'fsm', icon: Network, label: 'Logic Map' },
     // { id: 'telemetry', icon: Gauge, label: 'Telemetry' },
     // { id: 'terminal', icon: Terminal, label: 'Serial Log' },
   ];

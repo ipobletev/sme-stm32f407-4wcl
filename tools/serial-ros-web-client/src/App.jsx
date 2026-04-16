@@ -5,6 +5,7 @@ import Header from './components/Header';
 import PageSidebar from './components/PageSidebar';
 import TelemetryPanel from './components/TelemetryPanel';
 import GraphsPanel from './components/GraphsPanel';
+import SystemStatusMap from './components/SystemStatusMap';
 import CommandPanel from './components/CommandPanel';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
@@ -97,9 +98,13 @@ export default function App() {
                 <ErrorLogPanel sysStatus={telemetry.sysStatus} />
               </div>
             </>
-          ) : (
+          ) : activeTab === 'graphs' ? (
             <div className="graphs-view">
               <GraphsPanel history={history} />
+            </div>
+          ) : (
+            <div className="fsm-view">
+              <SystemStatusMap sysStatus={telemetry.sysStatus} />
             </div>
           )}
         </div>
