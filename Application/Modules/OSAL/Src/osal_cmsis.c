@@ -10,6 +10,11 @@ void osal_delay(uint32_t ms) {
     osDelay(ms);
 }
 
+void osal_delay_until(uint32_t *previous_wake_tick, uint32_t ms) {
+    osDelayUntil(*previous_wake_tick + ms);
+    *previous_wake_tick = osKernelGetTickCount();
+}
+
 /* --- Threads --- */
 
 static osPriority_t map_priority(osal_priority_t prio) {

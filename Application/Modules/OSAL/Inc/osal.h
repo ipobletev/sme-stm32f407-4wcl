@@ -45,6 +45,7 @@ typedef struct {
 /* --- System --- */
 uint32_t osal_get_tick(void);
 void osal_delay(uint32_t ms);
+void osal_delay_until(uint32_t *previous_wake_tick, uint32_t ms);
 
 /* --- Threads --- */
 osal_thread_h osal_thread_create(void (*func)(void *), void *arg, const osal_thread_attr_t *attr);

@@ -36,9 +36,9 @@ function RobotModel({ imu }) {
       targetRotation.current.set(p, y, r);
     }
 
-    groupRef.current.rotation.x += (targetRotation.current.x - groupRef.current.rotation.x) * 0.08;
-    groupRef.current.rotation.y += (targetRotation.current.y - groupRef.current.rotation.y) * 0.08;
-    groupRef.current.rotation.z += (targetRotation.current.z - groupRef.current.rotation.z) * 0.08;
+    groupRef.current.rotation.x += (targetRotation.current.x - groupRef.current.rotation.x) * 0.80;
+    groupRef.current.rotation.y += (targetRotation.current.y - groupRef.current.rotation.y) * 0.80;
+    groupRef.current.rotation.z += (targetRotation.current.z - groupRef.current.rotation.z) * 0.80;
   });
 
   return (

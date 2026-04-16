@@ -75,6 +75,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Console/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/SystemSensors/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/SerialRos/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/BSP/IMU/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/SerialRos/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config"/>
@@ -184,6 +185,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/BSP/Console/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/SystemSensors/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/SerialRos/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/BSP/IMU/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/SerialRos/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config"/>

@@ -32,6 +32,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/BSP/Console/Inc
     Drivers/BSP/SystemSensors/Inc
     Drivers/BSP/SerialRos/Inc
+    Drivers/BSP/IMU/Inc
     Application/Modules/SerialRos/Inc
     Application/Modules/ConsoleDebug/Inc
     Application/Config
