@@ -9,7 +9,7 @@ import SystemStatusMap from './components/SystemStatusMap';
 import CommandPanel from './components/CommandPanel';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
-import { Activity } from 'lucide-react';
+import { Activity, Power } from 'lucide-react';
 import './index.css';
 
 const TOPIC_LABELS = {
@@ -49,7 +49,10 @@ function FrequencyBar({ frequencies }) {
 }
 
 export default function App() {
-  const { connected, linkActive, connect, disconnect, sendPacket, telemetry, frequencies, log } = useSerial();
+  const { 
+    connected, isMaster, connect, disconnect, sendPacket, 
+    telemetry, frequencies, linkActive, log 
+  } = useSerial();
   const history = useTelemetryHistory(telemetry, 50);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -68,6 +71,7 @@ export default function App() {
       <main className="main-container">
         <Header 
           connected={connected} 
+          isMaster={isMaster}
           linkActive={linkActive}
           onConnect={connect} 
           onDisconnect={disconnect} 
