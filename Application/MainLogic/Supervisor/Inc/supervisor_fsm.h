@@ -22,7 +22,8 @@ typedef enum {
     EVENT_MODE_MANUAL,
     EVENT_MODE_AUTO,
     EVENT_PAUSE,
-    EVENT_RESUME
+    EVENT_RESUME,
+    EVENT_REHOME
 } SystemEvent_t;
 
 /* Event Source Authority Levels (Higher = More Priority) */

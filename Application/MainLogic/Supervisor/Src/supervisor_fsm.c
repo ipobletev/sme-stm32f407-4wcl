@@ -1,5 +1,7 @@
 #include "supervisor_fsm.h"
 #include "States/state_handlers.h"
+#include "arm_fsm.h"
+#include "robot_state.h"
 #include <stdio.h>
 
 const char* Supervisor_StateToStr(SystemState_t state) {
@@ -37,6 +39,7 @@ static void TransitionToState(SystemState_t newState) {
     }
 
     currentState = newState;
+    RobotState_UpdateSystemState(currentState);
 
     /* Call Enter Handler of new state */
     switch (currentState) {
@@ -55,6 +58,7 @@ static void TransitionToState(SystemState_t newState) {
  */
 void Supervisor_Init(void) {
     currentState = STATE_INIT;
+    RobotState_UpdateSystemState(currentState);
     State_Init_OnEnter();
     printf("Supervisor: Initialized\r\n");
 }
@@ -71,6 +75,14 @@ SystemState_t Supervisor_GetCurrentState(void) {
  */
 void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     SystemState_t nextState = currentState;
+
+    /* Handle Non-Transitioning Global Events */
+    if (event == EVENT_REHOME) {
+        if (currentState == STATE_IDLE || currentState == STATE_MANUAL || currentState == STATE_AUTO) {
+            Arm_RequestRehome();
+        }
+        return; /* Event consumed, no state change */
+    }
 
     /* Transition Table Logic */
     switch (currentState)
@@ -98,10 +110,11 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
                 previousMode = STATE_MANUAL;
                 pauseAuthLevel = source;
                 nextState = STATE_PAUSED;
+            } else if (event == EVENT_MODE_AUTO) {
+                nextState = STATE_AUTO;
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;
             }
-            /* Transition to AUTO is IGNORED here (Requires STOP first) */
             break;
 
         case STATE_AUTO:
@@ -111,10 +124,11 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
                 previousMode = STATE_AUTO;
                 pauseAuthLevel = source;
                 nextState = STATE_PAUSED;
+            } else if (event == EVENT_MODE_MANUAL) {
+                nextState = STATE_MANUAL;
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;
             }
-            /* Transition to MANUAL is IGNORED here (Requires STOP first) */
             break;
 
         case STATE_PAUSED:

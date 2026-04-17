@@ -28,17 +28,17 @@ osal_timer_h  heartbeatTimerHandle;
 
 /* --- TASK ATTRIBUTES (Generic) --- */
 
-// const osal_thread_attr_t managerTask_attributes = {
-//   .name = "ManagerTask",
-//   .stack_size = 1536 * 4,
-//   .priority = OSAL_PRIO_NORMAL,
-// };
+const osal_thread_attr_t managerTask_attributes = {
+  .name = "ManagerTask",
+  .stack_size = 1536 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
 
-// const osal_thread_attr_t controllerTask_attributes = {
-//   .name = "ControllerTask",
-//   .stack_size = 1536 * 4,
-//   .priority = OSAL_PRIO_NORMAL,
-// };
+const osal_thread_attr_t controllerTask_attributes = {
+  .name = "ControllerTask",
+  .stack_size = 1536 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
 
 
 const osal_thread_attr_t uartListenerTask_attributes = {
@@ -53,11 +53,11 @@ const osal_thread_attr_t mobilityTask_attributes = {
   .priority = OSAL_PRIO_NORMAL,
 };
 
-// const osal_thread_attr_t armTask_attributes = {
-//   .name = "ArmTask",
-//   .stack_size = 1536 * 4,
-//   .priority = OSAL_PRIO_NORMAL,
-// };
+const osal_thread_attr_t armTask_attributes = {
+  .name = "ArmTask",
+  .stack_size = 1536 * 4,
+  .priority = OSAL_PRIO_NORMAL,
+};
 
 const osal_thread_attr_t serialRosTask_attributes = {
   .name = "SerialRosTask",
@@ -88,8 +88,8 @@ void App_RTOS_Init(void) {
     stateMsgQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
     if (stateMsgQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
-    // uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
-    // if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
+    uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
+    if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     rosTxQueueHandle = osal_queue_create(50, sizeof(SerialRos_Packet_t));
     if (rosTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
@@ -104,11 +104,11 @@ void App_RTOS_Init(void) {
     if (consoleRxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     /* 2. Create Threads (Tasks) */
-    // managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
-    // if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
+    if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    // controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
-    // if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
+    if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     uartListenerTaskHandle = osal_thread_create(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
     if (uartListenerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
@@ -116,8 +116,8 @@ void App_RTOS_Init(void) {
     mobilityTaskHandle = osal_thread_create(StartMobilityTask, NULL, &mobilityTask_attributes);
     if (mobilityTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    // armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
-    // if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    armTaskHandle = osal_thread_create(StartArmTask, NULL, &armTask_attributes);
+    if (armTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     serialRosTaskHandle = osal_thread_create(StartSerialRosTask, NULL, &serialRosTask_attributes);
     if (serialRosTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);

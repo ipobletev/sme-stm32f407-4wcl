@@ -7,7 +7,8 @@
 /* Mobility Subsystem States */
 typedef enum {
     MOB_DISABLED = 0, /* Motors powered off / Safe */
-    MOB_STOPPED,      /* Holding position or waiting for commands */
+    MOB_IDLE,         /* Waiting for commands (Motors enabled) */
+    MOB_BREAK,        /* Active stop / Holding position */
     MOB_MOVING,       /* Actively executing twist commands */
     MOB_FAULT         /* Hardware error in motor drives */
 } MobilityState_t;

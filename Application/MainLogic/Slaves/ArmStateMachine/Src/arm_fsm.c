@@ -23,10 +23,13 @@ static float target_j3 = 0.0f;
 
 /* Homing simulation variables */
 static uint8_t homing_progress = 0;
+static bool rehome_requested = false;
 
 void Arm_Init(void) {
     arm_state = ARM_DISABLED;
+    RobotState_SetArmState(arm_state);
     homing_progress = 0;
+    rehome_requested = false;
     printf("ARM: Initialized (Disabled)\r\n");
 }
 
@@ -38,6 +41,10 @@ void Arm_SetJointTarget(float j1, float j2, float j3) {
     target_j1 = j1;
     target_j2 = j2;
     target_j3 = j3;
+}
+
+void Arm_RequestRehome(void) {
+    rehome_requested = true;
 }
 
 /**
@@ -84,8 +91,12 @@ void Arm_ProcessLogic(void) {
             break;
 
         case ARM_IDLE:
-            /* Note: In a real arm, we check if target differs from current pos */
-            if (target_j1 != 0.0f || target_j2 != 0.0f || target_j3 != 0.0f) {
+            if (rehome_requested) {
+                rehome_requested = false;
+                arm_state = ARM_HOMING;
+                homing_progress = 0;
+                printf("ARM: Re-homing requested from IDLE\r\n");
+            } else if (target_j1 != 0.0f || target_j2 != 0.0f || target_j3 != 0.0f) {
                 arm_state = ARM_MOVING;
                 printf("ARM: Transitioning to MOVING\r\n");
             }
@@ -104,4 +115,7 @@ void Arm_ProcessLogic(void) {
             /* Hardware failure (stall, overheat) handled here. */
             break;
     }
+
+    /* Sync local state to global RobotState */
+    RobotState_SetArmState(arm_state);
 }

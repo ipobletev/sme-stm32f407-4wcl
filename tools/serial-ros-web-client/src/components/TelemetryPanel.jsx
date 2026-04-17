@@ -4,8 +4,8 @@ import ImuVisualizer from './ImuVisualizer';
 const STATE_NAMES = ['IDLE', 'READY', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
 const STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault'];
 
-const MOB_STATE_NAMES = ['DISABLED', 'STOPPED', 'MOVING', 'FAULT'];
-const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-fault'];
+const MOB_STATE_NAMES = ['DISABLED', 'IDLE', 'BREAK', 'MOVING', 'FAULT'];
+const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-paused', 'state-running', 'state-fault'];
 
 const ARM_STATE_NAMES = ['DISABLED', 'HOMING', 'IDLE', 'MOVING', 'FAULT'];
 const ARM_STATE_CLASSES = ['state-idle', 'state-ready', 'state-ready', 'state-running', 'state-fault'];

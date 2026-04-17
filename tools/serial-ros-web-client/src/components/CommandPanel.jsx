@@ -92,6 +92,9 @@ export default function CommandPanel({ sendPacket, connected }) {
             <button className="event-btn reset" disabled={disabled} onClick={() => sendEvent(0x05)}>
               <RotateCcw size={12} /> Reset
             </button>
+            <button className="event-btn rehome" disabled={disabled} onClick={() => sendEvent(0x06)}>
+              <RotateCcw size={12} /> Home Arm
+            </button>
           </div>
         </div>
       </div>

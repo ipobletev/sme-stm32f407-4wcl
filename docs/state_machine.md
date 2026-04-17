@@ -16,7 +16,7 @@ The system is composed of one **Supervisor Controller** and multiple **Subsystem
 | State | Description | Global Impact |
 | :--- | :--- | :--- |
 | **STATE_INIT** | Power-on / Hardware Init. | Forces all slaves to **DISABLED**. |
-| **STATE_IDLE** | System ready. Safe standby. | Forces all slaves to **STOPPED** / **STDBY**. |
+| **STATE_IDLE** | System ready. Safe standby. | Forces all slaves to **IDLE** / **BREAK**. |
 | **STATE_MANUAL** | Operator driving mode. | Slaves follow local control commands. |
 | **STATE_AUTO** | ROS-driven autonomous mode. | Slaves follow ROS commands. |
 | **STATE_PAUSED**| Temporary halt (Manual/Auto). | Forces slaves to **STOP** (Holding positions). |
@@ -32,7 +32,8 @@ Responsible for base movement and powertrain safety.
 | State | Description | Reacts to Supervisor |
 | :--- | :--- | :--- |
 | **MOB_DISABLED** | Motors disabled / Signals cut. | Supervisor in **INIT** / **FAULT**. |
-| **MOB_STOPPED** | Velocity = 0. Encoders active. | Supervisor in **IDLE** / **PAUSED**. |
+| **MOB_IDLE** | Ready for commands (Motors active but zero speed). | Waiting for targets in **MANUAL** / **AUTO**. |
+| **MOB_BREAK** | Active stop / Forced hold. | Supervisor in **IDLE** / **PAUSED**. |
 | **MOB_MOVING** | Moving according to target. | Supervisor in **MANUAL** / **AUTO**. |
 | **MOB_FAULT** | Local hardware drive error. | Prevents movement. |
 
@@ -55,7 +56,7 @@ The system enforces safety via two mechanisms: **Top-Down Override** and **Botto
 ### 4.1 Top-Down Override
 Subsystems do not transition independently of the Supervisor Controller's safety context:
 1.  **Fault Propagation**: If Supervisor enters `STATE_FAULT`, all slaves are immediately `DISABLED`.
-2.  **Pause Dynamics**: If Supervisor enters `STATE_PAUSED`, Mobility goes to `STOPPED` (zero velocity) and Arm goes to `IDLE` (holding current position).
+2.  **Pause Dynamics**: If Supervisor enters `STATE_PAUSED`, Mobility goes to `BREAK` (active deceleration/hold) and Arm goes to `IDLE` (holding current position).
 3.  **Homing Requirement**: The Arm subsystem cannot move (`MOVING`) until it successfully completes the `HOMING` routine, which is triggered when the Supervisor first enters an active mode (`MANUAL`/`AUTO`).
 
 ### 4.2 Bottom-Up Supervision (Node Guarding)
@@ -94,7 +95,7 @@ When the system is in `STATE_PAUSED`, it records the authority level of the sour
 | **STATE_INIT** | `EVENT_START` | **STATE_IDLE** | Slaves remain disabled. |
 | **STATE_IDLE** | `EVENT_START` | **STATE_MANUAL** | Slaves begin wakeup (Homing Arm). |
 | **STATE_IDLE** | `EVENT_MODE_AUTO` | **STATE_AUTO** | Control authority to ROS. |
-| **STATE_MANUAL** | `EVENT_PAUSE` | **STATE_PAUSED** | `STOPPED` (Mob) / `IDLE` (Arm). |
+| **STATE_MANUAL** | `EVENT_PAUSE` | **STATE_PAUSED** | `BREAK` (Mob) / `IDLE` (Arm). |
 | **STATE_PAUSED** | `EVENT_RESUME` | *Prev Mode* | Resumes previous motion context. |
 | **ANY** | `EVENT_ERROR` | **STATE_FAULT** | **CRITICAL**: Full system shutdown. |
 
@@ -106,10 +107,11 @@ When the system is in `STATE_PAUSED`, it records the authority level of the sour
 | Current State | Condition / Event | Next State | Notes |
 | :--- | :--- | :--- | :--- |
 | **ANY** | Supervisor in `INIT` / `FAULT` | **MOB_DISABLED** | Safety: Motors powered off. |
-| **MOB_MOVING** | Supervisor in `IDLE` / `PAUSED` | **MOB_STOPPED** | Immediate halt (Top-down). |
-| **MOB_DISABLED** | Supervisor in `MANUAL` / `AUTO` | **MOB_STOPPED** | Wakeup sequence (Enabling drives). |
-| **MOB_STOPPED** | Velocity Targets != 0 | **MOB_MOVING** | Start trajectory execution. |
-| **MOB_MOVING** | Velocity Targets == 0 | **MOB_STOPPED** | Target reached / Stopped. |
+| **MOB_MOVING** | Supervisor in `IDLE` / `PAUSED` | **MOB_BREAK** | Active stop / holding (Top-down). |
+| **MOB_DISABLED** | Supervisor in `MANUAL` / `AUTO` | **MOB_IDLE** | Wakeup sequence (Enabling drives). |
+| **MOB_IDLE** | Velocity Targets != 0 | **MOB_MOVING** | Start trajectory execution. |
+| **MOB_MOVING** | Velocity Targets == 0 | **MOB_IDLE** | Target reached / Stopped. |
+| **MOB_BREAK** | Velocity Targets != 0 | **MOB_MOVING** | Breaking interrupted. |
 | **ANY** | Driver/Link Error | **MOB_FAULT** | Local hardware fault detected. |
 
 ### 6.2 Robotic Arm Subsystem
@@ -152,11 +154,15 @@ stateDiagram-v2
 
     state "MOBILITY SLAVE" as Mob {
         [*] --> MOB_DISABLED
-        MOB_DISABLED --> MOB_STOPPED : Supervisor Active
-        MOB_STOPPED --> MOB_MOVING : Command > 0
-        MOB_MOVING --> MOB_STOPPED : Command = 0
-        MOB_STOPPED --> MOB_DISABLED : Supervisor Init/Fault
-        MOB_MOVING --> MOB_STOPPED : Supervisor Idle/Pause
+        MOB_DISABLED --> MOB_IDLE : Supervisor Active
+        MOB_IDLE --> MOB_MOVING : Command > 0
+        MOB_MOVING --> MOB_IDLE : Command = 0
+        MOB_IDLE --> MOB_BREAK : Supervisor Idle/Pause
+        MOB_MOVING --> MOB_BREAK : Supervisor Idle/Pause
+        MOB_BREAK --> MOB_IDLE : Supervisor Active & Cmd = 0
+        MOB_BREAK --> MOB_MOVING : Command > 0
+        MOB_IDLE --> MOB_DISABLED : Supervisor Init/Fault
+        MOB_BREAK --> MOB_DISABLED : Supervisor Init/Fault
     }
 
     state "ARM SLAVE" as Arm {

@@ -90,6 +90,18 @@ void RobotState_SetAutonomous(uint8_t is_auto) {
     }
 }
 
+uint8_t RobotState_IsAutonomous(void) {
+    uint8_t is_auto;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        is_auto = RobotState_4wcl.Telemetry.is_autonomous;
+    } else {
+        taskENTER_CRITICAL();
+        is_auto = RobotState_4wcl.Telemetry.is_autonomous;
+        taskEXIT_CRITICAL();
+    }
+    return is_auto;
+}
+
 void RobotState_SetMobilityState(MobilityState_t state) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         RobotState_4wcl.Telemetry.current_mobility_state = state;
@@ -252,6 +264,18 @@ void RobotState_SetTargetMobilityMode(uint8_t mode) {
         RobotState_4wcl.Commands.target_mobility_mode = mode;
         taskEXIT_CRITICAL();
     }
+}
+
+uint8_t RobotState_GetTargetMobilityMode(void) {
+    uint8_t mode;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        mode = RobotState_4wcl.Commands.target_mobility_mode;
+    } else {
+        taskENTER_CRITICAL();
+        mode = RobotState_4wcl.Commands.target_mobility_mode;
+        taskEXIT_CRITICAL();
+    }
+    return mode;
 }
 
 float RobotState_GetBatteryVoltage(void) {

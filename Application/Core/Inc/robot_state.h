@@ -98,6 +98,7 @@ SystemState_t RobotState_GetSystemState(void);
 void RobotState_IncrementHeartbeat(void);
 uint32_t RobotState_GetHeartbeat(void);
 void RobotState_SetAutonomous(uint8_t is_auto);
+uint8_t RobotState_IsAutonomous(void);
 
 /* Subsystem Getters / Setters */
 void RobotState_SetMobilityState(MobilityState_t state);
@@ -123,6 +124,7 @@ uint8_t RobotState_GetWatchdogArm(void);
 void RobotState_SetTargetVelocity(float linear_x, float angular_z);
 void RobotState_SetTargetArmPose(float j1, float j2, float j3);
 void RobotState_SetTargetMobilityMode(uint8_t mode);
+uint8_t RobotState_GetTargetMobilityMode(void);
 
 /* Mobility Feedback Setters */
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);

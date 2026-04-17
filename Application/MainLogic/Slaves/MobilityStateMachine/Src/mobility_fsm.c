@@ -23,7 +23,8 @@ static uint32_t last_meas_tick = 0;
 const char* Mobility_StateToStr(MobilityState_t state) {
     switch(state) {
         case MOB_DISABLED: return "DISABLED";
-        case MOB_STOPPED:  return "STOPPED";
+        case MOB_IDLE:     return "IDLE";
+        case MOB_BREAK:    return "BREAK";
         case MOB_MOVING:   return "MOVING";
         case MOB_FAULT:    return "FAULT";
         default:           return "UNKNOWN";
@@ -54,6 +55,7 @@ void Mobility_Init(void) {
     last_ctrl_tick = now;
     last_meas_tick = now;
     mob_state = MOB_DISABLED;
+    RobotState_SetMobilityState(mob_state);
     printf("MOBILITY: Initialized (Disabled)\r\n");
 }
 
@@ -129,9 +131,11 @@ void Mobility_ProcessLogic(void) {
     }
 
     if (master_state == STATE_PAUSED || master_state == STATE_IDLE) {
-        if (mob_state == MOB_MOVING || mob_state == MOB_STOPPED) {
-            printf("MOBILITY: Master Paused/Idle -> Forcing STOPPED\r\n");
-            mob_state = MOB_STOPPED;
+        if (mob_state == MOB_MOVING || mob_state == MOB_BREAK || mob_state == MOB_IDLE) {
+            if (mob_state != MOB_BREAK) {
+                printf("MOBILITY: Master Paused/Idle -> Forcing BREAK\r\n");
+                mob_state = MOB_BREAK;
+            }
             /* Stop motors */
             for(int i=0; i<4; i++) encoder_motor_set_speed(motors[i], 0);
             target_linear_x = 0.0f;
@@ -149,21 +153,32 @@ void Mobility_ProcessLogic(void) {
     switch (mob_state) {
         case MOB_DISABLED:
             /* Enable motors if Master is active */
-            mob_state = MOB_STOPPED;
-            printf("MOBILITY: Transitioning to STOPPED (Motors Enabled)\r\n");
+            mob_state = MOB_IDLE;
+            printf("MOBILITY: Transitioning to IDLE (Motors Enabled)\r\n");
             break;
 
-        case MOB_STOPPED:
+        case MOB_IDLE:
             if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
                 mob_state = MOB_MOVING;
                 printf("MOBILITY: Transitioning to MOVING\r\n");
             }
             break;
 
+        case MOB_BREAK:
+            if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
+                mob_state = MOB_MOVING;
+                printf("MOBILITY: Breaking interrupted, MOVING\r\n");
+            } else {
+                /* If speed is zero, go to IDLE after a short "purgatory" or directly */
+                /* For now, let's keep it in BREAK if supervisor is still telling us to? 
+                   Actually, if we got here from MOVING -> cmd=0, we could stay in BREAK until next cmd. */
+            }
+            break;
+
         case MOB_MOVING:
             if (target_linear_x == 0.0f && target_angular_z == 0.0f) {
-                mob_state = MOB_STOPPED;
-                printf("MOBILITY: Transitioning to STOPPED (Zero Velocity)\r\n");
+                mob_state = MOB_IDLE;
+                printf("MOBILITY: Transitioning to IDLE (Zero Velocity)\r\n");
             } else {
                 /* Execute Mecanum Kinematics */
                 /* Simplified model for 4WD Mecanum:
@@ -198,4 +213,7 @@ void Mobility_ProcessLogic(void) {
                Requires external reset or Master FSM reset logic. */
             break;
     }
+    
+    /* Sync local state to global RobotState */
+    RobotState_SetMobilityState(mob_state);
 }

@@ -21,5 +21,6 @@ ArmState_t Arm_GetCurrentState(void);
 
 /* Command Interface (Called by UART ROS receiver) */
 void Arm_SetJointTarget(float j1, float j2, float j3);
+void Arm_RequestRehome(void);
 
 #endif /* __ARM_FSM_H */

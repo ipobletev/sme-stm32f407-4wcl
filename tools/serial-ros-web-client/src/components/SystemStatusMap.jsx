@@ -31,35 +31,47 @@ const SUPERVISOR_FSM = {
 
 const MOBILITY_FSM = {
   nodes: [
-    { id: 0, label: 'DISABLED', x: 100, y: 100, color: 'var(--text-muted)' },
-    { id: 1, label: 'STOPPED', x: 280, y: 100, color: 'var(--accent-amber)' },
-    { id: 2, label: 'MOVING', x: 460, y: 100, color: 'var(--accent-emerald)' },
-    { id: 3, label: 'FAULT', x: 280, y: 200, color: 'var(--accent-rose)' },
+    { id: 0, label: 'DISABLED', x: 60, y: 160, color: 'var(--text-muted)' },
+    { id: 1, label: 'IDLE', x: 220, y: 80, color: 'var(--accent-indigo)' },
+    { id: 2, label: 'BREAK', x: 380, y: 220, color: 'var(--accent-amber)' },
+    { id: 3, label: 'MOVING', x: 540, y: 80, color: 'var(--accent-emerald)' },
+    { id: 4, label: 'FAULT', x: 640, y: 220, color: 'var(--accent-rose)' },
   ],
   edges: [
-    { from: 0, to: 1, label: 'Supervisor Active' },
-    { from: 1, to: 2, label: 'Cmd > 0' },
-    { from: 2, to: 1, label: 'Cmd = 0' },
-    { from: 1, to: 0, label: 'Sup Init/Fault' },
-    { from: 2, to: 1, label: 'Sup Idle/Pause' },
+    { from: 0, to: 1, label: 'Active' },
+    { from: 1, to: 3, label: 'Cmd > 0' },
+    { from: 3, to: 1, label: 'Cmd = 0' },
+    { from: 3, to: 2, label: 'Pause' },
+    { from: 1, to: 2, label: 'Pause' },
+    { from: 2, to: 3, label: 'Resume' },
+    { from: 1, to: 0, label: 'Reset' },
+    { from: 2, to: 0, label: 'Reset' },
+    { from: 3, to: 0, label: 'Reset' },
+    { from: 1, to: 4, label: 'Error' },
+    { from: 2, to: 4, label: 'Error' },
+    { from: 3, to: 4, label: 'Error' },
   ]
 };
 
 const ARM_FSM = {
   nodes: [
-    { id: 0, label: 'DISABLED', x: 100, y: 100, color: 'var(--text-muted)' },
-    { id: 1, label: 'HOMING', x: 230, y: 100, color: 'var(--accent-cyan)' },
-    { id: 2, label: 'IDLE', x: 360, y: 100, color: 'var(--accent-indigo)' },
-    { id: 3, label: 'MOVING', x: 490, y: 100, color: 'var(--accent-emerald)' },
-    { id: 4, label: 'FAULT', x: 300, y: 200, color: 'var(--accent-rose)' },
+    { id: 0, label: 'DISABLED', x: 60, y: 160, color: 'var(--text-muted)' },
+    { id: 1, label: 'HOMING', x: 180, y: 80, color: 'var(--accent-cyan)' },
+    { id: 2, label: 'IDLE', x: 340, y: 160, color: 'var(--accent-indigo)' },
+    { id: 3, label: 'MOVING', x: 500, y: 80, color: 'var(--accent-emerald)' },
+    { id: 4, label: 'FAULT', x: 640, y: 160, color: 'var(--accent-rose)' },
   ],
   edges: [
-    { from: 0, to: 1, label: 'Supervisor Active' },
+    { from: 0, to: 1, label: 'Active' },
     { from: 1, to: 2, label: 'Done' },
-    { from: 2, to: 3, label: 'Target Set' },
+    { from: 2, to: 3, label: 'Move' },
     { from: 3, to: 2, label: 'Done' },
-    { from: 2, to: 0, label: 'Sup Init/Fault' },
-    { from: 3, to: 2, label: 'Sup Idle/Pause' },
+    { from: 2, to: 1, label: 'Re-Home' },
+    { from: 3, to: 2, label: 'Pause' },
+    { from: 2, to: 0, label: 'Reset' },
+    { from: 1, to: 4, label: 'Error' },
+    { from: 2, to: 4, label: 'Error' },
+    { from: 3, to: 4, label: 'Error' },
   ]
 };
 
@@ -123,7 +135,7 @@ function SubsystemDiagram({ title, icon: Icon, fsm, currentState }) {
         <Icon size={16} />
         <h4>{title}</h4>
       </div>
-      <svg viewBox="0 0 700 280" className="fsm-svg-small">
+      <svg viewBox="0 0 700 320" className="fsm-svg-small">
         {fsm.edges.map((e, i) => (
           <EdgeLine key={i} edge={e} nodes={fsm.nodes} isActive={e.from === currentState} />
         ))}
@@ -189,13 +201,13 @@ export default function SystemStatusMap({ sysStatus }) {
         {/* SECTION 3: SUBSYSTEM SLAVES (SIDE BY SIDE) */}
         <div className="slaves-fsm-row">
           <SubsystemDiagram 
-            title="Powertrain (Mobility)" 
+            title="Mobility" 
             icon={Zap} 
             fsm={MOBILITY_FSM} 
             currentState={currentMobState} 
           />
           <SubsystemDiagram 
-            title="Kinematics (Arm)" 
+            title="Arm" 
             icon={Activity} 
             fsm={ARM_FSM} 
             currentState={currentArmState} 

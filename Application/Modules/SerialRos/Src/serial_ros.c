@@ -38,14 +38,19 @@ static uint32_t last_rx_tick = 0;
  */
 static void handle_autonomous(const AutonomousMsg_t *msg)
 {
-    RobotState_SetAutonomous(msg->is_autonomous);
+    uint8_t current_auto = RobotState_IsAutonomous();
 
-    if (msg->is_autonomous) {
-        Supervisor_ProcessEvent(EVENT_MODE_AUTO, SRC_UART3_ROS);
-        LOG_INFO(LOG_TAG, "Autonomous ON\r\n");
-    } else {
-        Supervisor_ProcessEvent(EVENT_MODE_MANUAL, SRC_UART3_ROS);
-        LOG_INFO(LOG_TAG, "Autonomous OFF -> Manual\r\n");
+    if (msg->is_autonomous != current_auto) 
+    {
+        RobotState_SetAutonomous(msg->is_autonomous);
+
+        if (msg->is_autonomous) {
+            Supervisor_ProcessEvent(EVENT_MODE_AUTO, SRC_UART3_ROS);
+            LOG_INFO(LOG_TAG, "Autonomous ON (Direct Handover)\r\n");
+        } else {
+            Supervisor_ProcessEvent(EVENT_MODE_MANUAL, SRC_UART3_ROS);
+            LOG_INFO(LOG_TAG, "Autonomous OFF -> Manual Takeover\r\n");
+        }
     }
 }
 
@@ -59,9 +64,15 @@ static void handle_autonomous(const AutonomousMsg_t *msg)
  */
 static void handle_mobility_mode(const SysConfigMsg_t *msg)
 {
-    RobotState_SetTargetMobilityMode(msg->mobility_mode);
-    RobotState_SetAutonomous(msg->is_autonomous);
-    LOG_INFO(LOG_TAG, "Config: Mode=%u, Auto=%u\r\n", msg->mobility_mode, msg->is_autonomous);
+    uint8_t current_mode = RobotState_GetTargetMobilityMode();
+    uint8_t current_auto = RobotState_IsAutonomous();
+
+    if (msg->mobility_mode != current_mode || msg->is_autonomous != current_auto)
+    {
+        RobotState_SetTargetMobilityMode(msg->mobility_mode);
+        RobotState_SetAutonomous(msg->is_autonomous);
+        LOG_INFO(LOG_TAG, "Config Change: Mode=%u, Auto=%u\r\n", msg->mobility_mode, msg->is_autonomous);
+    }
 }
 
 /**
@@ -114,6 +125,7 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         case SYS_EVENT_PAUSE:   event = EVENT_PAUSE;       break;
         case SYS_EVENT_RESUME:  event = EVENT_RESUME;      break;
         case SYS_EVENT_RESET:   event = EVENT_RESET;       break;
+        case SYS_EVENT_HOME:    event = EVENT_REHOME;      break;
         default:
             LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
             valid = false;
@@ -121,7 +133,7 @@ static void handle_sys_event(const SysEventMsg_t *msg)
     }
 
     if (valid) {
-        LOG_INFO(LOG_TAG, "SysEvent 0x%02X -> FSM event %d\r\n", msg->event_id, event);
+        // LOG_INFO(LOG_TAG, "SysEvent 0x%02X -> FSM event %d\r\n", msg->event_id, event);
         Supervisor_ProcessEvent(event, SRC_UART3_ROS);
     }
 }

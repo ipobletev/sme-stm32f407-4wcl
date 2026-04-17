@@ -833,9 +833,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: rgba(167, 139, 250, 0.12);
   color: #a78bfa;
   border-color: rgba(167, 139, 250, 0.3);
-  grid-column: 1 / -1;
 }
 .event-btn.reset:hover { box-shadow: 0 0 15px rgba(167, 139, 250, 0.3); }
+
+.event-btn.rehome {
+  background: rgba(34, 211, 238, 0.12);
+  color: #22d3ee;
+  border-color: rgba(34, 211, 238, 0.3);
+}
+.event-btn.rehome:hover { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); }
 
 /* Mode selector */
 .mode-select-group {
