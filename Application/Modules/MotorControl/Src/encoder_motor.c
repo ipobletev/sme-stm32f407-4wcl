@@ -1,4 +1,5 @@
 #include "encoder_motor.h"
+#include "config.h"
 
 /**
  * @brief Update motor velocity measurement
@@ -35,14 +36,17 @@ void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period)
     /* Calculate new PWM pulse (current + increment) */
     pulse = self->current_pulse + self->pid_controller.output;
     
-    /* Clamp output to timer range (-1000 to 1000) */
-    if (pulse > 1000.0f) pulse = 1000.0f;
-    if (pulse < -1000.0f) pulse = -1000.0f;
+    /* Clamp output to timer range (-MOTOR_PWM_MAX to MOTOR_PWM_MAX) */
+    if (pulse > MOTOR_PWM_MAX) pulse = MOTOR_PWM_MAX;
+    if (pulse < -MOTOR_PWM_MAX) pulse = -MOTOR_PWM_MAX;
     
-    /* Apply deadband if necessary (approx +/- 250 as per ref) */
+    /* Apply deadband if necessary (approx +/- 1000 for 16-bit range) */
     float output_pulse = pulse;
-    if (output_pulse < 250.0f && output_pulse > -250.0f && self->pid_controller.set_point == 0) {
-        output_pulse = 0;
+    if (self->pid_controller.set_point == 0) {
+        if (output_pulse < 1000.0f && output_pulse > -1000.0f) {
+            output_pulse = 0;
+            pulse = 0; /* Reset incremental accumulator to stop the whine */
+        }
     }
     
     self->set_pulse(self, (int)output_pulse);
@@ -60,6 +64,19 @@ void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps)
     
     self->target_rps = rps;
     self->pid_controller.set_point = rps;
+}
+
+/**
+ * @brief Immediate hard stop (Brake)
+ */
+void encoder_motor_brake(EncoderMotorObjectTypeDef *self)
+{
+    self->target_rps = 0;
+    self->pid_controller.set_point = 0;
+    self->current_pulse = 0;
+    if (self->set_pulse) {
+        self->set_pulse(self, 0);
+    }
 }
 
 /**

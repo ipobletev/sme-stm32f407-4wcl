@@ -1,10 +1,34 @@
+/* 
+ * TIME CONFIG 
+ */
 #define TELEMETRY_BASE_PERIOD_MS  10        // 100Hz Base Loop
 #define HEARTBEAT_PERIOD_MS       1000      // Used in HeartbeatTimerCallback()
 #define SYSTEM_VARS_PERIOD_MS     500       // Frequency to sample battery and sensors
 #define IMU_PUBLISH_PERIOD_MS     10        // 100Hz
 #define ODOM_PUBLISH_PERIOD_MS    100       // 10Hz
 
-// // DEVICE CONFIG
+/**
+ * Common Motor Parameters (JGB520 default for Jetauto)
+ */
+#define MOTOR_TICKS_PER_CIRCLE 3960.0f
+#define MOTOR_PID_KP           63.0f
+#define MOTOR_PID_KI           2.6f
+#define MOTOR_PID_KD           2.4f
+#define MOTOR_RPS_LIMIT        1.5f
+
+/**
+ * Chassis Physical Parameters (Jetauto Mecanum)
+ */
+#define JETAUTO_WHEEL_DIAMETER   0.08f  /* 80mm */
+#define JETAUTO_SHAFT_LENGTH     0.170f  /* 170mm half length or track width? Reference code usually uses constants. */
+#define JETAUTO_WHEELBASE        0.150f
+
+/**
+ * PWM Configuration
+ */
+#define MOTOR_PWM_MAX           65535.0f
+
+
 // #define TIMEOUT_LAST_CMD_MS 250     // TIMEOUT CONFIG FOR CMD VEL. If no new command is received for this time, the motors will stop
 // #define TIME_WATCHDOG_MS 1000       // 1s refresh rate
 
@@ -29,33 +53,33 @@
 // #define MOTOR_ID_4 3
 
 // // MOTOR PID CONFIG
-// #define MOTOR_1_USE_PID true
-// #define MOTOR_1_PID_KP 1.5f
-// #define MOTOR_1_PID_KI 0.5f
-// #define MOTOR_1_PID_KD 0.0f
-// #define MOTOR_1_PID_MAX_OUTPUT 3600.0f
-// #define MOTOR_1_PID_MIN_OUTPUT -3600.0f
+// #define MOTOR1_USE_PID true
+// #define MOTOR1_PID_KP 1.5f
+// #define MOTOR1_PID_KI 0.5f
+// #define MOTOR1_PID_KD 0.0f
+// #define MOTOR1_PID_MAX_OUTPUT 3600.0f
+// #define MOTOR1_PID_MIN_OUTPUT -3600.0f
 
-// #define MOTOR_2_USE_PID true
-// #define MOTOR_2_PID_KP 1.5f
-// #define MOTOR_2_PID_KI 0.5f
-// #define MOTOR_2_PID_KD 0.0f
-// #define MOTOR_2_PID_MAX_OUTPUT 3600.0f
-// #define MOTOR_2_PID_MIN_OUTPUT -3600.0f
+// #define MOTOR2_USE_PID true
+// #define MOTOR2_PID_KP 1.5f
+// #define MOTOR2_PID_KI 0.5f
+// #define MOTOR2_PID_KD 0.0f
+// #define MOTOR2_PID_MAX_OUTPUT 3600.0f
+// #define MOTOR2_PID_MIN_OUTPUT -3600.0f
 
-// #define MOTOR_3_USE_PID true
-// #define MOTOR_3_PID_KP 1.5f
-// #define MOTOR_3_PID_KI 0.5f
-// #define MOTOR_3_PID_KD 0.0f
-// #define MOTOR_3_PID_MAX_OUTPUT 3600.0f
-// #define MOTOR_3_PID_MIN_OUTPUT -3600.0f
+// #define MOTOR3_USE_PID true
+// #define MOTOR3_PID_KP 1.5f
+// #define MOTOR3_PID_KI 0.5f
+// #define MOTOR3_PID_KD 0.0f
+// #define MOTOR3_PID_MAX_OUTPUT 3600.0f
+// #define MOTOR3_PID_MIN_OUTPUT -3600.0f
 
-// #define MOTOR_4_USE_PID true
-// #define MOTOR_4_PID_KP 1.5f
-// #define MOTOR_4_PID_KI 0.5f
-// #define MOTOR_4_PID_KD 0.0f
-// #define MOTOR_4_PID_MAX_OUTPUT 3600.0f
-// #define MOTOR_4_PID_MIN_OUTPUT -3600.0f
+// #define MOTOR4_USE_PID true
+// #define MOTOR4_PID_KP 1.5f
+// #define MOTOR4_PID_KI 0.5f
+// #define MOTOR4_PID_KD 0.0f
+// #define MOTOR4_PID_MAX_OUTPUT 3600.0f
+// #define MOTOR4_PID_MIN_OUTPUT -3600.0f
 
 // // SERIAL ROS CONFIG
 // #define SERIAL_ROS_HEADER_1 0xAA

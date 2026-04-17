@@ -12,6 +12,7 @@
 #include "serial_ros_protocol.h"
 #include "robot_state.h"
 #include "supervisor_fsm.h"
+#include "mobility_fsm.h"
 #include "debug_module.h"
 #include <string.h>
 #include "app_rtos.h"
@@ -85,8 +86,14 @@ static void handle_mobility_mode(const SysConfigMsg_t *msg)
  */
 static void handle_cmd_vel(const CmdVelMsg_t *msg)
 {
-    RobotState_SetTargetVelocity(msg->linear_x, msg->angular_z);
-    LOG_DEBUG(LOG_TAG, "CmdVel: x=%.3f z=%.3f", msg->linear_x, msg->angular_z);
+    SystemState_t current_sup = Supervisor_GetCurrentState();
+    if (current_sup == STATE_AUTO) {
+        RobotState_SetTargetVelocity(msg->linear_x, msg->angular_z);
+        LOG_INFO(LOG_TAG, "CmdVel ACCEPTED: x=%.3f z=%.3f\r\n", msg->linear_x, msg->angular_z);
+    } else {
+        /* Ignore commands if not in Auto mode */
+        LOG_WARNING(LOG_TAG, "CmdVel REJECTED: SUP is %d (Need AUTO)\r\n", current_sup);
+    }
 }
 
 /**
@@ -102,8 +109,14 @@ static void handle_cmd_vel(const CmdVelMsg_t *msg)
  */
 static void handle_arm_goal(const ArmGoalMsg_t *msg)
 {
-    RobotState_SetTargetArmPose(msg->j1, msg->j2, msg->j3);
-    LOG_DEBUG(LOG_TAG, "ArmGoal: j1=%.2f j2=%.2f j3=%.2f", msg->j1, msg->j2, msg->j3);
+    SystemState_t current_sup = Supervisor_GetCurrentState();
+    if (current_sup == STATE_AUTO) {
+        RobotState_SetTargetArmPose(msg->j1, msg->j2, msg->j3);
+        LOG_INFO(LOG_TAG, "ArmGoal ACCEPTED: j1=%.2f j2=%.2f j3=%.2f\r\n", msg->j1, msg->j2, msg->j3);
+    } else {
+        /* Ignore commands if not in Auto mode */
+        LOG_WARNING(LOG_TAG, "ArmGoal REJECTED: SUP is %d (Need AUTO)\r\n", current_sup);
+    }
 }
 
 /**
@@ -136,6 +149,17 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         // LOG_INFO(LOG_TAG, "SysEvent 0x%02X -> FSM event %d\r\n", msg->event_id, event);
         Supervisor_ProcessEvent(event, SRC_UART3_ROS);
     }
+}
+
+/**
+ * @brief [TOPIC 0x06] Handle raw actuator pulse for debugging.
+ *
+ * @param msg Pointer to the parsed ActuatorTestMsg_t payload.
+ */
+static void handle_actuator_test(const ActuatorTestMsg_t *msg)
+{
+    LOG_INFO(LOG_TAG, "Actuator Test Received: ID=%u Pulse=%d\r\n", (unsigned int)msg->actuator_id, (int)msg->pulse);
+    Mobility_SetRawMotorPulse(msg->actuator_id, msg->pulse);
 }
 
 /* =========================================================================
@@ -209,6 +233,12 @@ void SerialRos_ProcessPacket(uint8_t *buffer, uint16_t size)
         case TOPIC_ID_SYS_EVENT:
             if (len >= sizeof(SysEventMsg_t)) {
                 handle_sys_event((const SysEventMsg_t *)payload);
+            }
+            break;
+
+        case TOPIC_ID_ACTUATOR_PWM:
+            if (len >= sizeof(ActuatorTestMsg_t)) {
+                handle_actuator_test((const ActuatorTestMsg_t *)payload);
             }
             break;
 

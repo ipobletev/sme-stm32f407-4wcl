@@ -4,7 +4,6 @@
 #include "encoder_motor.h"
 #include "motor_hardware.h"
 #include "debug_module.h"
-#include "chassis_config.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -26,8 +25,19 @@ const char* Mobility_StateToStr(MobilityState_t state) {
         case MOB_IDLE:     return "IDLE";
         case MOB_BREAK:    return "BREAK";
         case MOB_MOVING:   return "MOVING";
+        case MOB_TESTING:  return "TESTING";
         case MOB_FAULT:    return "FAULT";
         default:           return "UNKNOWN";
+    }
+}
+
+const char* Mobility_ModeToStr(uint8_t mode) {
+    switch(mode) {
+        case MOB_MODE_DIRECT:    return "DIR";
+        case MOB_MODE_DIFF:      return "DIF";
+        case MOB_MODE_ACKERMANN: return "ACK";
+        case MOB_MODE_MECANUM:   return "MEC";
+        default:                 return "UNK";
     }
 }
 
@@ -41,11 +51,8 @@ void Mobility_Init(void) {
     /* Initialize Motor Objects */
     for(int i=0; i<4; i++) {
         encoder_motor_object_init(motors[i]);
-        motors[i]->ticks_per_circle = MOTOR_TICKS_PER_CIRCLE;
-        motors[i]->rps_limit = MOTOR_RPS_LIMIT;
-        motors[i]->pid_controller.kp = MOTOR_PID_KP;
-        motors[i]->pid_controller.ki = MOTOR_PID_KI;
-        motors[i]->pid_controller.kd = MOTOR_PID_KD;
+        /* Use default motor type for initialization */
+        Motor_Hardware_SetType(motors[i], MOTOR_TYPE_JGB520);
     }
 
     /* Initialize Hardware */
@@ -66,6 +73,20 @@ MobilityState_t Mobility_GetCurrentState(void) {
 void Mobility_SetCommandTarget(float linear_x, float angular_z) {
     target_linear_x = linear_x;
     target_angular_z = angular_z;
+}
+
+void Mobility_SetRawMotorPulse(uint8_t id, float pulse) {
+    if (id < 4) {
+        /* Force state to TESTING */
+        mob_state = MOB_TESTING;
+        /* Bypass PID by setting pulse directly on the motor hardware */
+        motors[id]->set_pulse(motors[id], (int)pulse);
+        /* Keep track of it in the motor object but PID will be skipped in ProcessLogic */
+        motors[id]->current_pulse = pulse;
+        motors[id]->pid_controller.set_point = 0; // Ensure PID doesn't fight
+
+        printf("MOBILITY: Raw Pulse Received - ID=%u, Pulse=%d (Testing Mode)\r\n", id, (int)pulse);
+    }
 }
 
 
@@ -125,19 +146,15 @@ void Mobility_ProcessLogic(void) {
         if (mob_state != MOB_DISABLED) {
             printf("MOBILITY: Master Fault/Init -> Forcing DISABLED\r\n");
             mob_state = MOB_DISABLED;
-            for(int i=0; i<4; i++) encoder_motor_set_speed(motors[i], 0);
+            for(int i=0; i<4; i++) encoder_motor_brake(motors[i]);
         }
         return;
     }
 
     if (master_state == STATE_PAUSED || master_state == STATE_IDLE) {
         if (mob_state == MOB_MOVING || mob_state == MOB_BREAK || mob_state == MOB_IDLE) {
-            if (mob_state != MOB_BREAK) {
-                printf("MOBILITY: Master Paused/Idle -> Forcing BREAK\r\n");
-                mob_state = MOB_BREAK;
-            }
-            /* Stop motors */
-            for(int i=0; i<4; i++) encoder_motor_set_speed(motors[i], 0);
+            /* Stop motors immediately (Hard Stop) */
+            for(int i=0; i<4; i++) encoder_motor_brake(motors[i]);
             target_linear_x = 0.0f;
             target_angular_z = 0.0f;
         }
@@ -145,8 +162,13 @@ void Mobility_ProcessLogic(void) {
     }
 
     /* 3. Active Control (PID & FSM) */
-    for(int i=0; i<4; i++) {
-        encoder_motor_control(motors[i], dt);
+    
+    /* Pull latest targets from shared RobotState if in an active mode */
+    RobotState_GetTargetVelocity(&target_linear_x, &target_angular_z);
+
+    if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
+        /* Optional frequent logging - use during debug only */
+        // printf("MOBILITY: Target X=%.3f Z=%.3f\r\n", target_linear_x, target_angular_z);
     }
 
     /* Standard State Machine Logic */
@@ -178,16 +200,13 @@ void Mobility_ProcessLogic(void) {
         case MOB_MOVING:
             if (target_linear_x == 0.0f && target_angular_z == 0.0f) {
                 mob_state = MOB_IDLE;
+                /* Explicitly stop motors (Hard Stop) and clear targets on transition to IDLE */
+                for(int i=0; i<4; i++) encoder_motor_brake(motors[i]);
+                target_linear_x = 0.0f;
+                target_angular_z = 0.0f;
                 printf("MOBILITY: Transitioning to IDLE (Zero Velocity)\r\n");
             } else {
                 /* Execute Mecanum Kinematics */
-                /* Simplified model for 4WD Mecanum:
-                   Wheel 1 (FL): vx - vy - (l+w)az
-                   Wheel 2 (BL): vx + vy - (l+w)az
-                   Wheel 3 (FR): vx + vy + (l+w)az
-                   Wheel 4 (BR): vx - vy + (l+w)az
-                   (In our case, motors 3 and 4 are often reversed in hardware)
-                */
                 float vx = target_linear_x;
                 float vy = 0; /* No strafing for now as only linear_x and angular_z are in RobotState */
                 float az = target_angular_z;
@@ -203,8 +222,19 @@ void Mobility_ProcessLogic(void) {
                 
                 encoder_motor_set_speed(motors[0], v1 * rps_conv);
                 encoder_motor_set_speed(motors[1], v2 * rps_conv);
-                encoder_motor_set_speed(motors[2], -v3 * rps_conv); /* Reversed as per reference */
-                encoder_motor_set_speed(motors[3], -v4 * rps_conv); /* Reversed as per reference */
+                encoder_motor_set_speed(motors[2], -v3 * rps_conv); 
+                encoder_motor_set_speed(motors[3], -v4 * rps_conv); 
+            }
+            break;
+
+        case MOB_TESTING:
+            /* In testing mode, we don't do anything here. 
+               Pulses are set directly via Mobility_SetRawMotorPulse.
+               We stay in this state until a velocity command (0 or non-zero) 
+               or a supervisor event forces us out. */
+            if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
+                mob_state = MOB_MOVING;
+                printf("MOBILITY: Testing interrupted by CmdVel -> MOVING\r\n");
             }
             break;
 
@@ -212,6 +242,13 @@ void Mobility_ProcessLogic(void) {
             /* Hardware failure handled here. 
                Requires external reset or Master FSM reset logic. */
             break;
+    }
+
+    /* 4. Execute Motor Control (PID) on updated targets */
+    if (mob_state != MOB_TESTING) {
+        for(int i=0; i<4; i++) {
+            encoder_motor_control(motors[i], dt);
+        }
     }
     
     /* Sync local state to global RobotState */

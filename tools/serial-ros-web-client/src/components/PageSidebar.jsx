@@ -5,6 +5,7 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange }) {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
     { id: 'fsm', icon: Network, label: 'Logic Map' },
+    { id: 'actuator-tool', icon: Settings, label: 'Actuator Tool' },
     // { id: 'telemetry', icon: Gauge, label: 'Telemetry' },
     // { id: 'terminal', icon: Terminal, label: 'Serial Log' },
   ];

@@ -2,7 +2,10 @@
 #include "States/state_handlers.h"
 #include "arm_fsm.h"
 #include "robot_state.h"
+#include "debug_module.h"
 #include <stdio.h>
+
+#define LOG_TAG "SUPERVISOR"
 
 const char* Supervisor_StateToStr(SystemState_t state) {
     switch(state) {
@@ -60,7 +63,7 @@ void Supervisor_Init(void) {
     currentState = STATE_INIT;
     RobotState_UpdateSystemState(currentState);
     State_Init_OnEnter();
-    printf("Supervisor: Initialized\r\n");
+    LOG_INFO(LOG_TAG, "Supervisor: Initialized\r\n");
 }
 
 /**
@@ -76,28 +79,20 @@ SystemState_t Supervisor_GetCurrentState(void) {
 void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     SystemState_t nextState = currentState;
 
-    /* Handle Non-Transitioning Global Events */
-    if (event == EVENT_REHOME) {
-        if (currentState == STATE_IDLE || currentState == STATE_MANUAL || currentState == STATE_AUTO) {
-            Arm_RequestRehome();
-        }
-        return; /* Event consumed, no state change */
-    }
-
     /* Transition Table Logic */
     switch (currentState)
     {
         case STATE_INIT:
-            if (event == EVENT_START) {
+            if (event == EVENT_ERROR) {
+                nextState = STATE_FAULT;
+            } else {
                 nextState = STATE_IDLE;
             }
             break;
 
         case STATE_IDLE:
-            if (event == EVENT_START || event == EVENT_MODE_MANUAL) {
+            if (event == EVENT_START) {
                 nextState = STATE_MANUAL;
-            } else if (event == EVENT_MODE_AUTO) {
-                nextState = STATE_AUTO;
             } else if (event == EVENT_ERROR) {
                 nextState = STATE_FAULT;
             }
@@ -152,7 +147,6 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
             }
             break;
 
-
         default:
             nextState = STATE_INIT;
             break;
@@ -160,6 +154,7 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
 
     /* Execute transition if state changed */
     if (nextState != currentState) {
+        LOG_INFO(LOG_TAG, "Supervisor: Transitioning from %s to %s\r\n", Supervisor_StateToStr(currentState), Supervisor_StateToStr(nextState));
         TransitionToState(nextState);
     }
 }

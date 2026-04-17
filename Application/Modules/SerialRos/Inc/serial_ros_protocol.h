@@ -14,6 +14,7 @@
 #define TOPIC_ID_CMD_VEL        0x03    /* Rx: Movement setpoints */
 #define TOPIC_ID_ARM_GOAL       0x04    /* Rx: Robotic arm joint targets */
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
+#define TOPIC_ID_ACTUATOR_PWM   0x06    /* Rx: Raw actuator PWM control (ID + Pulse) */
 
 /* Tx (Virtual Published) Topics */
 #define TOPIC_ID_SYS_STATUS     0x81    /* Tx: System state, health, and battery */
@@ -64,6 +65,15 @@ typedef struct {
 typedef struct {
     uint8_t event_id;   /* Maps to SystemEvent_t */
 } SysEventMsg_t;
+
+/**
+ * @brief Message: actuator_pwm [Topic 0x06]
+ * Used for testing/debugging individual motors.
+ */
+typedef struct {
+    uint8_t  actuator_id; /* 0-3 for motors */
+    float    pulse;       /* Raw PWM value (-65535 to 65535) */
+} ActuatorTestMsg_t;
 
 /**
  * @brief Message: mobility_mode [Topic 0x02]

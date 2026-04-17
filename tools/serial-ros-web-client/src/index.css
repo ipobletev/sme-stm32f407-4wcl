@@ -416,7 +416,7 @@ body::before {
 .app-layout {
   display: grid;
   grid-template-columns: 1fr 340px;
-  grid-template-rows: auto auto auto; /* Replaced fixed grid with auto-growing rows */
+  grid-template-rows: auto auto auto;
   gap: 16px;
   padding: 16px 24px 24px;
   box-sizing: border-box;
@@ -1357,4 +1357,64 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .slaves-fsm-row {
     grid-template-columns: 1fr;
   }
+}
+/* Predefined state color variables are at the top of the file */
+
+/* ===== HUD NUMERIC INPUTS ===== */
+.value-input {
+  width: 70px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+  padding: 2px 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.value-input:focus {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+}
+
+.value-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hide spin buttons for Chrome, Safari, Edge, Opera */
+.value-input::-webkit-outer-spin-button,
+.value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide spin buttons for Firefox */
+.value-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-stop-mob {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  flex: 1;
+}
+
+.btn-stop-mob:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
 }

@@ -7,6 +7,7 @@ import TelemetryPanel from './components/TelemetryPanel';
 import GraphsPanel from './components/GraphsPanel';
 import SystemStatusMap from './components/SystemStatusMap';
 import CommandPanel from './components/CommandPanel';
+import ActuatorControl from './components/ActuatorControl';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
 import { Activity, Power } from 'lucide-react';
@@ -106,9 +107,13 @@ export default function App() {
             <div className="graphs-view">
               <GraphsPanel history={history} />
             </div>
-          ) : (
+          ) : activeTab === 'fsm' ? (
             <div className="fsm-view">
               <SystemStatusMap sysStatus={telemetry.sysStatus} />
+            </div>
+          ) : (
+            <div className="diagnostics-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+              <ActuatorControl sendPacket={sendPacket} connected={connected} />
             </div>
           )}
         </div>

@@ -73,6 +73,10 @@ void Arm_ProcessLogic(void) {
     }
 
     /* 2. Standard State Machine Logic (assuming Master is MANUAL or AUTO) */
+    
+    /* Pull latest joint targets from shared RobotState */
+    RobotState_GetTargetArmPose(&target_j1, &target_j2, &target_j3);
+
     switch (arm_state) {
         case ARM_DISABLED:
             /* If master is active, we must home first */

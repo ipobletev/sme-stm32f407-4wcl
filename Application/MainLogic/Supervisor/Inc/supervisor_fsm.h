@@ -6,33 +6,33 @@
 /* State Machine definitions */
 typedef enum {
     STATE_INIT = 0,
-    STATE_IDLE,
-    STATE_MANUAL,
-    STATE_AUTO,
-    STATE_PAUSED,
-    STATE_FAULT
+    STATE_IDLE,         /* Waiting for operator to start (EVENT_START) */
+    STATE_MANUAL,       /* Manual control */
+    STATE_AUTO,         /* Autonomous control */
+    STATE_PAUSED,       /* Paused */
+    STATE_FAULT         /* Fault */
 } SystemState_t;
 
 typedef enum {
     EVENT_NONE = 0,
-    EVENT_START,        /* Defaults to MANUAL start */
-    EVENT_STOP,
-    EVENT_ERROR,
-    EVENT_RESET,
-    EVENT_MODE_MANUAL,
-    EVENT_MODE_AUTO,
-    EVENT_PAUSE,
-    EVENT_RESUME,
-    EVENT_REHOME
+    EVENT_START,        /* Enable system. transition to STATE_MANUAL */
+    EVENT_STOP,         /* Disable system. transition to STATE_IDLE */
+    EVENT_ERROR,        /* Set system to STATE_FAULT - STOP EMERGENCY */
+    EVENT_RESET,        /* Set system to STATE_INIT (if in STATE_FAULT) - CLEAR EMERGENCY */
+    EVENT_MODE_MANUAL,  /* Set system to STATE_MANUAL - MANUAL MODE */
+    EVENT_MODE_AUTO,    /* Set system to STATE_AUTO - AUTO MODE */
+    EVENT_PAUSE,        /* Set system to STATE_PAUSED - PAUSE */
+    EVENT_RESUME        /* Set system to STATE_MANUAL or STATE_AUTO - RESUME */
 } SystemEvent_t;
 
-/* Event Source Authority Levels (Higher = More Priority) */
+/* Event Source Types */
 typedef enum {
     SRC_UNKNOWN = 0,
-    SRC_UART3_ROS = 1,             /* Level 1: Remote Autonomous Control */
-    SRC_UART1_LOCAL = 2,           /* Level 2: Local Operator Console */
-    SRC_PHYSICAL = 3,              /* Level 3: Physical On-Board Buttons */
-    SRC_INTERNAL_SUPERVISOR = 4    /* Level 4: Internal Hardware/RTOS Monitor */
+    SRC_UART3_ROS = 1,             /* Remote (Only STATE_AUTO) */
+    SRC_UART1_LOCAL = 2,           /* Local Operator Console (Only STATE_MANUAL) */
+    SRC_PHYSICAL = 3,              /* Physical On-Board System (Only STATE_MANUAL) */
+    SRC_PHYSICAL_CRITICAL = 4,     /* Physical Critical (STATE_MANUAL, STATE_AUTO) */
+    SRC_INTERNAL_SUPERVISOR = 5    /* Internal Hardware/RTOS Monitor (STATE_MANUAL, STATE_AUTO) */
 } EventSource_t;
 
 /* Message structure for the queue */

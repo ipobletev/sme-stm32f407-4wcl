@@ -25,6 +25,7 @@ export const TOPIC_IDS = {
     CMD_VEL: 0x03,
     ARM_GOAL: 0x04,
     SYS_EVENT: 0x05,
+    ACTUATOR_PWM: 0x06,
   },
   TX: {
     SYS_STATUS: 0x81,
@@ -145,5 +146,13 @@ export const Encoders = {
     return new Uint8Array(buf);
   },
   
-  sysEvent: (eventId) => new Uint8Array([eventId])
+  sysEvent: (eventId) => new Uint8Array([eventId]),
+  
+  actuatorTest: (id, pulse) => {
+    const buf = new ArrayBuffer(5);
+    const view = new DataView(buf);
+    view.setUint8(0, id);
+    view.setFloat32(1, pulse, true);
+    return new Uint8Array(buf);
+  }
 };

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Send, Joystick, Cog, Zap, Play, Square, Pause, RotateCcw, RefreshCw, Shield, Navigation } from 'lucide-react';
+import { Send, Joystick, Cog, Zap, Play, Square, Pause, RotateCcw, RefreshCw, Shield, Navigation, StopCircle } from 'lucide-react';
 import { buildPacket, Encoders, TOPIC_IDS } from '../utils/protocol';
 
 export default function CommandPanel({ sendPacket, connected }) {
@@ -23,6 +23,13 @@ export default function CommandPanel({ sendPacket, connected }) {
     const payload = Encoders.cmdVel(linearX, angularZ);
     sendPacket(buildPacket(TOPIC_IDS.RX.CMD_VEL, Array.from(payload)));
   }, [linearX, angularZ, sendPacket]);
+
+  const stopMobility = useCallback(() => {
+    setLinearX(0);
+    setAngularZ(0);
+    const payload = Encoders.cmdVel(0, 0);
+    sendPacket(buildPacket(TOPIC_IDS.RX.CMD_VEL, Array.from(payload)));
+  }, [sendPacket]);
 
   const sendArmGoal = useCallback(() => {
     const payload = Encoders.armGoal(j1, j2, j3);
@@ -131,7 +138,16 @@ export default function CommandPanel({ sendPacket, connected }) {
           <div className="slider-group">
             <div className="slider-label">
               <span>Linear X</span>
-              <span className="slider-value">{linearX.toFixed(2)} m/s</span>
+              <input 
+                type="number" 
+                className="value-input" 
+                value={linearX} 
+                step={0.01}
+                min={-2}
+                max={2}
+                onChange={e => setLinearX(Number(e.target.value))}
+                disabled={disabled}
+              />
             </div>
             <input type="range" min={-2} max={2} step={0.01} value={linearX}
               onChange={e => setLinearX(Number(e.target.value))}
@@ -141,16 +157,30 @@ export default function CommandPanel({ sendPacket, connected }) {
           <div className="slider-group">
             <div className="slider-label">
               <span>Angular Z</span>
-              <span className="slider-value">{angularZ.toFixed(2)} rad/s</span>
+              <input 
+                type="number" 
+                className="value-input" 
+                value={angularZ} 
+                step={0.01}
+                min={-3.14}
+                max={3.14}
+                onChange={e => setAngularZ(Number(e.target.value))}
+                disabled={disabled}
+              />
             </div>
             <input type="range" min={-3.14} max={3.14} step={0.01} value={angularZ}
               onChange={e => setAngularZ(Number(e.target.value))}
               disabled={disabled}
               onDoubleClick={() => setAngularZ(0)} />
           </div>
-          <button className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={sendCmdVel} disabled={disabled}>
-            <Send size={12} /> Send Velocity
-          </button>
+          <div className="btn-group">
+            <button className="btn btn-primary btn-sm" style={{ flex: 2 }} onClick={sendCmdVel} disabled={disabled}>
+              <Send size={12} /> Send Velocity
+            </button>
+            <button className="btn btn-stop-mob btn-sm" onClick={stopMobility} disabled={disabled}>
+              <StopCircle size={12} /> STOP
+            </button>
+          </div>
         </div>
       </div>
 
@@ -169,7 +199,16 @@ export default function CommandPanel({ sendPacket, connected }) {
             <div className="slider-group" key={joint.label}>
               <div className="slider-label">
                 <span>{joint.label}</span>
-                <span className="slider-value">{joint.val.toFixed(2)}°</span>
+                <input 
+                  type="number" 
+                  className="value-input" 
+                  value={joint.val} 
+                  step={0.5}
+                  min={-180}
+                  max={180}
+                  onChange={e => joint.set(Number(e.target.value))}
+                  disabled={disabled}
+                />
               </div>
               <input type="range" min={-180} max={180} step={0.5} value={joint.val}
                 onChange={e => joint.set(Number(e.target.value))}

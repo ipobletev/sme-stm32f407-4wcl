@@ -18,7 +18,7 @@ struct EncoderMotorObject {
     float rps;              /**< @brief Revolutions Per Second (Measured) */
     float target_rps;       /**< @brief Target velocity in RPS */
     
-    float current_pulse;    /**< @brief Current PWM output (-1000 to 1000) */
+    float current_pulse;    /**< @brief Current PWM output (-65535 to 65535) */
     PID_ControllerTypeDef pid_controller; /**< @brief Velocity PID controller */
 
     /* Physical parameters */
@@ -33,5 +33,6 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self);
 void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t new_counter);
 void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period);
 void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps);
+void encoder_motor_brake(EncoderMotorObjectTypeDef *self);
 
 #endif /* __ENCODER_MOTOR_H_ */

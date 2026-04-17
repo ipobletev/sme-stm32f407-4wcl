@@ -10,6 +10,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #define LOG_TAG "TASK_TELE"
 
@@ -86,8 +87,14 @@ void StartTelemetryTask(void *argument) {
             SerialRos_EnqueueTx(TOPIC_ID_SYS_STATUS, &status_msg, sizeof(SystemStatusMsg_t));
 
             /* Report Status via DEBUG COM with Stack Diagnostics */
-            uint32_t stack_uart = osal_thread_get_stack_space(uartListenerTaskHandle);
-            uint32_t stack_ctrl = osal_thread_get_stack_space(controllerTaskHandle);
+            uint32_t s_mng  = osal_thread_get_stack_space(managerTaskHandle);
+            uint32_t s_ctl  = osal_thread_get_stack_space(controllerTaskHandle);
+            uint32_t s_urt  = osal_thread_get_stack_space(uartListenerTaskHandle);
+            uint32_t s_mob  = osal_thread_get_stack_space(mobilityTaskHandle);
+            uint32_t s_arm  = osal_thread_get_stack_space(armTaskHandle);
+            uint32_t s_ros  = osal_thread_get_stack_space(serialRosTaskHandle);
+            uint32_t s_tel  = osal_thread_get_stack_space(telemetryTaskHandle);
+            uint32_t s_imu  = osal_thread_get_stack_space(imuTaskHandle);
 
             uint64_t errs = RobotState_GetErrorFlags();
             char err_str[19];
@@ -99,20 +106,37 @@ void StartTelemetryTask(void *argument) {
             /* Manual float formatting since library support is unreliable */
             batt_v = RobotState_GetBatteryVoltage();
             mcu_t  = RobotState_GetUCTemperature();
+
+            float cmd_lx, cmd_az;
+            RobotState_GetTargetVelocity(&cmd_lx, &cmd_az);
+
             char batt_str[10];
             char mcu_str[10];
+            char cmd_lx_str[10];
+            char cmd_az_str[10];
+
             snprintf(batt_str, sizeof(batt_str), "%d.%02d", (int)batt_v, (int)(batt_v * 100) % 100);
-            snprintf(mcu_str, sizeof(mcu_str), "%d.%d", (int)mcu_t, (int)(mcu_t * 10) % 10);
+            snprintf(mcu_str, sizeof(mcu_str), "%d.%d", (int)mcu_t, abs((int)(mcu_t * 10) % 10));
+
+            int lx_int = (int)cmd_lx;
+            int lx_frac = abs((int)(cmd_lx * 100) % 100);
+            int az_int = (int)cmd_az;
+            int az_frac = abs((int)(cmd_az * 100) % 100);
+            snprintf(cmd_lx_str, sizeof(cmd_lx_str), "%s%d.%02d", (cmd_lx < 0 && lx_int == 0) ? "-" : "", lx_int, lx_frac);
+            snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
 
             /* Periodically log board health to console */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [CTRL:%lu UART:%lu]\r\n", 
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s:%s ARM:%s] | CmdVel: [%s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 Mobility_StateToStr(RobotState_GetMobilityState()),
+                Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
                 Arm_StateToStr(RobotState_GetArmState()),
+                cmd_lx_str, cmd_az_str,
                 batt_str,
                 mcu_str,
                 err_str,
-                (unsigned long)stack_ctrl, (unsigned long)stack_uart);
+                (unsigned long)s_mng, (unsigned long)s_ctl, (unsigned long)s_urt, (unsigned long)s_mob,
+                (unsigned long)s_arm, (unsigned long)s_ros, (unsigned long)s_tel, (unsigned long)s_imu);
         }
 
         cycle_counter++;

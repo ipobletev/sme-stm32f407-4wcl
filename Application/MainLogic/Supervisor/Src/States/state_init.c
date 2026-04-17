@@ -1,10 +1,13 @@
 #include "States/state_handlers.h"
+#include "debug_module.h"
 #include <stdio.h>
 
+#define LOG_TAG "SUPERVISOR"
+
 void State_Init_OnEnter(void) {
-    printf("SM: Entering STATE_INIT\r\n");
+    LOG_INFO(LOG_TAG, "Entering STATE_INIT\r\n");
 }
 
 void State_Init_OnExit(void) {
-    printf("SM: Exiting STATE_INIT\r\n");
+    LOG_INFO(LOG_TAG, "Exiting STATE_INIT\r\n");
 }
