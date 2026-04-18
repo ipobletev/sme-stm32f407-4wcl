@@ -54,12 +54,12 @@ void StartControllerTask(void *argument)
         /* K1 corresponds to START or RESUME event (Defaulting to MANUAL) */
         if (k1_pressed && !k1_prev)
         {
-            if (Supervisor_GetCurrentState() == STATE_PAUSED) {
+            if (Supervisor_GetCurrentState() == STATE_SUPERVISOR_PAUSED) {
                 LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME\r\n");
-                publish_event(EVENT_RESUME, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_RESUME, SRC_PHYSICAL);
             } else {
                 LOG_INFO(LOG_TAG, "K1 pressed, requesting MANUAL mode\r\n");
-                publish_event(EVENT_START, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
             }
         }
         k1_prev = k1_pressed;
@@ -70,12 +70,12 @@ void StartControllerTask(void *argument)
             k2_press_ticks++;
             if (k2_press_ticks == 10) { /* 10 ticks * 100ms = 1 second */
                 LOG_INFO(LOG_TAG, "K2 SAFETY long press (>1s), E-STOP triggered\r\n");
-                publish_event(EVENT_STOP, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
             }
         } else {
             if (k2_press_ticks > 0 && k2_press_ticks < 10) {
                 LOG_INFO(LOG_TAG, "K2 short press, PAUSE requested\r\n");
-                publish_event(EVENT_PAUSE, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_PAUSE, SRC_PHYSICAL);
             }
             k2_press_ticks = 0;
         }
@@ -87,11 +87,11 @@ void StartControllerTask(void *argument)
             static uint8_t error_flag = 0;
             if (!error_flag) {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_ERROR\r\n");
-                publish_event(EVENT_ERROR, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
                 error_flag = 1;
             } else {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_RESET\r\n");
-                publish_event(EVENT_RESET, SRC_PHYSICAL);
+                publish_event(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
                 error_flag = 0;
             }
         }

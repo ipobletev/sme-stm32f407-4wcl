@@ -1,4 +1,6 @@
 #include "app_rtos.h"
+#include "supervisor_fsm.h"
+#include "config.h"
 #include "bsp_serial_ros.h"
 #include "serial_ros.h"
 #include "robot_state.h"
@@ -85,8 +87,8 @@ void StartSerialRosTask(void *argument) {
             if (was_connected && !is_connected) {
                 /* Disconnection Pulse Detected */
                 LOG_WARNING(LOG_TAG, "Jetson Disconnected! Safety fallback to MANUAL.");
-                if (RobotState_GetSystemState() == STATE_AUTO) {
-                    Supervisor_ProcessEvent(EVENT_MODE_MANUAL, SRC_INTERNAL_SUPERVISOR);
+                if (RobotState_GetSystemState() == STATE_SUPERVISOR_AUTO) {
+                    Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_INTERNAL_SUPERVISOR);
                 }
             }
             was_connected = is_connected;

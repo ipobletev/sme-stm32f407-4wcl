@@ -10,7 +10,7 @@
  */
 RobotState_t RobotState_4wcl = {
     .Telemetry = {
-        .current_state = STATE_INIT,
+        .current_state = STATE_SUPERVISOR_INIT,
         .heartbeat_count = 0,
         .error_flags = 0 // 0 = No Error
     }

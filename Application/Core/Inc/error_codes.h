@@ -29,14 +29,23 @@
 #define ERR_BSP_SENSOR   (1ULL << 27)  /* External sensor communication failure */
 
 /* 4. System / Business Logic Errors (Bits 32-47) */
-#define ERR_BATT_LOW     (1ULL << 32)  /* Battery voltage below critical threshold */
-#define ERR_OVER_TEMP    (1ULL << 33)  /* System temperature critical */
-#define ERR_HEARTBEAT    (1ULL << 34)  /* Internal task heartbeat lost */
-#define ERR_CONFIG_LOAD  (1ULL << 35)  /* Configuration parameters loading failure */
-#define ERR_MOB_DRIVE    (1ULL << 36)  /* Mobility local hardware drive error */
-#define ERR_MOB_STALL    (1ULL << 37)  /* Mobility task watchdog stall */
-#define ERR_ARM_SERVO    (1ULL << 38)  /* Robotic arm servo failure */
-#define ERR_ARM_STALL    (1ULL << 39)  /* Robotic arm task watchdog stall */
+#define ERR_BATT_LOW                        (1ULL << 32)  /* Battery voltage below critical threshold */
+#define ERR_OVER_TEMP                       (1ULL << 33)  /* System temperature critical */
+#define ERR_HEARTBEAT                       (1ULL << 34)  /* Internal task heartbeat lost */
+#define ERR_CONFIG_LOAD                     (1ULL << 35)  /* Configuration parameters loading failure */
+
+#define ERR_MOB_DRIVE                       (1ULL << 36)  /* Mobility local hardware drive error */
+#define ERR_MOB_STALL                       (1ULL << 37)  /* Mobility task watchdog stall */
+#define ERR_MOB_FAULT                       (1ULL << 38)  /* Robotic arm task watchdog stall */
+#define ERR_INVALID_MOBILITY_EVENT          (1ULL << 39)  /* Robotic arm task watchdog stall */
+
+#define ERR_ARM_FAULT                       (1ULL << 40)  /* Robotic arm task watchdog stall */
+#define ERR_ARM_SERVO                       (1ULL << 41)  /* Robotic arm servo failure */
+#define ERR_ARM_STALL                       (1ULL << 42)  /* Robotic arm task watchdog stall */
+#define ERR_INVALID_ARM_EVENT               (1ULL << 43)  /* Robotic arm task watchdog stall */
+
+#define ERR_SUPERVISOR_FAULT                (1ULL << 44)  /* Robotic arm task watchdog stall */
+#define ERR_INVALID_SUPERVISOR_STATE        (1ULL << 45)  /* Robotic arm task watchdog stall */
 
 /* 5. Critical / Fatal Errors (Bits 48-63) */
 #define ERR_SYS_PANIC    (1ULL << 63)  /* Unrecoverable system panic */

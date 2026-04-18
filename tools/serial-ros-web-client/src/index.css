@@ -1341,16 +1341,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .fsm-edge-bg {
-  stroke: rgba(255, 255, 255, 0.25);
-  stroke-width: 2;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1.5;
   fill: none;
+  stroke-dasharray: 4;
 }
 
 .fsm-edge-active {
   stroke-width: 3;
   fill: none;
   stroke-dasharray: 6;
-  animation: flowLine 2s linear infinite;
+  animation: flowLine 1.5s linear infinite;
 }
 
 @media (max-width: 1100px) {

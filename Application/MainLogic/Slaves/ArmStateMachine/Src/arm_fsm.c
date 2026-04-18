@@ -1,36 +1,77 @@
 #include "arm_fsm.h"
-#include "supervisor_fsm.h" /* For Supervisor FSM interaction */
+#include "arm_fsm_internal.h"
+#include "States/arm_state_handlers.h"
+#include "supervisor_fsm.h"
 #include "robot_state.h"
-#include <stdio.h>
+#include "debug_module.h"
+#include "arm_fsm_internal.h"
+
+/* Internal State */
+static ArmState_t arm_state = STATE_ARM_INIT;
+
+/* Shared targets (declared extern in arm_fsm_internal.h) */
+float target_j1 = 0.0f;
+float target_j2 = 0.0f;
+float target_j3 = 0.0f;
+uint8_t homing_progress = 0;
 
 const char* Arm_StateToStr(ArmState_t state) {
     switch(state) {
-        case ARM_DISABLED: return "DISABLED";
-        case ARM_HOMING:   return "HOMING";
-        case ARM_IDLE:     return "IDLE";
-        case ARM_MOVING:   return "MOVING";
-        case ARM_FAULT:    return "FAULT";
-        default:           return "UNKNOWN";
+        case STATE_ARM_INIT:     return "INIT";
+        case STATE_ARM_HOMING:   return "HOMING";
+        case STATE_ARM_IDLE:     return "IDLE";
+        case STATE_ARM_MOVING:   return "MOVING";
+        case STATE_ARM_TESTING:  return "TESTING";
+        case STATE_ARM_FAULT:    return "FAULT";
+        default:                 return "UNKNOWN";
     }
 }
 
-static ArmState_t arm_state = ARM_DISABLED;
+/**
+ * @brief Helper to handle state transitions with entry/exit actions.
+ */
+void Arm_TransitionToState(ArmState_t newState) {
+    if (arm_state == newState) return;
 
-/* Joint targets */
-static float target_j1 = 0.0f;
-static float target_j2 = 0.0f;
-static float target_j3 = 0.0f;
+    /* Call Exit Handler of current state */
+    switch (arm_state) {
+        case STATE_ARM_INIT:     ArmState_Init_OnExit();     break;
+        case STATE_ARM_HOMING:   ArmState_Homing_OnExit();   break;
+        case STATE_ARM_IDLE:     ArmState_Idle_OnExit();     break;
+        case STATE_ARM_MOVING:   ArmState_Moving_OnExit();   break;
+        case STATE_ARM_TESTING:  ArmState_Testing_OnExit();  break;
+        case STATE_ARM_FAULT:    ArmState_Fault_OnExit();    break;
+        default: break;
+    }
 
-/* Homing simulation variables */
-static uint8_t homing_progress = 0;
-static bool rehome_requested = false;
+    arm_state = newState;
+    RobotState_SetArmState(arm_state);
+
+    /* Call Enter Handler of new state */
+    switch (arm_state) {
+        case STATE_ARM_INIT:     ArmState_Init_OnEnter();     break;
+        case STATE_ARM_HOMING:   ArmState_Homing_OnEnter();   break;
+        case STATE_ARM_IDLE:     ArmState_Idle_OnEnter();     break;
+        case STATE_ARM_MOVING:   ArmState_Moving_OnEnter();   break;
+        case STATE_ARM_TESTING:  ArmState_Testing_OnEnter();  break;
+        case STATE_ARM_FAULT:    ArmState_Fault_OnEnter();    break;
+        default: break;
+    }
+}
 
 void Arm_Init(void) {
-    arm_state = ARM_DISABLED;
-    RobotState_SetArmState(arm_state);
+    arm_state = STATE_ARM_INIT;
+    target_j1 = 0.0f;
+    target_j2 = 0.0f;
+    target_j3 = 0.0f;
     homing_progress = 0;
-    rehome_requested = false;
-    printf("ARM: Initialized (Disabled)\r\n");
+    
+    RobotState_SetArmState(arm_state);
+    
+    /* Start in INIT state */
+    Arm_TransitionToState(STATE_ARM_INIT);
+    
+    LOG_INFO(LOG_TAG, "Initialized (Standardized FSM)\r\n");
 }
 
 ArmState_t Arm_GetCurrentState(void) {
@@ -43,8 +84,72 @@ void Arm_SetJointTarget(float j1, float j2, float j3) {
     target_j3 = j3;
 }
 
-void Arm_RequestRehome(void) {
-    rehome_requested = true;
+void Arm_SetRawServoPulse(uint8_t servo_id, int16_t pulse) {
+    /* Auto-transition to TESTING state if not already there */
+    if (arm_state != STATE_ARM_TESTING) {
+        Arm_ProcessEvent(EVENT_ARM_TESTING);
+    }
+    
+    /* 
+       TODO: Forward pulse command to specific servo driver.
+       Since we don't have a shared 'commands' field for raw servos yet,
+       we LOG it for now or prepare a global shared flag.
+    */
+    LOG_INFO(LOG_TAG, "Testing Servo %u -> Pulse %d\r\n", servo_id, pulse);
+}
+
+void Arm_ProcessEvent(ArmEvent_t event) {
+    ArmState_t nextState = arm_state;
+
+    /* Transition Table Logic */
+    switch (arm_state)
+    {
+        case STATE_ARM_INIT:
+            if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            break;
+
+        case STATE_ARM_IDLE:
+            if (event == EVENT_ARM_MOVING) nextState = STATE_ARM_MOVING;
+            else if (event == EVENT_ARM_HOMING) nextState = STATE_ARM_HOMING;
+            else if (event == EVENT_ARM_TESTING) nextState = STATE_ARM_TESTING;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            break;
+
+        case STATE_ARM_HOMING:
+            if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
+            else if (event == EVENT_ARM_MOVING) nextState = STATE_ARM_MOVING;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            break;
+
+        case STATE_ARM_MOVING:
+            if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
+            else if (event == EVENT_ARM_HOMING) nextState = STATE_ARM_HOMING;
+            else if (event == EVENT_ARM_TESTING) nextState = STATE_ARM_TESTING;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            break;
+
+        case STATE_ARM_TESTING:
+            if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            break;
+
+        case STATE_ARM_FAULT:
+            if (event == EVENT_ARM_INIT) nextState = STATE_ARM_INIT;
+            break;
+
+        default:
+            LOG_ERROR(LOG_TAG, "Arm: Invalid state transition\r\n");
+            nextState = STATE_ARM_FAULT;
+            RobotState_SetErrorFlag(ERR_INVALID_ARM_EVENT);
+            break;
+    }
+
+    if (nextState != arm_state) {
+        LOG_INFO(LOG_TAG, "Arm: Transition from %s to %s (Event: %d)\r\n", 
+                 Arm_StateToStr(arm_state), Arm_StateToStr(nextState), event);
+        Arm_TransitionToState(nextState);
+    }
 }
 
 /**
@@ -53,71 +158,29 @@ void Arm_RequestRehome(void) {
 void Arm_ProcessLogic(void) {
     SystemState_t master_state = Supervisor_GetCurrentState();
 
-    /* 1. TOP-DOWN Override: React to Master FSM */
-    if (master_state == STATE_FAULT || master_state == STATE_INIT) {
-        if (arm_state != ARM_DISABLED) {
-            printf("ARM: Master Fault/Init -> Forcing DISABLED\r\n");
-            arm_state = ARM_DISABLED;
-            /* Cut servo power */
+    /* 1. TOP-DOWN Override: React to Master FSM via Events */
+    if (master_state == STATE_SUPERVISOR_FAULT || master_state == STATE_SUPERVISOR_INIT) {
+        if (arm_state != STATE_ARM_INIT) {
+            Arm_ProcessEvent(EVENT_ARM_INIT);
         }
-        return; /* Block further execution */
+    } else if (master_state == STATE_SUPERVISOR_PAUSED || master_state == STATE_SUPERVISOR_IDLE) {
+        if (arm_state == STATE_ARM_MOVING || arm_state == STATE_ARM_HOMING) {
+            Arm_ProcessEvent(EVENT_ARM_IDLE);
+        }
     }
 
-    if (master_state == STATE_PAUSED || master_state == STATE_IDLE) {
-        if (arm_state == ARM_MOVING || arm_state == ARM_HOMING) {
-            printf("ARM: Master Paused/Idle -> Forcing IDLE (Holding Position)\r\n");
-            arm_state = ARM_IDLE;
-            /* Keep servo power, but stop trajectory */
-        }
-        return;
-    }
-
-    /* 2. Standard State Machine Logic (assuming Master is MANUAL or AUTO) */
-    
-    /* Pull latest joint targets from shared RobotState */
+    /* 2. Sync targets from shared state */
     RobotState_GetTargetArmPose(&target_j1, &target_j2, &target_j3);
 
+    /* 3. Execute Current State Periodic Logic */
     switch (arm_state) {
-        case ARM_DISABLED:
-            /* If master is active, we must home first */
-            arm_state = ARM_HOMING;
-            homing_progress = 0;
-            printf("ARM: Transitioning to HOMING (Seeking Zero)\r\n");
-            break;
-
-        case ARM_HOMING:
-            /* Simulate Homing Routine */
-            homing_progress++;
-            if (homing_progress > 10) { // Simulate time passed
-                arm_state = ARM_IDLE;
-                printf("ARM: Homing Complete. Transitioning to IDLE\r\n");
-            }
-            break;
-
-        case ARM_IDLE:
-            if (rehome_requested) {
-                rehome_requested = false;
-                arm_state = ARM_HOMING;
-                homing_progress = 0;
-                printf("ARM: Re-homing requested from IDLE\r\n");
-            } else if (target_j1 != 0.0f || target_j2 != 0.0f || target_j3 != 0.0f) {
-                arm_state = ARM_MOVING;
-                printf("ARM: Transitioning to MOVING\r\n");
-            }
-            break;
-
-        case ARM_MOVING:
-            if (target_j1 == 0.0f && target_j2 == 0.0f && target_j3 == 0.0f) {
-                arm_state = ARM_IDLE;
-                printf("ARM: Transitioning to IDLE (Target Reached)\r\n");
-            } else {
-                /* Execute IK & Servo Control Here */
-            }
-            break;
-
-        case ARM_FAULT:
-            /* Hardware failure (stall, overheat) handled here. */
-            break;
+        case STATE_ARM_INIT:     ArmState_Init_Run();     break;
+        case STATE_ARM_HOMING:   ArmState_Homing_Run();   break;
+        case STATE_ARM_IDLE:     ArmState_Idle_Run();     break;
+        case STATE_ARM_MOVING:   ArmState_Moving_Run();   break;
+        case STATE_ARM_TESTING:  ArmState_Testing_Run();  break;
+        case STATE_ARM_FAULT:    ArmState_Fault_Run();    break;
+        default: break;
     }
 
     /* Sync local state to global RobotState */

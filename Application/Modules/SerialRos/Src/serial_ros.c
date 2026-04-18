@@ -46,10 +46,10 @@ static void handle_autonomous(const AutonomousMsg_t *msg)
         RobotState_SetAutonomous(msg->is_autonomous);
 
         if (msg->is_autonomous) {
-            Supervisor_ProcessEvent(EVENT_MODE_AUTO, SRC_UART3_ROS);
+            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_AUTO, SRC_UART3_ROS);
             LOG_INFO(LOG_TAG, "Autonomous ON (Direct Handover)\r\n");
         } else {
-            Supervisor_ProcessEvent(EVENT_MODE_MANUAL, SRC_UART3_ROS);
+            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_UART3_ROS);
             LOG_INFO(LOG_TAG, "Autonomous OFF -> Manual Takeover\r\n");
         }
     }
@@ -87,7 +87,7 @@ static void handle_mobility_mode(const SysConfigMsg_t *msg)
 static void handle_cmd_vel(const CmdVelMsg_t *msg)
 {
     SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_AUTO) {
+    if (current_sup == STATE_SUPERVISOR_AUTO) {
         RobotState_SetTargetVelocity(msg->linear_x, msg->angular_z);
         LOG_INFO(LOG_TAG, "CmdVel ACCEPTED: x=%.3f z=%.3f\r\n", msg->linear_x, msg->angular_z);
     } else {
@@ -110,7 +110,7 @@ static void handle_cmd_vel(const CmdVelMsg_t *msg)
 static void handle_arm_goal(const ArmGoalMsg_t *msg)
 {
     SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_AUTO) {
+    if (current_sup == STATE_SUPERVISOR_AUTO) {
         RobotState_SetTargetArmPose(msg->j1, msg->j2, msg->j3);
         LOG_INFO(LOG_TAG, "ArmGoal ACCEPTED: j1=%.2f j2=%.2f j3=%.2f\r\n", msg->j1, msg->j2, msg->j3);
     } else {
@@ -133,12 +133,12 @@ static void handle_sys_event(const SysEventMsg_t *msg)
     bool valid = true;
 
     switch (msg->event_id) {
-        case SYS_EVENT_START:   event = EVENT_START;       break;
-        case SYS_EVENT_STOP:    event = EVENT_STOP;        break;
-        case SYS_EVENT_PAUSE:   event = EVENT_PAUSE;       break;
-        case SYS_EVENT_RESUME:  event = EVENT_RESUME;      break;
-        case SYS_EVENT_RESET:   event = EVENT_RESET;       break;
-        case SYS_EVENT_HOME:    event = EVENT_REHOME;      break;
+        case SYS_EVENT_START:   event = EVENT_SUPERVISOR_START;       break;
+        case SYS_EVENT_STOP:    event = EVENT_SUPERVISOR_STOP;        break;
+        case SYS_EVENT_PAUSE:   event = EVENT_SUPERVISOR_PAUSE;       break;
+        case SYS_EVENT_RESUME:  event = EVENT_SUPERVISOR_RESUME;      break;
+        case SYS_EVENT_RESET:   event = EVENT_SUPERVISOR_RESET;       break;
+        case SYS_EVENT_HOME:    event = EVENT_SUPERVISOR_NONE; /* TODO: Rehoming trigger */ break;
         default:
             LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
             valid = false;
@@ -158,8 +158,15 @@ static void handle_sys_event(const SysEventMsg_t *msg)
  */
 static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 {
-    LOG_INFO(LOG_TAG, "Actuator Test Received: ID=%u Pulse=%d\r\n", (unsigned int)msg->actuator_id, (int)msg->pulse);
-    Mobility_SetRawMotorPulse(msg->actuator_id, msg->pulse);
+    LOG_INFO(LOG_TAG, "Actuator Test: ID=%u Pulse=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
+
+    if (msg->actuator_id < 10) {
+        /* 0-9: Mobility Motors */
+        Mobility_SetRawMotorPulse(msg->actuator_id, (int16_t)msg->pulse);
+    } else {
+        /* 10+: Arm Servos */
+        Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
+    }
 }
 
 /* =========================================================================

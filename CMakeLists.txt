@@ -23,7 +23,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Application/MainLogic/Supervisor/Inc
     Application/MainLogic/Supervisor/Inc/States
     Application/MainLogic/Slaves/MobilityStateMachine/Inc
+    Application/MainLogic/Slaves/MobilityStateMachine/Inc/States
     Application/MainLogic/Slaves/ArmStateMachine/Inc
+    Application/MainLogic/Slaves/ArmStateMachine/Inc/States
     Application/Modules/OSAL/Inc
     Drivers/BSP/Inc
     Drivers/BSP/Led/Inc
@@ -63,3 +65,4 @@ add_subdirectory(cmake/stm32cubemx)
 
 # The generated logic already calls target_sources and target_link_libraries
 # for ${CMAKE_PROJECT_NAME}, so we just need to ensure the order is correct.
+# Updated state machine file structure - Triggering Re-configuration.
