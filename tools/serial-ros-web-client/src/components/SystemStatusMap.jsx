@@ -132,20 +132,35 @@ function NodeCircle({ node, isActive, isRelevant, onHover, onLeave }) {
 function EdgeLine({ edge, nodes, isActive, isHovered }) {
   const from = nodes.find(n => n.id === edge.from);
   const to = nodes.find(n => n.id === edge.to);
-  if (!from || !to) return null;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return null;
+
+  const r = 25; // Node radius
+  
+  // Calculate points on the border of the circles
+  const x1 = from.x + (dx * r) / dist;
+  const y1 = from.y + (dy * r) / dist;
+  const x2 = to.x - (dx * r) / dist;
+  const y2 = to.y - (dy * r) / dist;
 
   return (
     <g style={{ opacity: isHovered || isActive ? 1 : 0.4 }}>
       <defs>
-        <marker id={`arrowhead-${from.id}-${to.id}`} markerWidth="6" markerHeight="4" 
-        refX="31" refY="2" orient="auto">
-          <polygon points="0 0, 6 2, 0 4" fill={(isActive || isHovered) ? from.color : "rgba(255,255,255,0.2)"} />
+        <marker 
+          id={`arrowhead-${from.id}-${to.id}`} 
+          markerUnits="userSpaceOnUse"
+          markerWidth="20" markerHeight="20" 
+          refX="12" refY="10" orient="auto"
+        >
+          <polygon points="0 5, 12 10, 0 15" fill={(isActive || isHovered) ? from.color : "rgba(255,255,255,0.2)"} />
         </marker>
       </defs>
       <line 
-        x1={from.x} y1={from.y} x2={to.x} y2={to.y} 
+        x1={x1} y1={y1} x2={x2} y2={y2} 
         className={isActive ? 'fsm-edge-active' : 'fsm-edge-bg'}
-        style={(isActive || isHovered) ? { stroke: from.color, strokeDasharray: isActive ? '6' : '4' } : {}}
+        style={(isActive || isHovered) ? { stroke: from.color } : {}}
         markerEnd={`url(#arrowhead-${from.id}-${to.id})`}
       />
     </g>
