@@ -101,6 +101,14 @@ void FSM_Mobility_ProcessEvent(MobilityEvent_t event) {
             else if (event == EVENT_MOB_ABORT) nextState = STATE_MOB_ABORT;
             break;
 
+        case STATE_MOB_IDLE:
+            if (event == EVENT_MOB_MOVING) nextState = STATE_MOB_MOVING;
+            else if (event == EVENT_MOB_BREAK) nextState = STATE_MOB_BREAK;
+            else if (event == EVENT_MOB_TESTING) nextState = STATE_MOB_TESTING;
+            else if (event == EVENT_MOB_FAULT) nextState = STATE_MOB_FAULT;
+            else if (event == EVENT_MOB_ABORT) nextState = STATE_MOB_ABORT;
+            break;
+
         case STATE_MOB_MOVING:
             if (event == EVENT_MOB_IDLE) nextState = STATE_MOB_IDLE;
             else if (event == EVENT_MOB_BREAK) nextState = STATE_MOB_BREAK;

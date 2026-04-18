@@ -1,35 +1,13 @@
 import { Cpu, Gauge, RotateCcw } from 'lucide-react';
 import ImuVisualizer from './ImuVisualizer';
-
-const STATE_NAMES = ['INIT', 'IDLE', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
-const STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault'];
-
-const MOB_STATE_NAMES = ['INIT', 'IDLE', 'BREAK', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
-const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-paused', 'state-running', 'state-running', 'state-fault', 'state-paused'];
-
-const ARM_STATE_NAMES = ['INIT', 'HOMING', 'IDLE', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
-const ARM_STATE_CLASSES = ['state-idle', 'state-ready', 'state-ready', 'state-running', 'state-running', 'state-fault', 'state-paused'];
-
-function getStateName(code) {
-  return STATE_NAMES[code] || `UNK(${code})`;
-}
-function getStateClass(code) {
-  return STATE_CLASSES[code] || 'state-idle';
-}
-
-function getMobStateName(code) {
-  return MOB_STATE_NAMES[code] || `UNK(${code})`;
-}
-function getMobStateClass(code) {
-  return MOB_STATE_CLASSES[code] || 'state-idle';
-}
-
-function getArmStateName(code) {
-  return ARM_STATE_NAMES[code] || `UNK(${code})`;
-}
-function getArmStateClass(code) {
-  return ARM_STATE_CLASSES[code] || 'state-idle';
-}
+import {
+  getSupervisorStateName as getStateName,
+  getSupervisorStateClass as getStateClass,
+  getMobilityStateName as getMobStateName,
+  getMobilityStateClass as getMobStateClass,
+  getArmStateName as getArmStateName,
+  getArmStateClass as getArmStateClass,
+} from '../utils/fsmLabels';
 
 function getBatteryPercent(voltage) {
   const min = 10.0, max = 12.6;

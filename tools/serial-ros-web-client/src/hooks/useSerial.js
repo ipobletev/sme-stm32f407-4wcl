@@ -358,6 +358,7 @@ export function useSerial() {
     } catch (e) {}
     setConnected(false);
     setFrequencies({});
+    setTelemetry({ sysStatus: null, imu: null, odometry: null });
   }, []);
 
   return {

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useSerial } from './hooks/useSerial';
 import { useTelemetryHistory } from './hooks/useTelemetryHistory';
+import { useFsmTransitionLog } from './hooks/useFsmTransitionLog';
 import Header from './components/Header';
 import PageSidebar from './components/PageSidebar';
 import TelemetryPanel from './components/TelemetryPanel';
 import GraphsPanel from './components/GraphsPanel';
 import SystemStatusMap from './components/SystemStatusMap';
+import FsmTransitionLogPanel from './components/FsmTransitionLogPanel';
 import CommandPanel from './components/CommandPanel';
 import ActuatorControl from './components/ActuatorControl';
 import LogPanel from './components/LogPanel';
@@ -55,6 +57,7 @@ export default function App() {
     telemetry, frequencies, linkActive, log 
   } = useSerial();
   const history = useTelemetryHistory(telemetry, 50);
+  const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -110,7 +113,20 @@ export default function App() {
             </div>
           ) : activeTab === 'fsm' ? (
             <div className="fsm-view">
-              <SystemStatusMap sysStatus={telemetry.sysStatus} />
+              <SystemStatusMap
+                sysStatus={telemetry.sysStatus}
+                sendPacket={sendPacket}
+                connected={connected}
+              />
+            </div>
+          ) : activeTab === 'fsm-log' ? (
+            <div className="fsm-log-view">
+              <FsmTransitionLogPanel
+                rows={fsmTransitionLog.rows}
+                onClear={fsmTransitionLog.clear}
+                connected={connected}
+                sysStatus={telemetry.sysStatus}
+              />
             </div>
           ) : (
             <div className="diagnostics-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>

@@ -22,5 +22,7 @@ void StartMobilityTask(void *argument)
         /* 3. Heartbeat: Tell the Supervisor we are alived */
         RobotState_UpdateMobilityHeartbeat();
 
+        osal_delay(20);
+
     }
 }

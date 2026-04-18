@@ -1248,6 +1248,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
   gap: 32px;
 }
 
+/* Formal Supervisor + System Events side by side */
+.fsm-supervisor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 24px;
+  align-items: start;
+}
+
+.fsm-system-events-aside {
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .fsm-supervisor-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Indicators Hook */
 .quick-indicators-row {
   display: flex;
@@ -1541,4 +1559,150 @@ input[type="range"]::-webkit-slider-thumb:hover {
   0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* ===== FSM transition log (sidebar tab) ===== */
+.fsm-log-view {
+  grid-column: 1 / -1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fsm-tlog-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  max-height: calc(100vh - 140px);
+}
+
+.fsm-tlog-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fsm-tlog-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.fsm-tlog-clear:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.fsm-tlog-clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fsm-tlog-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 !important;
+  overflow: auto;
+}
+
+.fsm-tlog-empty {
+  padding: 28px 18px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.fsm-tlog-table-wrap {
+  overflow: auto;
+}
+
+.fsm-tlog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.fsm-tlog-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(17, 24, 39, 0.97);
+  backdrop-filter: blur(8px);
+}
+
+.fsm-tlog-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.fsm-tlog-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: top;
+  line-height: 1.35;
+}
+
+.fsm-tlog-table tbody tr:hover td {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.fsm-tlog-time {
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  white-space: nowrap;
+}
+
+.fsm-tlog-initial {
+  font-family: var(--font-sans, inherit);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent-emerald);
+}
+
+.fsm-tlog-same {
+  color: var(--text-muted);
+}
+
+.fsm-tlog-delta .fsm-tlog-from {
+  color: var(--text-muted);
+}
+
+.fsm-tlog-delta .fsm-tlog-arrow {
+  margin: 0 5px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.fsm-tlog-delta .fsm-tlog-to {
+  color: var(--accent-emerald);
+  font-weight: 600;
+}
+
+.fsm-tlog-err .fsm-tlog-to {
+  color: var(--accent-rose);
+}
+
+.fsm-tlog-table .mono {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
 }

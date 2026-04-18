@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Cpu, Zap, Activity, AlertTriangle, Circle, ArrowRight } from 'lucide-react';
+import { Shield, Cpu, Zap, Activity } from 'lucide-react';
+import SystemEventsControl from './SystemEventsControl';
 
 /* --- FSM DEFINITIONS (Based on docs/state_machine.md) --- */
 
@@ -191,7 +192,7 @@ function SubsystemDiagram({ title, icon: Icon, fsm, currentState }) {
 
 /* --- MAIN COMPONENT --- */
 
-export default function SystemStatusMap({ sysStatus }) {
+export default function SystemStatusMap({ sysStatus, sendPacket, connected }) {
   const [hoveredNode, setHoveredNode] = useState(null);
   
   const currentSysState = sysStatus?.state ?? 0;
@@ -212,7 +213,6 @@ export default function SystemStatusMap({ sysStatus }) {
 
   return (
     <div className="fsm-complex-view">
-      
       <div className="quick-indicators-row">
         <div className="indicator-chip" data-active="true">
           <Cpu size={14} style={{ color: getSysColor(currentSysState) }} />
@@ -232,33 +232,37 @@ export default function SystemStatusMap({ sysStatus }) {
       </div>
 
       <div className="fsm-diagrams-grid">
-        
-        <div className="main-fsm-card glass-card">
-          <div className="sub-fsm-header">
-            <Shield size={18} />
-            <h3>Formal Supervisor Logic</h3>
+        <div className="fsm-supervisor-row">
+          <div className="main-fsm-card glass-card">
+            <div className="sub-fsm-header">
+              <Shield size={18} />
+              <h3>Formal Supervisor Logic</h3>
+            </div>
+            <svg viewBox="0 0 800 320" className="fsm-svg-main">
+              {SUPERVISOR_FSM.edges.map((e, i) => (
+                <EdgeLine 
+                  key={i} 
+                  edge={e} 
+                  nodes={SUPERVISOR_FSM.nodes} 
+                  isActive={e.from === currentSysState} 
+                  isHovered={e.from === hoveredNode}
+                />
+              ))}
+              {SUPERVISOR_FSM.nodes.map(n => (
+                <NodeCircle 
+                  key={n.id} 
+                  node={n} 
+                  isActive={n.id === currentSysState} 
+                  isRelevant={n.id === hoveredNode || potentialNextSysStates.includes(n.id)}
+                  onHover={(id) => setHoveredNode(id)}
+                  onLeave={() => setHoveredNode(null)}
+                />
+              ))}
+            </svg>
           </div>
-          <svg viewBox="0 0 800 320" className="fsm-svg-main">
-            {SUPERVISOR_FSM.edges.map((e, i) => (
-              <EdgeLine 
-                key={i} 
-                edge={e} 
-                nodes={SUPERVISOR_FSM.nodes} 
-                isActive={e.from === currentSysState} 
-                isHovered={e.from === hoveredNode}
-              />
-            ))}
-            {SUPERVISOR_FSM.nodes.map(n => (
-              <NodeCircle 
-                key={n.id} 
-                node={n} 
-                isActive={n.id === currentSysState} 
-                isRelevant={n.id === hoveredNode || potentialNextSysStates.includes(n.id)}
-                onHover={(id) => setHoveredNode(id)}
-                onLeave={() => setHoveredNode(null)}
-              />
-            ))}
-          </svg>
+          <div className="fsm-system-events-aside">
+            <SystemEventsControl sendPacket={sendPacket} connected={connected} />
+          </div>
         </div>
 
         <div className="slaves-fsm-row">

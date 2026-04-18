@@ -1,4 +1,4 @@
-import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart, Network, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Settings, LineChart, Network, AlertTriangle, Table2 } from 'lucide-react';
 import { getActiveErrors } from '../utils/ErrorMapping';
 
 export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStatus }) {
@@ -6,6 +6,7 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
     { id: 'fsm', icon: Network, label: 'Logic Map' },
+    { id: 'fsm-log', icon: Table2, label: 'State log' },
     { id: 'actuator-tool', icon: Settings, label: 'Actuator Tool' },
   ];
 
