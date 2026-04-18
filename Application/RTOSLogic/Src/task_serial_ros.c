@@ -61,11 +61,13 @@ void StartSerialRosTask(void *argument) {
         /* 2. Check for RX packet notifications (non-blocking) */
         uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG, 0U);
 
-        if (flags & RX_EVENT_FLAG) {
+        /* Flags check: Ensure no CMSIS error code (bit 31) and RX_EVENT_FLAG is set */
+        if (!(flags & 0x80000000U) && (flags & RX_EVENT_FLAG)) {
             /* Snapshot the shared RX buffer to minimize race conditions with next ISR */
             taskENTER_CRITICAL();
             local_rx_size = shared_rx_size;
             memcpy(local_rx_buffer, shared_rx_buffer, local_rx_size);
+            shared_rx_size = 0; /* Reset size to prevent accidental re-processing */
             taskEXIT_CRITICAL();
 
             /* Process raw packet in the module */
@@ -78,18 +80,20 @@ void StartSerialRosTask(void *argument) {
             osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
         }
 
-        /* 3. Connection Monitoring (approx every 100ms) */
+        /* 3. Connection Monitoring (approx every 1000ms) */
         uint32_t current_tick = osal_get_tick();
-        if ((current_tick - last_conn_check_tick) >= 100) {
+        if ((current_tick - last_conn_check_tick) >= 1000) {
             last_conn_check_tick = current_tick;
             bool is_connected = SerialRos_IsConnected();
 
             if (was_connected && !is_connected) {
                 /* Disconnection Pulse Detected */
-                LOG_WARNING(LOG_TAG, "Jetson Disconnected! Safety fallback to MANUAL.");
+                LOG_WARNING(LOG_TAG, "Client Disconnected! Safety fallback to MANUAL.\r\n");
                 if (RobotState_GetSystemState() == STATE_SUPERVISOR_AUTO) {
                     Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_INTERNAL_SUPERVISOR);
                 }
+            } else if (!was_connected && is_connected) {
+                LOG_INFO(LOG_TAG, "Client Connected (First handshake detected)\r\n");
             }
             was_connected = is_connected;
         }

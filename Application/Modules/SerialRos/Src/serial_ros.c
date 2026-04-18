@@ -212,6 +212,12 @@ void SerialRos_ProcessPacket(uint8_t *buffer, uint16_t size)
     /* Dispatch to per-topic handlers */
     switch (msg_id) {
 
+        case TOPIC_ID_HEARTBEAT:
+            /* Heartbeat received — Explicitly refresh connection tick as requested */
+            last_rx_tick = osal_get_tick();
+            //LOG_INFO(LOG_TAG, "Heartbeat Handshake OK\r\n");
+            break;
+
         case TOPIC_ID_AUTONOMOUS:
             if (len >= sizeof(AutonomousMsg_t)) {
                 handle_autonomous((const AutonomousMsg_t *)payload);

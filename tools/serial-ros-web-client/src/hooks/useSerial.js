@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { calculateCRC16, parsePayload, TOPIC_IDS } from '../utils/protocol';
+import { calculateCRC16, parsePayload, TOPIC_IDS, buildPacket } from '../utils/protocol';
 
 const SYNC1 = 0xAA;
 const SYNC2 = 0x55;
@@ -301,7 +301,11 @@ export function useSerial() {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify(hb));
         }
-      }, 1000);
+        
+        // Also send binary heartbeat to the robot
+        console.log('[Heartbeat] Pumping heartbeat packet (0x00) to serial...');
+        sendPacket(buildPacket(TOPIC_IDS.RX.HEARTBEAT));
+      }, 500);
 
       freqTrackerRef.current.onUpdate = (rates) => {
         const msg = { type: MSG_TYPES.FREQ_UPDATE, rates };

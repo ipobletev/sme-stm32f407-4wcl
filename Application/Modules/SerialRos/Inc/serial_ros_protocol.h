@@ -9,6 +9,7 @@
 #define SERIAL_ROS_MIN_SIZE     6  /* SYNC1 + SYNC2 + ID + LEN + CRC_H + CRC_L */
 
 /* Rx (Virtual Subscribed) Topics */
+#define TOPIC_ID_HEARTBEAT      0x00    /* Rx: Heartbeat from Client */
 #define TOPIC_ID_AUTONOMOUS     0x01    /* Rx: System Autonomous/Manual Mode */
 #define TOPIC_ID_MOBILITY_MODE  0x02    /* Rx: Mobility Mode */
 #define TOPIC_ID_CMD_VEL        0x03    /* Rx: Movement setpoints */

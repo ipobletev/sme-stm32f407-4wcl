@@ -20,6 +20,7 @@ export function calculateCRC16(data) {
 
 export const TOPIC_IDS = {
   RX: {
+    HEARTBEAT: 0x00,
     AUTONOMOUS: 0x01,
     MOBILITY_MODE: 0x02,
     CMD_VEL: 0x03,
