@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Cpu, Zap, Activity } from 'lucide-react';
+import { Shield, Cpu, Zap, Activity, Navigation } from 'lucide-react';
+import { buildPacket, Encoders, TOPIC_IDS } from '../utils/protocol';
 import SystemEventsControl from './SystemEventsControl';
 
 /* --- FSM DEFINITIONS (Based on docs/state_machine.md) --- */
@@ -214,6 +215,15 @@ export default function SystemStatusMap({ sysStatus, sendPacket, connected }) {
   const currentMobState = sysStatus?.mobility_state ?? 0;
   const currentArmState = sysStatus?.arm_state ?? 0;
 
+  const isAutoModeActual = currentSysState === 3;
+  const isManualModeActual = currentSysState === 2;
+  const disabled = !connected;
+
+  const sendAutonomous = useCallback((auto) => {
+    const payload = Encoders.autonomous(auto);
+    sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Array.from(payload)));
+  }, [sendPacket]);
+
   const potentialNextSysStates = hoveredNode !== null 
     ? SUPERVISOR_FSM.edges.filter(e => e.from === hoveredNode).map(e => e.to)
     : [];
@@ -276,6 +286,34 @@ export default function SystemStatusMap({ sysStatus, sendPacket, connected }) {
             </svg>
           </div>
           <div className="fsm-system-events-aside">
+            {/* ControlBoard Mode Card */}
+            <div className="card" style={{ marginBottom: '16px' }}>
+              <div className="card-header">
+                <h3><Shield size={14} /> Control Mode</h3>
+                <span className="card-badge">0x01</span>
+              </div>
+              <div className="card-body">
+                <div className="event-buttons">
+                  <button
+                    className={`event-btn ${isManualModeActual ? 'start' : 'stop'}`}
+                    disabled={disabled || currentSysState === 0 || currentSysState === 5}
+                    onClick={() => sendAutonomous(0)}
+                    style={{ opacity: isManualModeActual ? 1 : (currentSysState === 1 || currentSysState === 4 ? 0.7 : 0.4) }}
+                  >
+                    <Shield size={12} /> Manual
+                  </button>
+                  <button
+                    className={`event-btn ${isAutoModeActual ? 'resume' : 'stop'}`}
+                    disabled={disabled || currentSysState === 0 || currentSysState === 5}
+                    onClick={() => sendAutonomous(1)}
+                    style={{ opacity: isAutoModeActual ? 1 : (currentSysState === 1 || currentSysState === 4 ? 0.7 : 0.4) }}
+                  >
+                    <Navigation size={12} /> Autonomous
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <SystemEventsControl sendPacket={sendPacket} connected={connected} />
           </div>
         </div>
