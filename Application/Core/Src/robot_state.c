@@ -37,6 +37,16 @@ void RobotState_ClearErrorFlag(uint64_t flag) {
     }
 }
 
+void RobotState_ClearAllErrorFlags(void) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.error_flags = 0;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.error_flags = 0;
+        taskEXIT_CRITICAL();
+    }
+}
+
 uint64_t RobotState_GetErrorFlags(void) {
     uint64_t current_flags;
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {

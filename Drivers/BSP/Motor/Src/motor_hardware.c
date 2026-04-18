@@ -59,10 +59,33 @@ void BSP_Motor_Hardware_SetType(EncoderMotorObjectTypeDef *motor, MotorTypeEnum 
             break;
     }
 }
+static int64_t accumulated_counts[4] = {0, 0, 0, 0};
+static uint32_t last_raw_values[4] = {0, 0, 0, 0};
 
 bool BSP_Motor_Hardware_Init(EncoderMotorObjectTypeDef *motors[4])
 {
     HAL_StatusTypeDef status = HAL_OK;
+
+    /* 0. Ensure a clean state by stopping all peripherals first (Idempotent Init) */
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_4);
+    HAL_TIM_PWM_Stop(&htim9, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Stop(&htim9, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Stop(&htim11, TIM_CHANNEL_1);
+
+    HAL_TIM_Encoder_Stop(&htim5, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Stop(&htim2, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Stop(&htim4, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Stop(&htim3, TIM_CHANNEL_ALL);
+
+    /* Reset internal software tracking to avoid position jumps after init */
+    for(int i = 0; i < 4; i++) {
+        accumulated_counts[i] = 0;
+        last_raw_values[i] = 0;
+    }
 
     /* Initialize motor pointers and set overflow limits */
     for(int i = 0; i < 4; ++i) {
@@ -128,8 +151,6 @@ bool BSP_Motor_Hardware_Init(EncoderMotorObjectTypeDef *motors[4])
     return (status == HAL_OK);
 }
 
-static int64_t accumulated_counts[4] = {0, 0, 0, 0};
-static uint32_t last_raw_values[4] = {0, 0, 0, 0};
 
 int64_t BSP_Motor_Hardware_GetEncoderCount(uint8_t motor_idx)
 {

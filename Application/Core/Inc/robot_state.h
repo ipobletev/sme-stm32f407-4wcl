@@ -92,6 +92,7 @@ extern RobotState_t RobotState_4wcl;
 /* Thread-safe API for Shared Global Variables */
 void RobotState_SetErrorFlag(uint64_t flag);
 void RobotState_ClearErrorFlag(uint64_t flag);
+void RobotState_ClearAllErrorFlags(void);
 uint64_t RobotState_GetErrorFlags(void);
 
 /* System Core Getters / Setters */
