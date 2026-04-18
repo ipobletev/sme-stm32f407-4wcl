@@ -12,7 +12,6 @@
 #include "serial_ros_protocol.h"
 #include "robot_state.h"
 #include "supervisor_fsm.h"
-#include "mobility_fsm.h"
 #include "debug_module.h"
 #include <string.h>
 #include "app_rtos.h"
@@ -138,7 +137,7 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         case SYS_EVENT_PAUSE:   event = EVENT_SUPERVISOR_PAUSE;       break;
         case SYS_EVENT_RESUME:  event = EVENT_SUPERVISOR_RESUME;      break;
         case SYS_EVENT_RESET:   event = EVENT_SUPERVISOR_RESET;       break;
-        case SYS_EVENT_HOME:    event = EVENT_SUPERVISOR_NONE; /* TODO: Rehoming trigger */ break;
+        case SYS_EVENT_FAULT:   event = EVENT_SUPERVISOR_ERROR;       break;
         default:
             LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
             valid = false;
@@ -162,10 +161,10 @@ static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 
     if (msg->actuator_id < 10) {
         /* 0-9: Mobility Motors */
-        FSM_Mobility_SetRawMotorPulse(msg->actuator_id, (int16_t)msg->pulse);
+        // Mobility_SetRawPulse(msg->actuator_id, (int16_t)msg->pulse);
     } else {
         /* 10+: Arm Servos */
-        FSM_Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
+        // FSM_Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
     }
 }
 

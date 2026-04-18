@@ -14,5 +14,5 @@ void MobState_Fault_Run(void) {
 }
 
 void MobState_Fault_OnExit(void) {
-    LOG_INFO(LOG_TAG, "Exiting FAULT State. System reset.\r\n");
+    LOG_INFO(LOG_TAG, "Exiting FAULT State.\r\n");
 }

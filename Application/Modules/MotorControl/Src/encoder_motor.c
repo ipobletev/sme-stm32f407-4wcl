@@ -1,5 +1,8 @@
 #include "encoder_motor.h"
 #include "config.h"
+#include "motor_hardware.h"
+#include "motor_param.h"
+#include <stdbool.h>
 
 /**
  * @brief Update motor velocity measurement
@@ -94,4 +97,25 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self)
     self->ticks_per_circle = 3960; /* Default for common motors */
     self->rps_limit = 1.0f;
     pid_controller_init(&self->pid_controller, 0, 0, 0);
+}
+
+bool encoder_motor_init_hw_system(EncoderMotorObjectTypeDef *motors[4])
+{
+    return BSP_Motor_Hardware_Init(motors);
+}
+
+bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t motor_type)
+{
+    /* 1. Initialize logic object */
+    encoder_motor_object_init(self);
+    
+    /* 2. Apply hardware profile (PID, TPC, etc) */
+    BSP_Motor_Hardware_SetType(self, (MotorTypeEnum)motor_type);
+    
+    /* 3. Ensure hardware is in a safe state */
+    encoder_motor_brake(self);
+
+    /* Note: Currently BSP_Motor_Hardware_SetType doesn't fail, 
+       but we return true for API consistency if object is set. */
+    return (self->set_pulse != NULL);
 }

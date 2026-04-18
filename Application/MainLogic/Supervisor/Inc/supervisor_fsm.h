@@ -18,6 +18,7 @@ typedef enum {
 
 typedef enum {
     EVENT_SUPERVISOR_NONE = 0,
+    EVENT_SUPERVISOR_INIT,         /* Initialize system */
     EVENT_SUPERVISOR_READY,        /* Ready to Idle */
     EVENT_SUPERVISOR_START,        /* Enable system. transition to STATE_MANUAL */
     EVENT_SUPERVISOR_STOP,         /* Disable system. transition to STATE_IDLE */

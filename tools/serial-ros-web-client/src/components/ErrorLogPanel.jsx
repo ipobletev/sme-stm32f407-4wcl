@@ -1,27 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-const ERROR_FLAG_NAMES = {
-  0: 'ERR_HAL_ADC',
-  1: 'ERR_HAL_UART',
-  2: 'ERR_RTOS_QUEUE',
-  3: 'ERR_RTOS_TASK',
-  4: 'ERR_RTOS_TIMER',
-  5: 'ERR_MOB_STALL',
-  6: 'ERR_ARM_STALL',
-  7: 'ERR_SYS_PANIC',
-};
+import { getActiveErrors } from '../utils/ErrorMapping';
 
 function parseErrorFlags(flags) {
-  if (flags === null || flags === undefined) return [];
-  const bigFlags = typeof flags === 'bigint' ? flags : BigInt(flags || 0);
-  const active = [];
-  for (let i = 0; i < 64; i++) {
-    if ((bigFlags >> BigInt(i)) & 1n) {
-      active.push(ERROR_FLAG_NAMES[i] || `BIT_${i}`);
-    }
-  }
-  return active;
+  return getActiveErrors(flags).map(err => err.label);
 }
 
 export default function ErrorLogPanel({ sysStatus }) {

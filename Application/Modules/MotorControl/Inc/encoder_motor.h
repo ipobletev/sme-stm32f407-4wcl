@@ -2,6 +2,7 @@
 #define __ENCODER_MOTOR_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "pid.h"
 
 typedef struct EncoderMotorObject EncoderMotorObjectTypeDef;
@@ -34,5 +35,20 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t new_c
 void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period);
 void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps);
 void encoder_motor_brake(EncoderMotorObjectTypeDef *self);
+
+/**
+ * @brief High-level hardware initialization for the motor system
+ * @param motors Array of 4 motor objects to initialize
+ * @return true if initialization succeeded, false otherwise
+ */
+bool encoder_motor_init_hw_system(EncoderMotorObjectTypeDef *motors[4]);
+
+/**
+ * @brief Configure motor with a specific profile and ensure safety
+ * @param self Motor object
+ * @param motor_type Motor type (casted from MotorTypeEnum to avoid circularity)
+ * @return true if configuration succeeded, false otherwise
+ */
+bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t motor_type);
 
 #endif /* __ENCODER_MOTOR_H_ */

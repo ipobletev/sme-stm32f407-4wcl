@@ -3,36 +3,39 @@
 
 #include "mobility_fsm.h"
 
-/* State Handler Interface */
-
-/* INIT State */
+/* --- Init State Handlers --- */
 void MobState_Init_OnEnter(void);
 void MobState_Init_Run(void);
 void MobState_Init_OnExit(void);
 
-/* IDLE State */
+/* --- Idle State Handlers --- */
 void MobState_Idle_OnEnter(void);
 void MobState_Idle_Run(void);
 void MobState_Idle_OnExit(void);
 
-/* BREAK State */
+/* --- Break State Handlers --- */
 void MobState_Break_OnEnter(void);
 void MobState_Break_Run(void);
 void MobState_Break_OnExit(void);
 
-/* MOVING State */
+/* --- Moving State Handlers --- */
 void MobState_Moving_OnEnter(void);
 void MobState_Moving_Run(void);
 void MobState_Moving_OnExit(void);
 
-/* TESTING State */
+/* --- Testing State Handlers --- */
 void MobState_Testing_OnEnter(void);
 void MobState_Testing_Run(void);
 void MobState_Testing_OnExit(void);
 
-/* FAULT State */
+/* --- Fault State Handlers --- */
 void MobState_Fault_OnEnter(void);
 void MobState_Fault_Run(void);
 void MobState_Fault_OnExit(void);
+
+/* --- Abort State Handlers --- */
+void MobState_Abort_OnEnter(void);
+void MobState_Abort_Run(void);
+void MobState_Abort_OnExit(void);
 
 #endif /* __MOB_STATE_HANDLERS_H */

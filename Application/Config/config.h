@@ -8,7 +8,7 @@
 #define ODOM_PUBLISH_PERIOD_MS    100       // 10Hz
 
 /**
- * Common Motor Parameters (JGB520 default for Jetauto)
+ * Common Motor Parameters (JGB520)
  */
 #define MOTOR_TICKS_PER_CIRCLE 3960.0f
 #define MOTOR_PID_KP           63.0f
@@ -17,11 +17,11 @@
 #define MOTOR_RPS_LIMIT        1.5f
 
 /**
- * Chassis Physical Parameters (Jetauto Mecanum)
+ * Chassis Physical Parameters (4WCL Mecanum)
  */
-#define JETAUTO_WHEEL_DIAMETER   0.08f  /* 80mm */
-#define JETAUTO_SHAFT_LENGTH     0.170f  /* 170mm half length or track width? Reference code usually uses constants. */
-#define JETAUTO_WHEELBASE        0.150f
+#define ROBOT_WHEEL_DIAMETER   0.08f    /* 80mm */
+#define ROBOT_SHAFT_WIDTH      0.170f   /* Distance from the center of the wheel and the center of the other wheel */
+#define ROBOT_WHEELBASE_LENGTH 0.150f   /* Distance between the center of the front wheels and the center of the rear wheels */
 
 /**
  * PWM Configuration

@@ -10,16 +10,11 @@
 #include "mobility_fsm.h"
 #include "arm_fsm.h"
 
-/* Watchdog Variables (Moved from task_manager.c) */
-static uint8_t prev_mob_wdg = 0;
-static uint8_t prev_arm_wdg = 0;
-static uint32_t last_mob_tick = 0;
-static uint32_t last_arm_tick = 0;
 
 /* Internal Private State */
-static SystemState_t currentState = STATE_SUPERVISOR_INIT;
-static SystemState_t previousMode = STATE_SUPERVISOR_IDLE; /* To restore after Pause */
-static uint8_t pauseAuthLevel = 0;              /* Authority level that triggered the pause */
+static SystemState_t current_state = STATE_SUPERVISOR_INIT;
+static SystemState_t previous_mode = STATE_SUPERVISOR_INIT;  /* To restore after Pause */
+static uint8_t pause_auth_level = 0;                          /* Authority level that triggered the pause */
 
 const char* Supervisor_StateToStr(SystemState_t state) {
     switch(state) {
@@ -39,37 +34,27 @@ const char* Supervisor_StateToStr(SystemState_t state) {
 void Supervisor_RunStandardChecks(void) {
     uint32_t now = osal_get_tick();
 
-    /* 1. Mobility Subsystem Check */
-    // Get mobility watchdog
-    uint8_t current_mob_wdg = RobotState_GetWatchdogMobility();
-    if (current_mob_wdg != prev_mob_wdg) {
-        last_mob_tick = now;
-        prev_mob_wdg = current_mob_wdg;
-    } else {
-        if (now - last_mob_tick >= TIMEOUT_SUPERVISOR_ERROR_MS) {
-            RobotState_SetErrorFlag(ERR_MOB_STALL);
-        }
+    /* 1. Mobility Subsystem Check (Passive Timestamp Watchdog) */
+    // Check if the mobility task is alive
+    if (now - RobotState_GetMobilityHeartbeat() > TIMEOUT_SUPERVISOR_ERROR_MS) {
+        RobotState_SetErrorFlag(ERR_MOB_STALL);
+        LOG_ERROR(LOG_TAG, "Mobility Task STALL! No heartbeat for >%d ms\r\n", TIMEOUT_SUPERVISOR_ERROR_MS);
     }
-    // Get mobility state
-    MobilityState_t mobilityState = RobotState_GetMobilityState();
-    if (mobilityState == STATE_MOB_FAULT) {
+    // Check if the mobility state is fault
+    MobilityState_t mobility_state = RobotState_GetMobilityState();
+    if (mobility_state == STATE_MOB_FAULT) {
         RobotState_SetErrorFlag(ERR_MOB_FAULT);
     }
 
-    /* 2. Arm Subsystem Check */
-    // Get arm watchdog
-    uint8_t current_arm_wdg = RobotState_GetWatchdogArm();
-    if (current_arm_wdg != prev_arm_wdg) {
-        last_arm_tick = now;
-        prev_arm_wdg = current_arm_wdg;
-    } else {
-        if (now - last_arm_tick >= TIMEOUT_SUPERVISOR_ERROR_MS) {
-            RobotState_SetErrorFlag(ERR_ARM_STALL);
-        }
+    /* 2. Arm Subsystem Check (Passive Timestamp Watchdog) */
+    // Check if the arm task is alive
+    if (now - RobotState_GetArmHeartbeat() > TIMEOUT_SUPERVISOR_ERROR_MS) {
+        RobotState_SetErrorFlag(ERR_ARM_STALL);
+        LOG_ERROR(LOG_TAG, "Arm Task STALL! No heartbeat for >%d ms\r\n", TIMEOUT_SUPERVISOR_ERROR_MS);
     }
-    // Get arm state
-    ArmState_t armState = RobotState_GetArmState();
-    if (armState == STATE_ARM_FAULT) {
+    // Check if the arm state is fault
+    ArmState_t arm_state = RobotState_GetArmState();
+    if (arm_state == STATE_ARM_FAULT) {
         RobotState_SetErrorFlag(ERR_ARM_FAULT);
     }
 
@@ -80,16 +65,30 @@ void Supervisor_RunStandardChecks(void) {
                (unsigned long)(current_errors >> 32), (unsigned long)(current_errors & 0xFFFFFFFF));
         Supervisor_ProcessEvent(EVENT_SUPERVISOR_ERROR, SRC_INTERNAL_SUPERVISOR);
     }
+
+    /* 4. Cross-Subsystem Abort Logic */
+    // If any system error is present, command healthy subsystems to stop safely.
+    if (ERR_IS_ANY(current_errors)) {
+        if (mobility_state != STATE_MOB_FAULT && mobility_state != STATE_MOB_ABORT) {
+            FSM_Mobility_ProcessEvent(EVENT_MOB_ABORT);
+        }
+        if (arm_state != STATE_ARM_FAULT && arm_state != STATE_ARM_ABORT) {
+            FSM_Arm_ProcessEvent(EVENT_ARM_ABORT);
+        }
+    }
+
+    
+    
 }
 
 /**
  * @brief Helper to handle state transitions with entry/exit actions.
  */
-static void TransitionToState(SystemState_t newState) {
-    if (currentState == newState) return;
+static void TransitionToState(SystemState_t new_state) {
+    if (current_state == new_state) return;
 
     /* Call Exit Handler of current state */
-    switch (currentState) {
+    switch (current_state) {
         case STATE_SUPERVISOR_INIT:   State_Init_OnExit();   break;
         case STATE_SUPERVISOR_IDLE:   State_Idle_OnExit();   break;
         case STATE_SUPERVISOR_MANUAL: State_Manual_OnExit(); break;
@@ -99,11 +98,11 @@ static void TransitionToState(SystemState_t newState) {
         default: break;
     }
 
-    currentState = newState;
-    RobotState_UpdateSystemState(currentState);
+    current_state = new_state;
+    RobotState_UpdateSystemState(current_state);
 
     /* Call Enter Handler of new state */
-    switch (currentState) {
+    switch (current_state) {
         case STATE_SUPERVISOR_INIT:   State_Init_OnEnter();   break;
         case STATE_SUPERVISOR_IDLE:   State_Idle_OnEnter();   break;
         case STATE_SUPERVISOR_MANUAL: State_Manual_OnEnter(); break;
@@ -118,13 +117,11 @@ static void TransitionToState(SystemState_t newState) {
  * @brief Initialize the supervisor state machine.
  */
 void Supervisor_Init(void) {
-    currentState = STATE_SUPERVISOR_INIT;
-    uint32_t now = osal_get_tick();
-    last_mob_tick = now;
-    last_arm_tick = now;
     
-    RobotState_UpdateSystemState(currentState);
-    State_Init_OnEnter();
+    /* Initialize heartbeats to current time to avoid immediate stall detection */
+    RobotState_UpdateMobilityHeartbeat();
+    RobotState_UpdateArmHeartbeat();
+    
     LOG_INFO(LOG_TAG, "Supervisor: Initialized\r\n");
 }
 
@@ -132,77 +129,77 @@ void Supervisor_Init(void) {
  * @brief Get the current state.
  */
 SystemState_t Supervisor_GetCurrentState(void) {
-    return currentState;
+    return current_state;
 }
 
 /**
  * @brief Process an incoming event and update the supervisor state machine.
  */
 void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
-    SystemState_t nextState = currentState;
+    SystemState_t next_state = current_state;
 
     /* Transition Table Logic */
-    switch (currentState)
+    switch (current_state)
     {
         case STATE_SUPERVISOR_INIT:
-            if (event == EVENT_SUPERVISOR_ERROR) nextState = STATE_SUPERVISOR_FAULT;
-            else if (event == EVENT_SUPERVISOR_READY) nextState = STATE_SUPERVISOR_IDLE;
+            if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
+            else if (event == EVENT_SUPERVISOR_READY) next_state = STATE_SUPERVISOR_IDLE;
             break;
 
         case STATE_SUPERVISOR_IDLE:
-            if (event == EVENT_SUPERVISOR_ERROR) nextState = STATE_SUPERVISOR_FAULT;
-            else if (event == EVENT_SUPERVISOR_START) nextState = STATE_SUPERVISOR_MANUAL;
+            if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
+            else if (event == EVENT_SUPERVISOR_START) next_state = STATE_SUPERVISOR_MANUAL;
             break;
         
         case STATE_SUPERVISOR_MANUAL:
-            if (event == EVENT_SUPERVISOR_STOP) nextState = STATE_SUPERVISOR_IDLE;
-            else if (event == EVENT_SUPERVISOR_MODE_AUTO) nextState = STATE_SUPERVISOR_AUTO;
-            else if (event == EVENT_SUPERVISOR_ERROR) nextState = STATE_SUPERVISOR_FAULT;
+            if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
+            else if (event == EVENT_SUPERVISOR_MODE_AUTO) next_state = STATE_SUPERVISOR_AUTO;
+            else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             else if (event == EVENT_SUPERVISOR_PAUSE) {
-                previousMode = STATE_SUPERVISOR_MANUAL;
-                pauseAuthLevel = source;
-                nextState = STATE_SUPERVISOR_PAUSED;
+                previous_mode = STATE_SUPERVISOR_MANUAL;
+                pause_auth_level = source;
+                next_state = STATE_SUPERVISOR_PAUSED;
             }
             break;
 
         case STATE_SUPERVISOR_AUTO:
-            if (event == EVENT_SUPERVISOR_STOP) nextState = STATE_SUPERVISOR_IDLE;
-            else if (event == EVENT_SUPERVISOR_MODE_MANUAL) nextState = STATE_SUPERVISOR_MANUAL;
-            else if (event == EVENT_SUPERVISOR_ERROR) nextState = STATE_SUPERVISOR_FAULT;
+            if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
+            else if (event == EVENT_SUPERVISOR_MODE_MANUAL) next_state = STATE_SUPERVISOR_MANUAL;
+            else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             else if (event == EVENT_SUPERVISOR_PAUSE) {
-                previousMode = STATE_SUPERVISOR_AUTO;
-                pauseAuthLevel = source;
-                nextState = STATE_SUPERVISOR_PAUSED;
+                previous_mode = STATE_SUPERVISOR_AUTO;
+                pause_auth_level = source;
+                next_state = STATE_SUPERVISOR_PAUSED;
             }
             break;
 
         case STATE_SUPERVISOR_PAUSED:
-            if (event == EVENT_SUPERVISOR_STOP) nextState = STATE_SUPERVISOR_IDLE;
-            else if (event == EVENT_SUPERVISOR_ERROR) nextState = STATE_SUPERVISOR_FAULT;
+            if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
+            else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             else if (event == EVENT_SUPERVISOR_RESUME) {
                 // Hierarchical Authority Check
-                if (source >= pauseAuthLevel) {
-                    nextState = previousMode; // Restore where we were
+                if (source >= pause_auth_level) {
+                    next_state = previous_mode; // Restore where we were
                 } else {
-                    LOG_WARNING(LOG_TAG, "Supervisor: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pauseAuthLevel);
+                    LOG_WARNING(LOG_TAG, "Supervisor: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pause_auth_level);
                 }
             }
             break;
 
         case STATE_SUPERVISOR_FAULT:
-            if (event == EVENT_SUPERVISOR_RESET) nextState = STATE_SUPERVISOR_INIT;
+            if (event == EVENT_SUPERVISOR_RESET) next_state = STATE_SUPERVISOR_INIT;
             break;
 
         default:
             LOG_ERROR(LOG_TAG, "Supervisor: Invalid state transition\r\n");
-            nextState = STATE_SUPERVISOR_FAULT;
+            next_state = STATE_SUPERVISOR_FAULT;
             RobotState_SetErrorFlag(ERR_INVALID_SUPERVISOR_STATE);
             break;
     }
 
-    if (nextState != currentState) {
-        LOG_INFO(LOG_TAG, "Supervisor: Transitioning from %s to %s\r\n", Supervisor_StateToStr(currentState), Supervisor_StateToStr(nextState));
-        TransitionToState(nextState);
+    if (next_state != current_state) {
+        LOG_INFO(LOG_TAG, "Supervisor: Transitioning from %s to %s\r\n", Supervisor_StateToStr(current_state), Supervisor_StateToStr(next_state));
+        TransitionToState(next_state);
     }
 }
 
@@ -210,13 +207,16 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
  * @brief Periodic logic for the supervisor. Called by RTOS Task.
  */
 void Supervisor_ProcessLogic(void) {
+    /* Feed Supervisor heartbeat to let subsystems know we are alive */
+    RobotState_UpdateSupervisorHeartbeat();
+
     /* 1. Global Safety Checks (Standard for all operational states) */
-    if (currentState != STATE_SUPERVISOR_INIT && currentState != STATE_SUPERVISOR_FAULT) {
+    if (current_state != STATE_SUPERVISOR_INIT && current_state != STATE_SUPERVISOR_FAULT) {
         Supervisor_RunStandardChecks();
     }
 
     /* 2. Execute Current State Periodic Logic */
-    switch (currentState) {
+    switch (current_state) {
         case STATE_SUPERVISOR_INIT:   State_Init_Run();   break;
         case STATE_SUPERVISOR_IDLE:   State_Idle_Run();   break;
         case STATE_SUPERVISOR_MANUAL: State_Manual_Run(); break;

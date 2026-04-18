@@ -1,5 +1,4 @@
 #include "app_rtos.h"
-#include "mobility_fsm.h"
 #include "supervisor_fsm.h"
 #include "config.h"
 #include "robot_state.h"
@@ -34,8 +33,8 @@ void StartTelemetryTask(void *argument) {
         /* Maintain strict 10ms period */
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TELEMETRY_BASE_PERIOD_MS));
 
-        /* --- 0. SENSOR ACQUISITION (Decoupled from states) --- */
-        FSM_Mobility_UpdateMeasurements();
+        /* --- 0. MOBILITY TELEMETRY  --- */
+        
 
         /* --- 1. IMU TOPIC (100Hz) --- */
         ImuMsg_t imu_msg;
@@ -127,10 +126,9 @@ void StartTelemetryTask(void *argument) {
             snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
 
             /* Periodically log board health to console */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s:%s ARM:%s] | CmdVel: [%s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
-                FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
                 FSM_Arm_StateToStr(RobotState_GetArmState()),
                 cmd_lx_str, cmd_az_str,
                 batt_str,

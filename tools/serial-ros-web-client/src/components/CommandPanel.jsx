@@ -1,20 +1,22 @@
 import { useState, useCallback } from 'react';
-import { Send, Joystick, Cog, Zap, Play, Square, Pause, RotateCcw, RefreshCw, Shield, Navigation, StopCircle } from 'lucide-react';
+import { Send, Joystick, Cog, Zap, Play, Square, Pause, RotateCcw, RefreshCw, Shield, Navigation, StopCircle, AlertTriangle } from 'lucide-react';
 import { buildPacket, Encoders, TOPIC_IDS } from '../utils/protocol';
 
-export default function CommandPanel({ sendPacket, connected }) {
+export default function CommandPanel({ sendPacket, connected, sysStatus }) {
   const [linearX, setLinearX] = useState(0);
   const [angularZ, setAngularZ] = useState(0);
   const [j1, setJ1] = useState(0);
   const [j2, setJ2] = useState(0);
   const [j3, setJ3] = useState(0);
   const [mobMode, setMobMode] = useState(0);
-  const [isAuto, setIsAuto] = useState(0);
+
+  const currentSupState = sysStatus?.state ?? 0;
+  const isAutoModeActual = currentSupState === 3;
+  const isManualModeActual = currentSupState === 2;
 
   const disabled = !connected;
 
   const sendAutonomous = useCallback((auto) => {
-    setIsAuto(auto);
     const payload = Encoders.autonomous(auto);
     sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Array.from(payload)));
   }, [sendPacket]);
@@ -37,9 +39,9 @@ export default function CommandPanel({ sendPacket, connected }) {
   }, [j1, j2, j3, sendPacket]);
 
   const sendMobilityMode = useCallback(() => {
-    const payload = Encoders.mobilityMode(mobMode, isAuto);
+    const payload = Encoders.mobilityMode(mobMode, isAutoModeActual ? 1 : 0);
     sendPacket(buildPacket(TOPIC_IDS.RX.MOBILITY_MODE, Array.from(payload)));
-  }, [mobMode, isAuto, sendPacket]);
+  }, [mobMode, isAutoModeActual, sendPacket]);
 
   const sendEvent = useCallback((eventId) => {
     const payload = Encoders.sysEvent(eventId);
@@ -57,18 +59,18 @@ export default function CommandPanel({ sendPacket, connected }) {
         <div className="card-body">
           <div className="event-buttons">
             <button
-              className={`event-btn ${isAuto === 0 ? 'start' : 'stop'}`}
-              disabled={disabled}
+              className={`event-btn ${isManualModeActual ? 'start' : 'stop'}`}
+              disabled={disabled || currentSupState === 0 || currentSupState === 5}
               onClick={() => sendAutonomous(0)}
-              style={{ opacity: isAuto === 0 ? 1 : 0.5 }}
+              style={{ opacity: isManualModeActual ? 1 : (currentSupState === 1 || currentSupState === 4 ? 0.7 : 0.4) }}
             >
               <Shield size={12} /> Manual
             </button>
             <button
-              className={`event-btn ${isAuto === 1 ? 'resume' : 'stop'}`}
-              disabled={disabled}
+              className={`event-btn ${isAutoModeActual ? 'resume' : 'stop'}`}
+              disabled={disabled || currentSupState === 0 || currentSupState === 5}
               onClick={() => sendAutonomous(1)}
-              style={{ opacity: isAuto === 1 ? 1 : 0.5 }}
+              style={{ opacity: isAutoModeActual ? 1 : (currentSupState === 1 || currentSupState === 4 ? 0.7 : 0.4) }}
             >
               <Navigation size={12} /> Autonomous
             </button>
@@ -99,8 +101,8 @@ export default function CommandPanel({ sendPacket, connected }) {
             <button className="event-btn reset" disabled={disabled} onClick={() => sendEvent(0x05)}>
               <RotateCcw size={12} /> Reset
             </button>
-            <button className="event-btn rehome" disabled={disabled} onClick={() => sendEvent(0x06)}>
-              <RotateCcw size={12} /> Home Arm
+            <button className="event-btn fault" disabled={disabled} onClick={() => sendEvent(0x06)}>
+              <AlertTriangle size={12} /> FAULT (E-STOP)
             </button>
           </div>
         </div>

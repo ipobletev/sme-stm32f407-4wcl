@@ -1,13 +1,13 @@
 #include "arm_fsm.h"
+#include "osal.h"
 #include "arm_fsm_internal.h"
 #include "States/arm_state_handlers.h"
 #include "supervisor_fsm.h"
 #include "robot_state.h"
 #include "debug_module.h"
-#include "arm_fsm_internal.h"
 
 /* Internal State */
-static ArmState_t arm_state = STATE_ARM_UNKNOWN;
+static ArmState_t arm_state = STATE_ARM_INIT;
 
 /* Shared targets (declared extern in arm_fsm_internal.h) */
 float target_j1 = 0.0f;
@@ -23,6 +23,7 @@ const char* FSM_Arm_StateToStr(ArmState_t state) {
         case STATE_ARM_MOVING:   return "MOVING";
         case STATE_ARM_TESTING:  return "TESTING";
         case STATE_ARM_FAULT:    return "FAULT";
+        case STATE_ARM_ABORT:    return "ABORT";
         default:                 return "UNKNOWN";
     }
 }
@@ -41,6 +42,7 @@ void FSM_Arm_TransitionToState(ArmState_t newState) {
         case STATE_ARM_MOVING:   ArmState_Moving_OnExit();   break;
         case STATE_ARM_TESTING:  ArmState_Testing_OnExit();  break;
         case STATE_ARM_FAULT:    ArmState_Fault_OnExit();    break;
+        case STATE_ARM_ABORT:    ArmState_Abort_OnExit();    break;
         default: break;
     }
 
@@ -55,22 +57,17 @@ void FSM_Arm_TransitionToState(ArmState_t newState) {
         case STATE_ARM_MOVING:   ArmState_Moving_OnEnter();   break;
         case STATE_ARM_TESTING:  ArmState_Testing_OnEnter();  break;
         case STATE_ARM_FAULT:    ArmState_Fault_OnEnter();    break;
+        case STATE_ARM_ABORT:    ArmState_Abort_OnEnter();    break;
         default: break;
     }
 }
 
 void FSM_Arm_Init(void) {
-    arm_state = STATE_ARM_INIT;
     target_j1 = 0.0f;
     target_j2 = 0.0f;
     target_j3 = 0.0f;
     homing_progress = 0;
-    
-    RobotState_SetArmState(arm_state);
-    
-    /* Start in INIT state */
-    FSM_Arm_TransitionToState(arm_state);
-    
+        
     LOG_INFO(LOG_TAG, "Initialized (Standardized FSM)\r\n");
 }
 
@@ -107,6 +104,7 @@ void FSM_Arm_ProcessEvent(ArmEvent_t event) {
         case STATE_ARM_INIT:
             if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
             else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            else if (event == EVENT_ARM_ABORT) nextState = STATE_ARM_ABORT;
             break;
 
         case STATE_ARM_IDLE:
@@ -114,12 +112,14 @@ void FSM_Arm_ProcessEvent(ArmEvent_t event) {
             else if (event == EVENT_ARM_HOMING) nextState = STATE_ARM_HOMING;
             else if (event == EVENT_ARM_TESTING) nextState = STATE_ARM_TESTING;
             else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            else if (event == EVENT_ARM_ABORT) nextState = STATE_ARM_ABORT;
             break;
 
         case STATE_ARM_HOMING:
             if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
             else if (event == EVENT_ARM_MOVING) nextState = STATE_ARM_MOVING;
             else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            else if (event == EVENT_ARM_ABORT) nextState = STATE_ARM_ABORT;
             break;
 
         case STATE_ARM_MOVING:
@@ -127,15 +127,22 @@ void FSM_Arm_ProcessEvent(ArmEvent_t event) {
             else if (event == EVENT_ARM_HOMING) nextState = STATE_ARM_HOMING;
             else if (event == EVENT_ARM_TESTING) nextState = STATE_ARM_TESTING;
             else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            else if (event == EVENT_ARM_ABORT) nextState = STATE_ARM_ABORT;
             break;
 
         case STATE_ARM_TESTING:
             if (event == EVENT_ARM_IDLE) nextState = STATE_ARM_IDLE;
             else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
+            else if (event == EVENT_ARM_ABORT) nextState = STATE_ARM_ABORT;
             break;
 
         case STATE_ARM_FAULT:
             if (event == EVENT_ARM_INIT) nextState = STATE_ARM_INIT;
+            break;
+
+        case STATE_ARM_ABORT:
+            if (event == EVENT_ARM_INIT) nextState = STATE_ARM_INIT;
+            else if (event == EVENT_ARM_FAULT) nextState = STATE_ARM_FAULT;
             break;
 
         default:
@@ -157,23 +164,8 @@ void FSM_Arm_ProcessEvent(ArmEvent_t event) {
  * @brief Main logic loop for Arm FSM. Called periodically by its RTOS Task.
  */
 void FSM_Arm_ProcessLogic(void) {
-    SystemState_t master_state = Supervisor_GetCurrentState();
 
-    /* 1. TOP-DOWN Override: React to Master FSM via Events */
-    if (master_state == STATE_SUPERVISOR_FAULT || master_state == STATE_SUPERVISOR_INIT) {
-        if (arm_state != STATE_ARM_INIT) {
-            FSM_Arm_ProcessEvent(EVENT_ARM_INIT);
-        }
-    } else if (master_state == STATE_SUPERVISOR_PAUSED || master_state == STATE_SUPERVISOR_IDLE) {
-        if (arm_state == STATE_ARM_MOVING || arm_state == STATE_ARM_HOMING) {
-            FSM_Arm_ProcessEvent(EVENT_ARM_IDLE);
-        }
-    }
-
-    /* 2. Sync targets from shared state */
-    RobotState_GetTargetArmPose(&target_j1, &target_j2, &target_j3);
-
-    /* 3. Execute Current State Periodic Logic */
+    /* Execute Current State Periodic Logic */
     switch (arm_state) {
         case STATE_ARM_INIT:     ArmState_Init_Run();     break;
         case STATE_ARM_HOMING:   ArmState_Homing_Run();   break;
@@ -184,6 +176,4 @@ void FSM_Arm_ProcessLogic(void) {
         default: break;
     }
 
-    /* Sync local state to global RobotState */
-    RobotState_SetArmState(arm_state);
 }

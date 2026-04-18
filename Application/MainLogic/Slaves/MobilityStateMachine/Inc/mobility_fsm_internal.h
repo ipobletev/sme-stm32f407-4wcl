@@ -14,7 +14,9 @@ extern EncoderMotorObjectTypeDef *motors[4];
 extern float target_linear_x;
 extern float target_angular_z;
 
-/* Helper to transition between states */
-void FSM_Mobility_TransitionToState(MobilityState_t newState);
+/**
+ * @brief Internal helper to handle transitions with entry/exit logic.
+ */
+// Declaration moved to mobility_fsm.h for Supervisor access
 
 #endif /* __MOBILITY_FSM_INTERNAL_H */

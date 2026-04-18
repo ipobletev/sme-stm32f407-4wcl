@@ -33,4 +33,9 @@ void ArmState_Fault_OnEnter(void);
 void ArmState_Fault_Run(void);
 void ArmState_Fault_OnExit(void);
 
+/* STATE: ABORT */
+void ArmState_Abort_OnEnter(void);
+void ArmState_Abort_Run(void);
+void ArmState_Abort_OnExit(void);
+
 #endif /* __ARM_STATE_HANDLERS_H */

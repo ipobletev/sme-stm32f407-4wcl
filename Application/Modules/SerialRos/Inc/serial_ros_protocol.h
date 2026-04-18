@@ -28,7 +28,7 @@ typedef enum {
     SYS_EVENT_PAUSE  = 0x03,
     SYS_EVENT_RESUME = 0x04,
     SYS_EVENT_RESET  = 0x05,
-    SYS_EVENT_HOME   = 0x06,
+    SYS_EVENT_FAULT  = 0x06,
 } SysEventId_t;
 
 /* --- Message Structures (Packed) --- */

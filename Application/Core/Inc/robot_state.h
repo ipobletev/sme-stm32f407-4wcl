@@ -81,8 +81,10 @@ typedef struct {
     } Telemetry;
 
     /* 3. Internal Controls (Not sent to ROS) */
-    uint8_t mobility_watchdog;          /* Node guarding */
-    uint8_t arm_watchdog;               /* Node guarding */
+    uint32_t mobility_heartbeat_tick;   /* Last tick from mobility task (Passive) */
+    uint32_t arm_heartbeat_tick;        /* Last tick from arm task (Passive) */
+    uint32_t supervisor_heartbeat_tick; /* Last tick from supervisor task */
+    
 
 } RobotState_t;
 extern RobotState_t RobotState_4wcl;
@@ -114,11 +116,14 @@ void RobotState_SetBoardTemperature(float temp);
 float RobotState_GetBatteryVoltage(void);
 float RobotState_GetUCTemperature(void);
 
-/* Watchdog API */
-void RobotState_FeedWatchdogMobility(void);
-uint8_t RobotState_GetWatchdogMobility(void);
-void RobotState_FeedWatchdogArm(void);
-uint8_t RobotState_GetWatchdogArm(void);
+/* Heartbeat / Watchdog API */
+void RobotState_UpdateMobilityHeartbeat(void);
+uint32_t RobotState_GetMobilityHeartbeat(void);
+void RobotState_UpdateArmHeartbeat(void);
+uint32_t RobotState_GetArmHeartbeat(void);
+void RobotState_UpdateSupervisorHeartbeat(void);
+uint32_t RobotState_GetSupervisorHeartbeat(void);
+
 
 /* Command Setters (Rx from ROS) */
 void RobotState_SetTargetVelocity(float linear_x, float angular_z);

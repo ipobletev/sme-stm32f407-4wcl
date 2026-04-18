@@ -1,5 +1,7 @@
 #include "States/state_handlers.h"
 #include "debug_module.h"
+#include "mobility_fsm.h"
+#include "arm_fsm.h"
 
 void State_Fault_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering STATE_FAULT (EMERGENCY STOP)\r\n");

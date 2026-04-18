@@ -6,12 +6,12 @@ import { Shield, Cpu, Zap, Activity, AlertTriangle, Circle, ArrowRight } from 'l
 
 const SUPERVISOR_FSM = {
   nodes: [
-    { id: 0, label: 'INIT', x: 80, y: 120, color: '#a78bfa' },
-    { id: 1, label: 'IDLE', x: 220, y: 120, color: '#94a3b8' },
-    { id: 2, label: 'MANUAL', x: 400, y: 60, color: '#6366f1' },
-    { id: 3, label: 'AUTO', x: 400, y: 180, color: '#10b981' },
-    { id: 4, label: 'PAUSED', x: 580, y: 120, color: '#f59e0b' },
-    { id: 5, label: 'FAULT', x: 320, y: 260, color: '#ef4444' },
+    { id: 0, label: 'INIT', x: 120, y: 120, color: '#a78bfa' },
+    { id: 1, label: 'IDLE', x: 260, y: 120, color: '#94a3b8' },
+    { id: 2, label: 'MANUAL', x: 440, y: 60, color: '#6366f1' },
+    { id: 3, label: 'AUTO', x: 440, y: 180, color: '#10b981' },
+    { id: 4, label: 'PAUSED', x: 620, y: 120, color: '#f59e0b' },
+    { id: 5, label: 'FAULT', x: 360, y: 260, color: '#ef4444' },
   ],
   edges: [
     { from: 0, to: 1, label: 'READY' },
@@ -35,56 +35,64 @@ const SUPERVISOR_FSM = {
 
 const MOBILITY_FSM = {
   nodes: [
-    { id: 1, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
-    { id: 2, label: 'IDLE', x: 220, y: 80, color: 'var(--accent-indigo)' },
-    { id: 3, label: 'BREAK', x: 380, y: 220, color: 'var(--accent-amber)' },
-    { id: 4, label: 'MOVING', x: 540, y: 80, color: 'var(--accent-emerald)' },
-    { id: 5, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
-    { id: 6, label: 'FAULT', x: 660, y: 220, color: 'var(--accent-rose)' },
+    { id: 0, label: 'INIT', x: 140, y: 160, color: 'var(--text-muted)' },
+    { id: 1, label: 'IDLE', x: 260, y: 80, color: 'var(--accent-indigo)' },
+    { id: 2, label: 'BREAK', x: 420, y: 220, color: 'var(--accent-amber)' },
+    { id: 3, label: 'MOVING', x: 580, y: 80, color: 'var(--accent-emerald)' },
+    { id: 4, label: 'TESTING', x: 540, y: 220, color: 'var(--accent-cyan)' },
+    { id: 5, label: 'FAULT', x: 660, y: 260, color: 'var(--accent-rose)' },
+    { id: 6, label: 'ABORT', x: 300, y: 260, color: 'var(--accent-amber)' },
   ],
   edges: [
-    { from: 1, to: 2, label: 'Ready' },
-    { from: 2, to: 4, label: 'Moving' },
-    { from: 2, to: 3, label: 'Break' },
-    { from: 2, to: 5, label: 'Test' },
-    { from: 4, to: 2, label: 'Idle' },
-    { from: 4, to: 3, label: 'Break' },
-    { from: 3, to: 4, label: 'Moving' },
-    { from: 3, to: 2, label: 'Idle' },
-    { from: 5, to: 2, label: 'Idle' },
-    { from: 5, to: 4, label: 'Moving' },
-    { from: 2, to: 6, label: 'Error' },
-    { from: 4, to: 6, label: 'Error' },
-    { from: 6, to: 1, label: 'Reset' },
+    { from: 0, to: 1, label: 'Ready' },
+    { from: 1, to: 3, label: 'Moving' },
+    { from: 1, to: 2, label: 'Break' },
+    { from: 1, to: 4, label: 'Test' },
+    { from: 3, to: 1, label: 'Idle' },
+    { from: 3, to: 2, label: 'Break' },
+    { from: 2, to: 3, label: 'Moving' },
+    { from: 2, to: 1, label: 'Idle' },
+    { from: 4, to: 1, label: 'Idle' },
+    { from: 4, to: 3, label: 'Moving' },
+    { from: 1, to: 5, label: 'Error' },
+    { from: 3, to: 5, label: 'Error' },
+    { from: 1, to: 6, label: 'Abort' },
+    { from: 3, to: 6, label: 'Abort' },
+    { from: 6, to: 0, label: 'Reset' },
+    { from: 5, to: 0, label: 'Reset' },
   ]
 };
 
 const ARM_FSM = {
   nodes: [
-    { id: 1, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
-    { id: 2, label: 'HOMING', x: 180, y: 80, color: 'var(--accent-cyan)' },
-    { id: 3, label: 'IDLE', x: 340, y: 160, color: 'var(--accent-indigo)' },
-    { id: 4, label: 'MOVING', x: 500, y: 80, color: 'var(--accent-emerald)' },
-    { id: 5, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
-    { id: 6, label: 'FAULT', x: 640, y: 160, color: 'var(--accent-rose)' },
+    { id: 0, label: 'INIT', x: 140, y: 160, color: 'var(--text-muted)' },
+    { id: 1, label: 'HOMING', x: 240, y: 80, color: 'var(--accent-cyan)' },
+    { id: 2, label: 'IDLE', x: 380, y: 160, color: 'var(--accent-indigo)' },
+    { id: 3, label: 'MOVING', x: 540, y: 80, color: 'var(--accent-emerald)' },
+    { id: 4, label: 'TESTING', x: 540, y: 220, color: 'var(--accent-cyan)' },
+    { id: 5, label: 'FAULT', x: 660, y: 160, color: 'var(--accent-rose)' },
+    { id: 6, label: 'ABORT', x: 520, y: 280, color: 'var(--accent-amber)' },
   ],
   edges: [
-    { from: 1, to: 3, label: 'Idle' },
-    { from: 3, to: 2, label: 'Homing' },
-    { from: 3, to: 4, label: 'Moving' },
-    { from: 3, to: 5, label: 'Test' },
-    { from: 2, to: 3, label: 'Done' },
-    { from: 2, to: 4, label: 'Moving' },
-    { from: 2, to: 5, label: 'Test' },
-    { from: 4, to: 3, label: 'Idle' },
-    { from: 4, to: 2, label: 'Homing' },
-    { from: 4, to: 5, label: 'Test' },
-    { from: 5, to: 3, label: 'Idle' },
-    { from: 5, to: 4, label: 'Moving' },
-    { from: 2, to: 6, label: 'Error' },
-    { from: 3, to: 6, label: 'Error' },
-    { from: 4, to: 6, label: 'Error' },
-    { from: 6, to: 1, label: 'Reset' },
+    { from: 0, to: 2, label: 'Idle' },
+    { from: 2, to: 1, label: 'Homing' },
+    { from: 2, to: 3, label: 'Moving' },
+    { from: 2, to: 4, label: 'Test' },
+    { from: 1, to: 2, label: 'Done' },
+    { from: 1, to: 3, label: 'Moving' },
+    { from: 1, to: 4, label: 'Test' },
+    { from: 3, to: 2, label: 'Idle' },
+    { from: 3, to: 1, label: 'Homing' },
+    { from: 3, to: 4, label: 'Test' },
+    { from: 4, to: 2, label: 'Idle' },
+    { from: 4, to: 3, label: 'Moving' },
+    { from: 1, to: 5, label: 'Error' },
+    { from: 2, to: 5, label: 'Error' },
+    { from: 3, to: 5, label: 'Error' },
+    { from: 2, to: 6, label: 'Abort' },
+    { from: 3, to: 6, label: 'Abort' },
+    { from: 6, to: 0, label: 'Reset' },
+    { from: 5, to: 0, label: 'Reset' },
   ]
 };
 
@@ -186,7 +194,7 @@ function SubsystemDiagram({ title, icon: Icon, fsm, currentState }) {
 export default function SystemStatusMap({ sysStatus }) {
   const [hoveredNode, setHoveredNode] = useState(null);
   
-  const currentSysState = sysStatus?.state ?? 1;
+  const currentSysState = sysStatus?.state ?? 0;
   const currentMobState = sysStatus?.mobility_state ?? 0;
   const currentArmState = sysStatus?.arm_state ?? 0;
 

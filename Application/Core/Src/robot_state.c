@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "osal.h"
 
 #define IS_IN_ISR() ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0)
 
@@ -146,48 +147,70 @@ ArmState_t RobotState_GetArmState(void) {
     return state;
 }
 
-void RobotState_FeedWatchdogMobility(void) {
+void RobotState_UpdateMobilityHeartbeat(void) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        RobotState_4wcl.mobility_watchdog++;
+        RobotState_4wcl.mobility_heartbeat_tick = osal_get_tick();
     } else {
         taskENTER_CRITICAL();
-        RobotState_4wcl.mobility_watchdog++;
+        RobotState_4wcl.mobility_heartbeat_tick = osal_get_tick();
         taskEXIT_CRITICAL();
     }
 }
 
-uint8_t RobotState_GetWatchdogMobility(void) {
-    uint8_t wdg;
+uint32_t RobotState_GetMobilityHeartbeat(void) {
+    uint32_t tick;
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        wdg = RobotState_4wcl.mobility_watchdog;
+        tick = RobotState_4wcl.mobility_heartbeat_tick;
     } else {
         taskENTER_CRITICAL();
-        wdg = RobotState_4wcl.mobility_watchdog;
+        tick = RobotState_4wcl.mobility_heartbeat_tick;
         taskEXIT_CRITICAL();
     }
-    return wdg;
+    return tick;
 }
 
-void RobotState_FeedWatchdogArm(void) {
+void RobotState_UpdateArmHeartbeat(void) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        RobotState_4wcl.arm_watchdog++;
+        RobotState_4wcl.arm_heartbeat_tick = osal_get_tick();
     } else {
         taskENTER_CRITICAL();
-        RobotState_4wcl.arm_watchdog++;
+        RobotState_4wcl.arm_heartbeat_tick = osal_get_tick();
         taskEXIT_CRITICAL();
     }
 }
 
-uint8_t RobotState_GetWatchdogArm(void) {
-    uint8_t wdg;
+uint32_t RobotState_GetArmHeartbeat(void) {
+    uint32_t tick;
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        wdg = RobotState_4wcl.arm_watchdog;
+        tick = RobotState_4wcl.arm_heartbeat_tick;
     } else {
         taskENTER_CRITICAL();
-        wdg = RobotState_4wcl.arm_watchdog;
+        tick = RobotState_4wcl.arm_heartbeat_tick;
         taskEXIT_CRITICAL();
     }
-    return wdg;
+    return tick;
+}
+
+void RobotState_UpdateSupervisorHeartbeat(void) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.supervisor_heartbeat_tick = osal_get_tick();
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.supervisor_heartbeat_tick = osal_get_tick();
+        taskEXIT_CRITICAL();
+    }
+}
+
+uint32_t RobotState_GetSupervisorHeartbeat(void) {
+    uint32_t tick;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        tick = RobotState_4wcl.supervisor_heartbeat_tick;
+    } else {
+        taskENTER_CRITICAL();
+        tick = RobotState_4wcl.supervisor_heartbeat_tick;
+        taskEXIT_CRITICAL();
+    }
+    return tick;
 }
 
 void RobotState_SetBatteryVoltage(float voltage) {
@@ -371,3 +394,4 @@ void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
         taskEXIT_CRITICAL();
     }
 }
+

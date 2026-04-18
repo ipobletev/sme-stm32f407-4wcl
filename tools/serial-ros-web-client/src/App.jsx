@@ -66,6 +66,7 @@ export default function App() {
         collapsed={sidebarCollapsed} 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
+        sysStatus={telemetry.sysStatus}
       />
 
       {/* Main Content Area */}
@@ -93,7 +94,7 @@ export default function App() {
               {/* Right sidebar: scrollable control panel */}
               <div className="sidebar">
                 <div className="sidebar-scroll">
-                  <CommandPanel sendPacket={sendPacket} connected={connected} />
+                  <CommandPanel sendPacket={sendPacket} connected={connected} sysStatus={telemetry.sysStatus} />
                 </div>
               </div>
 

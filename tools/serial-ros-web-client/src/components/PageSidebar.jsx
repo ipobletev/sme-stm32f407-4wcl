@@ -1,14 +1,15 @@
-import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart, Network } from 'lucide-react';
+import { LayoutDashboard, Terminal, Gauge, Settings, HelpCircle, User, LineChart, Network, AlertTriangle } from 'lucide-react';
+import { getActiveErrors } from '../utils/ErrorMapping';
 
-export default function PageSidebar({ collapsed, activeTab, onTabChange }) {
+export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStatus }) {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
     { id: 'fsm', icon: Network, label: 'Logic Map' },
     { id: 'actuator-tool', icon: Settings, label: 'Actuator Tool' },
-    // { id: 'telemetry', icon: Gauge, label: 'Telemetry' },
-    // { id: 'terminal', icon: Terminal, label: 'Serial Log' },
   ];
+
+  const activeErrors = getActiveErrors(sysStatus?.errors);
 
   return (
     <aside className={`page-sidebar ${collapsed ? 'collapsed' : 'expanded'}`}>
@@ -29,6 +30,33 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange }) {
           </button>
         ))}
       </nav>
+
+      {/* Real-time Error List (Left Sidebar instance) */}
+      {activeErrors.length > 0 && (
+        <div className="sidebar-errors">
+          {collapsed ? (
+            <div 
+              className={`error-compact-dot severity-${activeErrors[0].severity}`} 
+              title={`${activeErrors.length} Active Errors`}
+            />
+          ) : (
+            <>
+              <div className="error-list-title">
+                <AlertTriangle size={12} />
+                <span>Active Errors</span>
+              </div>
+              <div className="error-items-container">
+                {activeErrors.map((err, idx) => (
+                  <div key={idx} className={`sidebar-error-item severity-${err.severity}`}>
+                    <AlertTriangle size={14} className="error-icon" />
+                    <span className="error-msg">{err.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="sidebar-footer">
         <div className="footer-status">

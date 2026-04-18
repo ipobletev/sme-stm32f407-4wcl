@@ -14,7 +14,7 @@ export default function Header({
   
   const handleEmergencyStop = () => {
     if (!connected || !sendPacket) return;
-    const payload = Encoders.sysEvent(0x02);
+    const payload = Encoders.sysEvent(0x06);
     const packet = buildPacket(TOPIC_IDS.RX.SYS_EVENT, payload);
     sendPacket(packet);
     console.warn("EMERGENCY STOP SENT");

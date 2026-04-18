@@ -4,11 +4,11 @@ import ImuVisualizer from './ImuVisualizer';
 const STATE_NAMES = ['INIT', 'IDLE', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
 const STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault'];
 
-const MOB_STATE_NAMES = ['UNKNOWN', 'INIT', 'IDLE', 'BREAK', 'MOVING', 'TESTING', 'FAULT'];
-const MOB_STATE_CLASSES = ['state-idle', 'state-idle', 'state-ready', 'state-paused', 'state-running', 'state-running', 'state-fault'];
+const MOB_STATE_NAMES = ['INIT', 'IDLE', 'BREAK', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
+const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-paused', 'state-running', 'state-running', 'state-fault', 'state-paused'];
 
-const ARM_STATE_NAMES = ['UNKNOWN', 'INIT', 'HOMING', 'IDLE', 'MOVING', 'TESTING', 'FAULT'];
-const ARM_STATE_CLASSES = ['state-idle', 'state-idle', 'state-ready', 'state-ready', 'state-running', 'state-running', 'state-fault'];
+const ARM_STATE_NAMES = ['INIT', 'HOMING', 'IDLE', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
+const ARM_STATE_CLASSES = ['state-idle', 'state-ready', 'state-ready', 'state-running', 'state-running', 'state-fault', 'state-paused'];
 
 function getStateName(code) {
   return STATE_NAMES[code] || `UNK(${code})`;
