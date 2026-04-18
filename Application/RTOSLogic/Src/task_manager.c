@@ -2,6 +2,9 @@
 #include "robot_state.h"
 #include "supervisor_fsm.h"
 #include <stdio.h>
+#include "debug_module.h"
+
+#define LOG_TAG "TASK_MANAGER"
 
 void StartManagerTask(void *argument)
 {
@@ -10,7 +13,7 @@ void StartManagerTask(void *argument)
     /* Initialize the internal supervisor logic */
     Supervisor_Init();
 
-    printf("Manager Task Started. Ready to process events.\r\n");
+    LOG_INFO(LOG_TAG, "Manager Task Started. Ready to process events.\r\n");
 
     for(;;)
     {
@@ -18,7 +21,7 @@ void StartManagerTask(void *argument)
         /* Wait for a message from other tasks, block for 20ms */
         if (osal_queue_get(stateMsgQueueHandle, &msg, 20U) == OSAL_OK)
         {
-            printf("Manager: Processing Event %d collected at tick %lu\r\n", 
+            LOG_INFO(LOG_TAG, "Manager: Processing Event %d collected at tick %lu\r\n", 
                    msg.event, (unsigned long)msg.timestamp);
 
             /* Delegate the transition logic to the Supervisor module */

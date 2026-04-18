@@ -8,7 +8,7 @@ void ArmState_Moving_OnEnter(void) {
 
 void ArmState_Moving_Run(void) {
     if (target_j1 == 0.0f && target_j2 == 0.0f && target_j3 == 0.0f) {
-        Arm_ProcessEvent(EVENT_ARM_IDLE);
+        FSM_Arm_ProcessEvent(EVENT_ARM_IDLE);
     } else {
         /* 
            Execute IK & Servo Control Here.

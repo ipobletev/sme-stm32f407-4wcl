@@ -7,9 +7,7 @@ void ArmState_Idle_OnEnter(void) {
 }
 
 void ArmState_Idle_Run(void) {
-    if (target_j1 != 0.0f || target_j2 != 0.0f || target_j3 != 0.0f) {
-        Arm_ProcessEvent(EVENT_ARM_MOVING);
-    }
+    // TODO: Implement idle logic
 }
 
 void ArmState_Idle_OnExit(void) {

@@ -9,7 +9,7 @@ void StartMobilityTask(void *argument)
 {
     LOG_INFO(LOG_TAG, "Mobility Logic Task Started.\r\n");
 
-    Mobility_Init();
+    FSM_Mobility_Init();
 
     for(;;)
     {
@@ -17,10 +17,10 @@ void StartMobilityTask(void *argument)
         RobotState_FeedWatchdogMobility();
 
         /* Process Mobility Logic at 50Hz (20ms loop) */
-        Mobility_ProcessLogic();
+        FSM_Mobility_ProcessLogic();
         
         /* Update Shared Robot State telemetry */
-        RobotState_SetMobilityState(Mobility_GetCurrentState());
+        RobotState_SetMobilityState(FSM_Mobility_GetCurrentState());
 
         /* In a real scenario, here we check queues for cmd_vel if needed, 
            or global targets updated by UART listener. */

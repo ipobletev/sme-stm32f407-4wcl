@@ -9,7 +9,7 @@ void MobState_Testing_OnEnter(void) {
 void MobState_Testing_Run(void) {
     /* If a velocity command arrives, exit testing mode and go to MOVING */
     if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
-        Mobility_ProcessEvent(EVENT_MOVING);
+        FSM_Mobility_ProcessEvent(EVENT_MOVING);
     }
 }
 

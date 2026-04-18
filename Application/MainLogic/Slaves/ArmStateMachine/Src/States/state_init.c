@@ -10,13 +10,9 @@ void ArmState_Init_OnEnter(void) {
 }
 
 void ArmState_Init_Run(void) {
-    SystemState_t master_state = Supervisor_GetCurrentState();
-
-    /* Transition logic: If supervisor is in MANUAL or AUTO, start homing */
-    if (master_state == STATE_SUPERVISOR_MANUAL || master_state == STATE_SUPERVISOR_AUTO) {
-        LOG_INFO(LOG_TAG, "System Ready -> Transitioning to HOMING\r\n");
-        Arm_ProcessEvent(EVENT_ARM_HOMING);
-    }
+    /* Transition logic: Go to IDLE when system is stabilized */
+    LOG_INFO(LOG_TAG, "System Ready -> Transitioning to IDLE\r\n");
+    FSM_Arm_ProcessEvent(EVENT_ARM_IDLE);
 }
 
 void ArmState_Init_OnExit(void) {

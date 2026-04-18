@@ -1,14 +1,14 @@
 import { Cpu, Gauge, RotateCcw } from 'lucide-react';
 import ImuVisualizer from './ImuVisualizer';
 
-const STATE_NAMES = ['IDLE', 'READY', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
+const STATE_NAMES = ['INIT', 'IDLE', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT'];
 const STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault'];
 
-const MOB_STATE_NAMES = ['DISABLED', 'IDLE', 'BREAK', 'MOVING', 'FAULT'];
-const MOB_STATE_CLASSES = ['state-idle', 'state-ready', 'state-paused', 'state-running', 'state-fault'];
+const MOB_STATE_NAMES = ['UNKNOWN', 'INIT', 'IDLE', 'BREAK', 'MOVING', 'TESTING', 'FAULT'];
+const MOB_STATE_CLASSES = ['state-idle', 'state-idle', 'state-ready', 'state-paused', 'state-running', 'state-running', 'state-fault'];
 
-const ARM_STATE_NAMES = ['DISABLED', 'HOMING', 'IDLE', 'MOVING', 'FAULT'];
-const ARM_STATE_CLASSES = ['state-idle', 'state-ready', 'state-ready', 'state-running', 'state-fault'];
+const ARM_STATE_NAMES = ['UNKNOWN', 'INIT', 'HOMING', 'IDLE', 'MOVING', 'TESTING', 'FAULT'];
+const ARM_STATE_CLASSES = ['state-idle', 'state-idle', 'state-ready', 'state-ready', 'state-running', 'state-running', 'state-fault'];
 
 function getStateName(code) {
   return STATE_NAMES[code] || `UNK(${code})`;

@@ -7,7 +7,7 @@
 #include "arm_fsm_internal.h"
 
 /* Internal State */
-static ArmState_t arm_state = STATE_ARM_INIT;
+static ArmState_t arm_state = STATE_ARM_UNKNOWN;
 
 /* Shared targets (declared extern in arm_fsm_internal.h) */
 float target_j1 = 0.0f;
@@ -15,7 +15,7 @@ float target_j2 = 0.0f;
 float target_j3 = 0.0f;
 uint8_t homing_progress = 0;
 
-const char* Arm_StateToStr(ArmState_t state) {
+const char* FSM_Arm_StateToStr(ArmState_t state) {
     switch(state) {
         case STATE_ARM_INIT:     return "INIT";
         case STATE_ARM_HOMING:   return "HOMING";
@@ -30,7 +30,7 @@ const char* Arm_StateToStr(ArmState_t state) {
 /**
  * @brief Helper to handle state transitions with entry/exit actions.
  */
-void Arm_TransitionToState(ArmState_t newState) {
+void FSM_Arm_TransitionToState(ArmState_t newState) {
     if (arm_state == newState) return;
 
     /* Call Exit Handler of current state */
@@ -59,7 +59,7 @@ void Arm_TransitionToState(ArmState_t newState) {
     }
 }
 
-void Arm_Init(void) {
+void FSM_Arm_Init(void) {
     arm_state = STATE_ARM_INIT;
     target_j1 = 0.0f;
     target_j2 = 0.0f;
@@ -69,25 +69,25 @@ void Arm_Init(void) {
     RobotState_SetArmState(arm_state);
     
     /* Start in INIT state */
-    Arm_TransitionToState(STATE_ARM_INIT);
+    FSM_Arm_TransitionToState(arm_state);
     
     LOG_INFO(LOG_TAG, "Initialized (Standardized FSM)\r\n");
 }
 
-ArmState_t Arm_GetCurrentState(void) {
+ArmState_t FSM_Arm_GetCurrentState(void) {
     return arm_state;
 }
 
-void Arm_SetJointTarget(float j1, float j2, float j3) {
+void FSM_Arm_SetJointTarget(float j1, float j2, float j3) {
     target_j1 = j1;
     target_j2 = j2;
     target_j3 = j3;
 }
 
-void Arm_SetRawServoPulse(uint8_t servo_id, int16_t pulse) {
+void FSM_Arm_SetRawServoPulse(uint8_t servo_id, int16_t pulse) {
     /* Auto-transition to TESTING state if not already there */
     if (arm_state != STATE_ARM_TESTING) {
-        Arm_ProcessEvent(EVENT_ARM_TESTING);
+        FSM_Arm_ProcessEvent(EVENT_ARM_TESTING);
     }
     
     /* 
@@ -98,7 +98,7 @@ void Arm_SetRawServoPulse(uint8_t servo_id, int16_t pulse) {
     LOG_INFO(LOG_TAG, "Testing Servo %u -> Pulse %d\r\n", servo_id, pulse);
 }
 
-void Arm_ProcessEvent(ArmEvent_t event) {
+void FSM_Arm_ProcessEvent(ArmEvent_t event) {
     ArmState_t nextState = arm_state;
 
     /* Transition Table Logic */
@@ -147,25 +147,26 @@ void Arm_ProcessEvent(ArmEvent_t event) {
 
     if (nextState != arm_state) {
         LOG_INFO(LOG_TAG, "Arm: Transition from %s to %s (Event: %d)\r\n", 
-                 Arm_StateToStr(arm_state), Arm_StateToStr(nextState), event);
-        Arm_TransitionToState(nextState);
+            FSM_Arm_StateToStr(arm_state), 
+            FSM_Arm_StateToStr(nextState), event);
+        FSM_Arm_TransitionToState(nextState);
     }
 }
 
 /**
  * @brief Main logic loop for Arm FSM. Called periodically by its RTOS Task.
  */
-void Arm_ProcessLogic(void) {
+void FSM_Arm_ProcessLogic(void) {
     SystemState_t master_state = Supervisor_GetCurrentState();
 
     /* 1. TOP-DOWN Override: React to Master FSM via Events */
     if (master_state == STATE_SUPERVISOR_FAULT || master_state == STATE_SUPERVISOR_INIT) {
         if (arm_state != STATE_ARM_INIT) {
-            Arm_ProcessEvent(EVENT_ARM_INIT);
+            FSM_Arm_ProcessEvent(EVENT_ARM_INIT);
         }
     } else if (master_state == STATE_SUPERVISOR_PAUSED || master_state == STATE_SUPERVISOR_IDLE) {
         if (arm_state == STATE_ARM_MOVING || arm_state == STATE_ARM_HOMING) {
-            Arm_ProcessEvent(EVENT_ARM_IDLE);
+            FSM_Arm_ProcessEvent(EVENT_ARM_IDLE);
         }
     }
 

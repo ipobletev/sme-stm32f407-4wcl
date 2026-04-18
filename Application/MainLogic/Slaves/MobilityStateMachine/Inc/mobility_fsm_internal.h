@@ -15,6 +15,6 @@ extern float target_linear_x;
 extern float target_angular_z;
 
 /* Helper to transition between states */
-void Mobility_TransitionToState(MobilityState_t newState);
+void FSM_Mobility_TransitionToState(MobilityState_t newState);
 
 #endif /* __MOBILITY_FSM_INTERNAL_H */

@@ -3,6 +3,9 @@
 #include "qmi8658.h"
 #include <string.h>
 #include <stdio.h>
+#include "debug_module.h"
+
+#define LOG_TAG "BSP_IMU"
 
 extern I2C_HandleTypeDef hi2c2;
 
@@ -47,7 +50,7 @@ IMU_Status_t BSP_IMU_Init(void) {
     detected_addr = 0;
     imu_type = IMU_TYPE_NONE;
 
-    printf("[IMU] Scanning I2C2 Bus...\r\n");
+    LOG_INFO(LOG_TAG, "Scanning I2C2 Bus...\r\n");
     for (uint8_t addr = 0x68; addr <= 0x6B; addr++) {
         uint8_t target = addr << 1;
         if (HAL_I2C_IsDeviceReady(&hi2c2, target, 2, 5) == HAL_OK) {
@@ -56,7 +59,7 @@ IMU_Status_t BSP_IMU_Init(void) {
                 if (check == 0x05) {
                     detected_addr = target;
                     imu_type = IMU_TYPE_QMI8658;
-                    printf("[IMU] QMI8658 detected at 0x%02X\r\n", addr);
+                    LOG_INFO(LOG_TAG, "QMI8658 detected at 0x%02X\r\n", addr);
                     if (qmi8658_begin()) return IMU_OK;
                     return IMU_ERROR_I2C;
                 }
@@ -66,14 +69,14 @@ IMU_Status_t BSP_IMU_Init(void) {
                 if (check == 0x68 || (check >= 0x70 && check <= 0x73)) {
                     detected_addr = target;
                     imu_type = IMU_TYPE_MPU6050;
-                    printf("[IMU] MPU Family detected at 0x%02X (ID: 0x%02X)\r\n", addr, check);
+                    LOG_INFO(LOG_TAG, "MPU Family detected at 0x%02X (ID: 0x%02X)\r\n", addr, check);
                     return MPU6050_Init();
                 }
             }
         }
     }
 
-    printf("[IMU] No known IMU sensor found.\r\n");
+    LOG_INFO(LOG_TAG, "No known IMU sensor found.\r\n");
     return IMU_ERROR_ID;
 }
 

@@ -12,7 +12,7 @@ void ArmState_Homing_Run(void) {
     homing_progress++;
     
     if (homing_progress > 10) { // Simulate completion
-        Arm_ProcessEvent(EVENT_ARM_IDLE);
+        FSM_Arm_ProcessEvent(EVENT_ARM_IDLE);
     }
 }
 

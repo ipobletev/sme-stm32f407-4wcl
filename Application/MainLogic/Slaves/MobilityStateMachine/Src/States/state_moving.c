@@ -16,7 +16,7 @@ void MobState_Moving_OnEnter(void) {
 void MobState_Moving_Run(void) {
     /* If targets return to zero, transition back to IDLE */
     if (target_linear_x == 0.0f && target_angular_z == 0.0f) {
-        Mobility_ProcessEvent(EVENT_IDLE);
+        FSM_Mobility_ProcessEvent(EVENT_IDLE);
         return;
     }
 

@@ -15,6 +15,6 @@ extern uint8_t homing_progress;
 /**
  * @brief Internal helper to handle transitions with entry/exit logic.
  */
-void Arm_TransitionToState(ArmState_t newState);
+void FSM_Arm_TransitionToState(ArmState_t newState);
 
 #endif /* __ARM_FSM_INTERNAL_H */

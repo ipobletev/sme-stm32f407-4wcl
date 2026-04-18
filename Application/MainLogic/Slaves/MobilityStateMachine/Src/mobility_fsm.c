@@ -17,13 +17,13 @@ float target_linear_x = 0.0f;
 float target_angular_z = 0.0f;
 
 /* Internal State */
-static MobilityState_t mob_state = STATE_MOB_INIT;
+static MobilityState_t mob_state = STATE_MOB_UNKNOWN;
 
 /* Timing */
 static uint32_t last_ctrl_tick = 0;
 static uint32_t last_meas_tick = 0;
 
-const char* Mobility_StateToStr(MobilityState_t state) {
+const char* FSM_Mobility_StateToStr(MobilityState_t state) {
     switch(state) {
         case STATE_MOB_INIT:     return "INIT";
         case STATE_MOB_IDLE:     return "IDLE";
@@ -35,7 +35,7 @@ const char* Mobility_StateToStr(MobilityState_t state) {
     }
 }
 
-const char* Mobility_ModeToStr(uint8_t mode) {
+const char* FSM_Mobility_ModeToStr(uint8_t mode) {
     switch(mode) {
         case MOB_MODE_DIRECT:    return "DIR";
         case MOB_MODE_DIFF:      return "DIF";
@@ -48,7 +48,7 @@ const char* Mobility_ModeToStr(uint8_t mode) {
 /**
  * @brief Helper to handle state transitions with entry/exit actions.
  */
-void Mobility_TransitionToState(MobilityState_t newState) {
+void FSM_Mobility_TransitionToState(MobilityState_t newState) {
     if (mob_state == newState) return;
 
     /* Call Exit Handler of current state */
@@ -77,30 +77,30 @@ void Mobility_TransitionToState(MobilityState_t newState) {
     }
 }
 
-void Mobility_Init(void) {
+void FSM_Mobility_Init(void) {
     uint32_t now = osal_get_tick();
     last_ctrl_tick = now;
     last_meas_tick = now;
     
     /* Start in INIT state to handle hardware setup */
-    Mobility_TransitionToState(STATE_MOB_INIT);
+    FSM_Mobility_TransitionToState(STATE_MOB_INIT);
     
     LOG_INFO(LOG_TAG, "Initializing Module...\r\n");
 }
 
-MobilityState_t Mobility_GetCurrentState(void) {
+MobilityState_t FSM_Mobility_GetCurrentState(void) {
     return mob_state;
 }
 
-void Mobility_SetCommandTarget(float linear_x, float angular_z) {
+void FSM_Mobility_SetCommandTarget(float linear_x, float angular_z) {
     target_linear_x = linear_x;
     target_angular_z = angular_z;
 }
 
-void Mobility_SetRawMotorPulse(uint8_t id, float pulse) {
+void FSM_Mobility_SetRawMotorPulse(uint8_t id, float pulse) {
     if (id < 4) {
         /* Force state to TESTING via Event system */
-        Mobility_ProcessEvent(EVENT_TESTING);
+        FSM_Mobility_ProcessEvent(EVENT_TESTING);
         
         /* Bypass PID by setting pulse directly on the motor hardware */
         motors[id]->set_pulse(motors[id], (int)pulse);
@@ -111,7 +111,7 @@ void Mobility_SetRawMotorPulse(uint8_t id, float pulse) {
     }
 }
 
-void Mobility_UpdateMeasurements(void) {
+void FSM_Mobility_UpdateMeasurements(void) {
     uint32_t now = osal_get_tick();
     float dt = (float)(now - last_meas_tick) / 1000.0f;
     if (dt <= 0.0f) dt = 0.01f; 
@@ -135,7 +135,7 @@ void Mobility_UpdateMeasurements(void) {
     RobotState_SetMeasuredVelocity(actual_vx, 0.0f);
 }
 
-void Mobility_ProcessEvent(MobilityEvent_t event) {
+void FSM_Mobility_ProcessEvent(MobilityEvent_t event) {
     MobilityState_t nextState = mob_state;
 
     /* Transition Table Logic */
@@ -184,12 +184,12 @@ void Mobility_ProcessEvent(MobilityEvent_t event) {
 
     if (nextState != mob_state) {
         LOG_INFO(LOG_TAG, "Mobility: Transition from %s to %s (Event: %d)\r\n", 
-                 Mobility_StateToStr(mob_state), Mobility_StateToStr(nextState), event);
-        Mobility_TransitionToState(nextState);
+                 FSM_Mobility_StateToStr(mob_state), FSM_Mobility_StateToStr(nextState), event);
+        FSM_Mobility_TransitionToState(nextState);
     }
 }
 
-void Mobility_ProcessLogic(void) {
+void FSM_Mobility_ProcessLogic(void) {
     SystemState_t master_state = Supervisor_GetCurrentState();
     uint32_t now = osal_get_tick();
     float dt = (float)(now - last_ctrl_tick) / 1000.0f;
@@ -199,11 +199,11 @@ void Mobility_ProcessLogic(void) {
     /* 1. TOP-DOWN Override & Safety (React to Master FSM via Events) */
     if (master_state == STATE_SUPERVISOR_FAULT || master_state == STATE_SUPERVISOR_INIT) {
         if (mob_state != STATE_MOB_INIT) {
-            Mobility_ProcessEvent(EVENT_INIT);
+            FSM_Mobility_ProcessEvent(EVENT_INIT);
         }
     } else if (master_state == STATE_SUPERVISOR_IDLE || master_state == STATE_SUPERVISOR_PAUSED) {
         if (mob_state == STATE_MOB_MOVING) {
-             Mobility_ProcessEvent(EVENT_BREAK);
+             FSM_Mobility_ProcessEvent(EVENT_BREAK);
         }
     }
 

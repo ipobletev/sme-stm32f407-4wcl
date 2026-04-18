@@ -14,7 +14,7 @@ void ArmState_Testing_Run(void) {
     */
     if (target_j1 != 0.0f || target_j2 != 0.0f || target_j3 != 0.0f) {
         LOG_INFO(LOG_TAG, "Control Takeover -> Exiting TESTING\r\n");
-        Arm_ProcessEvent(EVENT_ARM_MOVING);
+        FSM_Arm_ProcessEvent(EVENT_ARM_MOVING);
     }
 }
 

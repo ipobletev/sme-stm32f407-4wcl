@@ -35,7 +35,7 @@ void StartTelemetryTask(void *argument) {
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(TELEMETRY_BASE_PERIOD_MS));
 
         /* --- 0. SENSOR ACQUISITION (Decoupled from states) --- */
-        Mobility_UpdateMeasurements();
+        FSM_Mobility_UpdateMeasurements();
 
         /* --- 1. IMU TOPIC (100Hz) --- */
         ImuMsg_t imu_msg;
@@ -129,9 +129,9 @@ void StartTelemetryTask(void *argument) {
             /* Periodically log board health to console */
             LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s:%s ARM:%s] | CmdVel: [%s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
-                Mobility_StateToStr(RobotState_GetMobilityState()),
-                Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
-                Arm_StateToStr(RobotState_GetArmState()),
+                FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
+                FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
+                FSM_Arm_StateToStr(RobotState_GetArmState()),
                 cmd_lx_str, cmd_az_str,
                 batt_str,
                 mcu_str,

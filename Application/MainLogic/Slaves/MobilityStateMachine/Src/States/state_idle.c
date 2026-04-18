@@ -14,7 +14,7 @@ void MobState_Idle_OnEnter(void) {
 void MobState_Idle_Run(void) {
     /* Transition to MOVING if targets are non-zero */
     if (target_linear_x != 0.0f || target_angular_z != 0.0f) {
-        Mobility_ProcessEvent(EVENT_MOVING);
+        FSM_Mobility_ProcessEvent(EVENT_MOVING);
     }
 }
 

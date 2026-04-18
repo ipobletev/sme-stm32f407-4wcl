@@ -9,7 +9,7 @@ void StartArmTask(void *argument)
 {
     LOG_INFO(LOG_TAG, "Robotic Arm Logic Task Started.\r\n");
 
-    Arm_Init();
+    FSM_Arm_Init();
 
     for(;;)
     {
@@ -17,10 +17,10 @@ void StartArmTask(void *argument)
         RobotState_FeedWatchdogArm();
 
         /* Process Arm Logic at 50Hz (20ms) */
-        Arm_ProcessLogic();
+        FSM_Arm_ProcessLogic();
 
         /* Update Shared Robot State telemetry */
-        RobotState_SetArmState(Arm_GetCurrentState());
+        RobotState_SetArmState(FSM_Arm_GetCurrentState());
 
         /* In a real scenario, check queues for joint_trajectory commands */
 

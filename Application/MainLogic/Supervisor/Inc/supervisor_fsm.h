@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define TIMEOUT_SUPERVISOR_ERROR_MS 500
+#define ENTRY_WAIT_TIME_MS 1000
 
 /* State Machine definitions */
 typedef enum {

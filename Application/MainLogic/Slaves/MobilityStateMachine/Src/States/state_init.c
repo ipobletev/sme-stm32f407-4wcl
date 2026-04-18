@@ -22,7 +22,7 @@ void MobState_Init_Run(void) {
     SystemState_t master_state = Supervisor_GetCurrentState();
     if (master_state != STATE_SUPERVISOR_FAULT && master_state != STATE_SUPERVISOR_INIT) {
         LOG_INFO(LOG_TAG, "System Ready -> Transitioning to IDLE\r\n");
-        Mobility_ProcessEvent(EVENT_IDLE);
+        FSM_Mobility_ProcessEvent(EVENT_IDLE);
     }
 }
 

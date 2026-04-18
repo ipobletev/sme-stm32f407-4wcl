@@ -162,10 +162,10 @@ static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 
     if (msg->actuator_id < 10) {
         /* 0-9: Mobility Motors */
-        Mobility_SetRawMotorPulse(msg->actuator_id, (int16_t)msg->pulse);
+        FSM_Mobility_SetRawMotorPulse(msg->actuator_id, (int16_t)msg->pulse);
     } else {
         /* 10+: Arm Servos */
-        Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
+        FSM_Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
     }
 }
 

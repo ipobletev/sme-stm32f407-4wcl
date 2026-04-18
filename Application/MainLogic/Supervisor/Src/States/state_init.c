@@ -1,12 +1,21 @@
 #include "States/state_handlers.h"
 #include "debug_module.h"
+#include "supervisor_fsm.h"
+#include "osal.h"
+
+static uint32_t entry_tick = 0;
 
 void State_Init_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering STATE_INIT\r\n");
+    entry_tick = osal_get_tick();
 }
 
 void State_Init_Run(void) {
-    /* Logic */
+    /* Wait 1 second to ensure subsystems are up and running */
+    if (osal_get_tick() - entry_tick >= ENTRY_WAIT_TIME_MS) {
+        LOG_INFO(LOG_TAG, "Initialization complete. Signaling READY.\r\n");
+        Supervisor_ProcessEvent(EVENT_SUPERVISOR_READY, SRC_INTERNAL_SUPERVISOR);
+    }
 }
 
 void State_Init_OnExit(void) {

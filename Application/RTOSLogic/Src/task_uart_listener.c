@@ -82,6 +82,8 @@ void StartUARTListenerTask(void *argument)
                     else if (strcmp(cmd, "PAUSE") == 0)  publish_event(EVENT_SUPERVISOR_PAUSE, SRC_UART1_LOCAL);
                     else if (strcmp(cmd, "RESUME") == 0) publish_event(EVENT_SUPERVISOR_RESUME, SRC_UART1_LOCAL);
                     else if (strcmp(cmd, "RESET") == 0)  publish_event(EVENT_SUPERVISOR_RESET, SRC_UART1_LOCAL);
+
+                    LOG_INFO(LOG_TAG, "ConsoleDebug: Event %s published\n", cmd);
                 }
             }
 

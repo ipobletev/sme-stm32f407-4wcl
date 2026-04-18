@@ -35,58 +35,56 @@ const SUPERVISOR_FSM = {
 
 const MOBILITY_FSM = {
   nodes: [
-    { id: 0, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
-    { id: 1, label: 'IDLE', x: 220, y: 80, color: 'var(--accent-indigo)' },
-    { id: 2, label: 'BREAK', x: 380, y: 220, color: 'var(--accent-amber)' },
-    { id: 3, label: 'MOVING', x: 540, y: 80, color: 'var(--accent-emerald)' },
-    { id: 4, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
-    { id: 5, label: 'FAULT', x: 660, y: 220, color: 'var(--accent-rose)' },
+    { id: 1, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
+    { id: 2, label: 'IDLE', x: 220, y: 80, color: 'var(--accent-indigo)' },
+    { id: 3, label: 'BREAK', x: 380, y: 220, color: 'var(--accent-amber)' },
+    { id: 4, label: 'MOVING', x: 540, y: 80, color: 'var(--accent-emerald)' },
+    { id: 5, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
+    { id: 6, label: 'FAULT', x: 660, y: 220, color: 'var(--accent-rose)' },
   ],
   edges: [
-    { from: 0, to: 1, label: 'Ready' },
-    { from: 1, to: 3, label: 'Moving' },
-    { from: 1, to: 2, label: 'Break' },
-    { from: 1, to: 4, label: 'Test' },
-    { from: 3, to: 1, label: 'Idle' },
-    { from: 3, to: 2, label: 'Break' },
-    { from: 2, to: 3, label: 'Moving' },
-    { from: 2, to: 1, label: 'Idle' },
-    { from: 4, to: 1, label: 'Idle' },
-    { from: 4, to: 3, label: 'Moving' },
-    { from: 1, to: 0, label: 'Re-Init' },
-    { from: 1, to: 5, label: 'Error' },
-    { from: 3, to: 5, label: 'Error' },
-    { from: 5, to: 0, label: 'Reset' },
+    { from: 1, to: 2, label: 'Ready' },
+    { from: 2, to: 4, label: 'Moving' },
+    { from: 2, to: 3, label: 'Break' },
+    { from: 2, to: 5, label: 'Test' },
+    { from: 4, to: 2, label: 'Idle' },
+    { from: 4, to: 3, label: 'Break' },
+    { from: 3, to: 4, label: 'Moving' },
+    { from: 3, to: 2, label: 'Idle' },
+    { from: 5, to: 2, label: 'Idle' },
+    { from: 5, to: 4, label: 'Moving' },
+    { from: 2, to: 6, label: 'Error' },
+    { from: 4, to: 6, label: 'Error' },
+    { from: 6, to: 1, label: 'Reset' },
   ]
 };
 
 const ARM_FSM = {
   nodes: [
-    { id: 0, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
-    { id: 1, label: 'HOMING', x: 180, y: 80, color: 'var(--accent-cyan)' },
-    { id: 2, label: 'IDLE', x: 340, y: 160, color: 'var(--accent-indigo)' },
-    { id: 3, label: 'MOVING', x: 500, y: 80, color: 'var(--accent-emerald)' },
-    { id: 4, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
-    { id: 5, label: 'FAULT', x: 640, y: 160, color: 'var(--accent-rose)' },
+    { id: 1, label: 'INIT', x: 60, y: 160, color: 'var(--text-muted)' },
+    { id: 2, label: 'HOMING', x: 180, y: 80, color: 'var(--accent-cyan)' },
+    { id: 3, label: 'IDLE', x: 340, y: 160, color: 'var(--accent-indigo)' },
+    { id: 4, label: 'MOVING', x: 500, y: 80, color: 'var(--accent-emerald)' },
+    { id: 5, label: 'TESTING', x: 500, y: 220, color: 'var(--accent-cyan)' },
+    { id: 6, label: 'FAULT', x: 640, y: 160, color: 'var(--accent-rose)' },
   ],
   edges: [
-    { from: 0, to: 2, label: 'Idle' },
-    { from: 2, to: 1, label: 'Homing' },
-    { from: 2, to: 3, label: 'Moving' },
-    { from: 2, to: 4, label: 'Test' },
-    { from: 1, to: 2, label: 'Done' },
-    { from: 1, to: 3, label: 'Moving' },
-    { from: 1, to: 4, label: 'Test' },
-    { from: 3, to: 2, label: 'Idle' },
-    { from: 3, to: 1, label: 'Homing' },
-    { from: 3, to: 4, label: 'Test' },
-    { from: 4, to: 2, label: 'Idle' },
-    { from: 4, to: 3, label: 'Moving' },
-    { from: 2, to: 0, label: 'Reset' },
-    { from: 1, to: 5, label: 'Error' },
-    { from: 2, to: 5, label: 'Error' },
-    { from: 3, to: 5, label: 'Error' },
-    { from: 5, to: 0, label: 'Reset' },
+    { from: 1, to: 3, label: 'Idle' },
+    { from: 3, to: 2, label: 'Homing' },
+    { from: 3, to: 4, label: 'Moving' },
+    { from: 3, to: 5, label: 'Test' },
+    { from: 2, to: 3, label: 'Done' },
+    { from: 2, to: 4, label: 'Moving' },
+    { from: 2, to: 5, label: 'Test' },
+    { from: 4, to: 3, label: 'Idle' },
+    { from: 4, to: 2, label: 'Homing' },
+    { from: 4, to: 5, label: 'Test' },
+    { from: 5, to: 3, label: 'Idle' },
+    { from: 5, to: 4, label: 'Moving' },
+    { from: 2, to: 6, label: 'Error' },
+    { from: 3, to: 6, label: 'Error' },
+    { from: 4, to: 6, label: 'Error' },
+    { from: 6, to: 1, label: 'Reset' },
   ]
 };
 
@@ -200,24 +198,28 @@ export default function SystemStatusMap({ sysStatus }) {
   const getMobLabel = (id) => MOBILITY_FSM.nodes.find(n => n.id === id)?.label || 'UNKNOWN';
   const getArmLabel = (id) => ARM_FSM.nodes.find(n => n.id === id)?.label || 'UNKNOWN';
 
+  const getSysColor = (id) => SUPERVISOR_FSM.nodes.find(n => n.id === id)?.color || 'rgba(255,255,255,0.2)';
+  const getMobColor = (id) => MOBILITY_FSM.nodes.find(n => n.id === id)?.color || 'rgba(255,255,255,0.2)';
+  const getArmColor = (id) => ARM_FSM.nodes.find(n => n.id === id)?.color || 'rgba(255,255,255,0.2)';
+
   return (
     <div className="fsm-complex-view">
       
       <div className="quick-indicators-row">
         <div className="indicator-chip" data-active="true">
-          <Cpu size={14} style={{ color: SUPERVISOR_FSM.nodes[currentSysState]?.color }} />
+          <Cpu size={14} style={{ color: getSysColor(currentSysState) }} />
           <span className="label">SYSTEM:</span>
-          <span className="value" style={{ color: SUPERVISOR_FSM.nodes[currentSysState]?.color }}>{getSysLabel(currentSysState)}</span>
+          <span className="value" style={{ color: getSysColor(currentSysState) }}>{getSysLabel(currentSysState)}</span>
         </div>
         <div className="indicator-chip" data-active="true">
-          <Zap size={14} style={{ color: MOBILITY_FSM.nodes[currentMobState]?.color }} />
+          <Zap size={14} style={{ color: getMobColor(currentMobState) }} />
           <span className="label">MOBILITY:</span>
-          <span className="value" style={{ color: MOBILITY_FSM.nodes[currentMobState]?.color }}>{getMobLabel(currentMobState)}</span>
+          <span className="value" style={{ color: getMobColor(currentMobState) }}>{getMobLabel(currentMobState)}</span>
         </div>
         <div className="indicator-chip" data-active="true">
-          <Activity size={14} style={{ color: ARM_FSM.nodes[currentArmState]?.color }} />
+          <Activity size={14} style={{ color: getArmColor(currentArmState) }} />
           <span className="label">ARM:</span>
-          <span className="value" style={{ color: ARM_FSM.nodes[currentArmState]?.color }}>{getArmLabel(currentArmState)}</span>
+          <span className="value" style={{ color: getArmColor(currentArmState) }}>{getArmLabel(currentArmState)}</span>
         </div>
       </div>
 
