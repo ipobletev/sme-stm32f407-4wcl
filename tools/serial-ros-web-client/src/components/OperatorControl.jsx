@@ -7,6 +7,7 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
   const [maxLinear, setMaxLinear] = useState(0.5); // m/s
   const [maxAngular, setMaxAngular] = useState(1.5); // rad/s
   const [isDriving, setIsDriving] = useState(false);
+  const [activeControlType, setActiveControlType] = useState(null); // 'joystick' or 'dpad'
   const [displayVel, setDisplayVel] = useState({ x: 0, z: 0 });
   
   const joystickRef = useRef(null);
@@ -54,17 +55,23 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
       velRef.current = { x: 0, z: 0 };
     }
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        clearInterval(interval);
+        // Safety: send one last stop when the component unmounts or loop breaks
+        transmitVelocity(0, 0);
+      }
     };
   }, [isDriving, connected, transmitVelocity]);
 
   const handlePointerDown = (e) => {
+    if (e.cancelable) e.preventDefault();
     setIsDriving(true);
+    setActiveControlType('joystick');
     handlePointerMove(e);
   };
 
   const handlePointerMove = (e) => {
-    if (!isDriving || !joystickRef.current) return;
+    if (!isDriving || activeControlType !== 'joystick' || !joystickRef.current) return;
 
     const rect = joystickRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -101,14 +108,30 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
 
   const handlePointerUp = () => {
     setIsDriving(false);
+    setActiveControlType(null);
+    
+    // 1. Immediate stop transmission
+    transmitVelocity(0, 0);
+    
+    // 2. Redundant check: reset values instantly
     velRef.current = { x: 0, z: 0 };
+    setDisplayVel({ x: 0, z: 0 });
+    
+    // 3. UI Reset
     if (knobRef.current) {
       knobRef.current.style.transform = `translate(0px, 0px)`;
     }
+
+    // 4. Send multiple stop packets to ensure delivery over relay/radio
+    // (Serial protocols can sometimes drop packets)
+    setTimeout(() => transmitVelocity(0, 0), 50);
+    setTimeout(() => transmitVelocity(0, 0), 150);
   };
 
-  const handleArrowPress = (direction) => {
+  const handleArrowPress = (direction, e) => {
+    if (e && e.cancelable) e.preventDefault();
     setIsDriving(true);
+    setActiveControlType('dpad');
     let lx = 0, az = 0;
     const lin = limitsRef.current.linear * 0.7;
     const ang = limitsRef.current.angular * 0.7;
@@ -136,16 +159,18 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
     if (isDriving) {
       window.addEventListener('mousemove', handlePointerMove);
       window.addEventListener('mouseup', handlePointerUp);
-      window.addEventListener('touchmove', handlePointerMove);
+      window.addEventListener('touchmove', handlePointerMove, { passive: false });
       window.addEventListener('touchend', handlePointerUp);
+      window.addEventListener('touchcancel', handlePointerUp);
     }
     return () => {
       window.removeEventListener('mousemove', handlePointerMove);
       window.removeEventListener('mouseup', handlePointerUp);
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('touchend', handlePointerUp);
+      window.removeEventListener('touchcancel', handlePointerUp);
     };
-  }, [isDriving, maxLinear, maxAngular]);
+  }, [isDriving]); // Removed maxLinear/maxAngular as they aren't needed for listeners
 
   const handleEStop = () => {
     transmitVelocity(0, 0);
@@ -284,37 +309,37 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
 
           <div className={`dpad-container ${!isAuto || !connected ? 'disabled' : ''}`}>
              <div className="dpad-row">
-               <button className="dpad-btn diag" onMouseDown={() => handleArrowPress('up-left')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('up-left')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn diag" onMouseDown={(e) => handleArrowPress('up-left', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('up-left', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ArrowUpLeft size={20} />
                </button>
-               <button className="dpad-btn" onMouseDown={() => handleArrowPress('up')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('up')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn" onMouseDown={(e) => handleArrowPress('up', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('up', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ChevronUp size={24} />
                </button>
-               <button className="dpad-btn diag" onMouseDown={() => handleArrowPress('up-right')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('up-right')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn diag" onMouseDown={(e) => handleArrowPress('up-right', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('up-right', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ArrowUpRight size={20} />
                </button>
              </div>
              
              <div className="dpad-row">
-               <button className="dpad-btn" onMouseDown={() => handleArrowPress('left')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('left')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn" onMouseDown={(e) => handleArrowPress('left', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('left', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ChevronLeft size={24} />
                </button>
                <div className="dpad-center">
                  <Zap size={18} className={isDriving ? 'active' : ''} />
                </div>
-               <button className="dpad-btn" onMouseDown={() => handleArrowPress('right')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('right')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn" onMouseDown={(e) => handleArrowPress('right', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('right', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ChevronRight size={24} />
                </button>
              </div>
 
              <div className="dpad-row">
-               <button className="dpad-btn diag" onMouseDown={() => handleArrowPress('down-left')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('down-left')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn diag" onMouseDown={(e) => handleArrowPress('down-left', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('down-left', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ArrowDownLeft size={20} />
                </button>
-               <button className="dpad-btn" onMouseDown={() => handleArrowPress('down')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('down')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn" onMouseDown={(e) => handleArrowPress('down', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('down', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ChevronDown size={24} />
                </button>
-               <button className="dpad-btn diag" onMouseDown={() => handleArrowPress('down-right')} onMouseUp={handleArrowRelease} onTouchStart={() => handleArrowPress('down-right')} onTouchEnd={handleArrowRelease}>
+               <button className="dpad-btn diag" onMouseDown={(e) => handleArrowPress('down-right', e)} onMouseUp={handleArrowRelease} onTouchStart={(e) => handleArrowPress('down-right', e)} onTouchEnd={handleArrowRelease} onTouchCancel={handleArrowRelease}>
                  <ArrowDownRight size={20} />
                </button>
              </div>
