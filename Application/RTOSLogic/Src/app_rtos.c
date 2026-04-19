@@ -30,54 +30,52 @@ osal_timer_h  heartbeatTimerHandle;
 
 const osal_thread_attr_t managerTask_attributes = {
   .name = "ManagerTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
 const osal_thread_attr_t controllerTask_attributes = {
   .name = "ControllerTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
 
 const osal_thread_attr_t uartListenerTask_attributes = {
   .name = "UARTListenerTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 768 * 4,
   .priority = OSAL_PRIO_HIGH,
 };
 
 const osal_thread_attr_t mobilityTask_attributes = {
   .name = "MobilityTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
 const osal_thread_attr_t armTask_attributes = {
   .name = "ArmTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
 const osal_thread_attr_t serialRosTask_attributes = {
   .name = "SerialRosTask",
-  .stack_size = 1536 * 4,
+  .stack_size = 768 * 4,
   .priority = OSAL_PRIO_HIGH,
 };
 
 const osal_thread_attr_t telemetryTask_attributes = {
   .name = "TelemetryTask",
-  .stack_size = 768 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 
 const osal_thread_attr_t imuTask_attributes = {
   .name = "IMUTask",
-  .stack_size = 1024 * 4,
+  .stack_size = 512 * 4,
   .priority = OSAL_PRIO_HIGH, /* IMU needs high frequency and low jitter */
 };
-
-
 
 /**
  * @brief Initialize all application RTOS resources using OSAL.
