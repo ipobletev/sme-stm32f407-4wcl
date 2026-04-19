@@ -24,25 +24,25 @@ void MobState_Moving_Run(void) {
         return;
     }
 
-    uint8_t mode = RobotState_GetTargetMobilityMode();
-    float vw[4] = {0, 0, 0, 0};
+    MobilityMode_t mode = RobotState_GetTargetMobilityMode();
+    float velocity_wheels[4] = {0, 0, 0, 0};
     
     /* 3. Apply Kinematic Model */
     switch (mode) {
         case MOB_MODE_MECANUM:
-            Kinematics_Mecanum(target_linear_x, 0.0f, target_angular_z, vw);
+            Kinematics_Mecanum(target_linear_x, 0.0f, target_angular_z, velocity_wheels);
             break;
 
         case MOB_MODE_DIFF:
-            Kinematics_Differential(target_linear_x, target_angular_z, vw);
+            Kinematics_Differential(target_linear_x, target_angular_z, velocity_wheels);
             break;
 
         case MOB_MODE_ACKERMANN:
-            Kinematics_Ackermann(target_linear_x, target_angular_z, vw);
+            Kinematics_Ackermann(target_linear_x, target_angular_z, velocity_wheels);
             break;
 
         case MOB_MODE_DIRECT:
-            Kinematics_Direct(target_linear_x, target_angular_z, vw);
+            Kinematics_Direct(target_linear_x, target_angular_z, velocity_wheels);
             break;
 
         default:
@@ -55,12 +55,19 @@ void MobState_Moving_Run(void) {
     
     /* 5. Set targets for individual PID controllers */
     /* Note: Right side motors (3 and 4) are physically flipped, hence the minus sign */
-    encoder_motor_set_speed(motors[0], vw[0] * rps_conv);
-    encoder_motor_set_speed(motors[1], vw[1] * rps_conv);
-    encoder_motor_set_speed(motors[2], -vw[2] * rps_conv); 
-    encoder_motor_set_speed(motors[3], -vw[3] * rps_conv); 
+    encoder_motor_set_speed(motors[0], velocity_wheels[0] * rps_conv);
+    encoder_motor_set_speed(motors[1], velocity_wheels[1] * rps_conv);
+    encoder_motor_set_speed(motors[2], velocity_wheels[2] * rps_conv); 
+    encoder_motor_set_speed(motors[3], velocity_wheels[3] * rps_conv); 
+
+    /* Run Motors. Run PID loop (if ROBOT_STATE_DEFAULT_PID_ENABLED enabled) for each motor */
+    for (int i = 0; i < 4; i++) {
+        encoder_motor_control(i, motors[i], 0.02f);
+    }
 }
 
 void MobState_Moving_OnExit(void) {
-    LOG_INFO(LOG_TAG, "Exiting MOVING State.\r\n");
+    /* Reset commands when exiting MOVING state */
+    RobotState_ResetMobilityCommands();
+    LOG_INFO(LOG_TAG, "Exiting MOVING State. Commands reset.\r\n");
 }

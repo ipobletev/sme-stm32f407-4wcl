@@ -17,7 +17,7 @@ typedef struct {
         /* Mobility Commands */
         float target_linear_x;
         float target_angular_z;
-        uint8_t target_mobility_mode;          /* 0: Direct, 1: DiffDrive, 2: Ackermann, 3: Mecanum */
+        MobilityMode_t target_mobility_mode;
 
         /* Arm Commands */
         float target_arm_j1;
@@ -44,7 +44,7 @@ typedef struct {
         uint8_t is_autonomous;          /* 0: Manual, 1: Auto */
 
         /* Mobility Feedback */
-        uint8_t current_mobility_mode;  /* Real active mode: 0: Direct, 1: DiffDrive, 2: Ackermann, 3: Mecanum */
+        MobilityMode_t current_mobility_mode;
         float measured_linear_x;
         float measured_angular_z;
         int32_t enc_1;
@@ -84,6 +84,7 @@ typedef struct {
     uint32_t mobility_heartbeat_tick;   /* Last tick from mobility task (Passive) */
     uint32_t arm_heartbeat_tick;        /* Last tick from arm task (Passive) */
     uint32_t supervisor_heartbeat_tick; /* Last tick from supervisor task */
+    uint8_t pid_enabled;                /* 0: PID Disabled (Open Loop), 1: PID Enabled (Closed Loop) */
     
 
 } RobotState_t;
@@ -102,6 +103,8 @@ void RobotState_IncrementHeartbeat(void);
 uint32_t RobotState_GetHeartbeat(void);
 void RobotState_SetAutonomous(uint8_t is_auto);
 uint8_t RobotState_IsAutonomous(void);
+void RobotState_SetPIDEnabled(uint8_t enabled);
+uint8_t RobotState_PIDIsEnabled(void);
 
 /* Subsystem Getters / Setters */
 void RobotState_SetMobilityState(MobilityState_t state);
@@ -127,12 +130,14 @@ uint32_t RobotState_GetSupervisorHeartbeat(void);
 
 
 /* Command Setters (Rx from ROS) */
+void RobotState_ResetMobilityCommands(void);
+void RobotState_ResetArmCommands(void);
 void RobotState_SetTargetVelocity(float linear_x, float angular_z);
 void RobotState_GetTargetVelocity(float *linear_x, float *angular_z);
 void RobotState_SetTargetArmPose(float j1, float j2, float j3);
 void RobotState_GetTargetArmPose(float *j1, float *j2, float *j3);
-void RobotState_SetTargetMobilityMode(uint8_t mode);
-uint8_t RobotState_GetTargetMobilityMode(void);
+void RobotState_SetTargetMobilityMode(MobilityMode_t mode);
+MobilityMode_t RobotState_GetTargetMobilityMode(void);
 
 /* Mobility Feedback Setters */
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);

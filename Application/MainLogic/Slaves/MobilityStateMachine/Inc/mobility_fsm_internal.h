@@ -15,8 +15,9 @@ extern float target_linear_x;
 extern float target_angular_z;
 
 /**
- * @brief Internal helper to handle transitions with entry/exit logic.
+ * @brief Periodic update functions for control and measurement
  */
-// Declaration moved to mobility_fsm.h for Supervisor access
+void FSM_Mobility_UpdateMeasurements(float period);
+void FSM_Mobility_UpdateControl(float period);
 
 #endif /* __MOBILITY_FSM_INTERNAL_H */

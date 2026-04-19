@@ -35,7 +35,7 @@ typedef enum {
 
 /* Interaction Interface */
 const char* FSM_Mobility_StateToStr(MobilityState_t state);
-const char* FSM_Mobility_ModeToStr(uint8_t mode);
+const char* FSM_Mobility_ModeToStr(MobilityMode_t mode);
 void FSM_Mobility_Init(void);
 void FSM_Mobility_ProcessLogic(void); /* Called from control task */
 void FSM_Mobility_ProcessEvent(MobilityEvent_t event); /* Handle state transitions */

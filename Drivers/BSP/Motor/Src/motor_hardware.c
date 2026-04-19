@@ -92,7 +92,7 @@ bool BSP_Motor_Hardware_Init(EncoderMotorObjectTypeDef *motors[4])
         motors[i]->ticks_overflow = 60000;
     }
 
-    /* Note: pulse setters are static BSP functions mapped to the objects */
+    /* Note: set_pulse functions are static BSP functions mapped to the objects */
     motors[0]->set_pulse = BSP_motor1_set_pulse;
     motors[1]->set_pulse = BSP_motor2_set_pulse;
     motors[2]->set_pulse = BSP_motor3_set_pulse;

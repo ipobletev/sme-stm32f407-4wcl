@@ -9,27 +9,28 @@ static bool init_success = true;
 
 void MobState_Init_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering INIT State. Initializing...\r\n");
-    
+}
+
+void MobState_Init_Run(void) {
+
     init_success = true;
 
-    /* 1. Initialize and configure Motor Objects with specific profile */
+    /* 1. Initialize Hardware Peripherals first so pointers are set */
+    if (!encoder_motor_init_hw_system(motors)) {
+        init_success = false;
+    }
+
+    /* 2. Configure Motor Objects with specific profile */
     for(int i=0; i<4; i++) {
         if (!encoder_motor_configure(motors[i], MOTOR_TYPE_JGB520)) {
             init_success = false;
         }
     }
 
-    /* 2. Initialize Hardware Peripherals (Global System Init) */
-    if (!encoder_motor_init_hw_system(motors)) {
-        init_success = false;
-    }
-
     if (!init_success) {
         LOG_ERROR(LOG_TAG, "Hardware Initialization FAILED!\r\n");
     }
-}
 
-void MobState_Init_Run(void) {
     /* 1. If initialization failed, trigger local fault */
     if (!init_success) {
         RobotState_SetErrorFlag(ERR_MOB_DRIVE);

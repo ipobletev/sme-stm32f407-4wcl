@@ -1,5 +1,6 @@
 #include "States/state_handlers.h"
 #include "debug_module.h"
+#include "robot_state.h"
 #include "supervisor_fsm.h"
 #include "osal.h"
 
@@ -8,6 +9,11 @@ static uint32_t entry_tick = 0;
 void State_Init_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering STATE_INIT\r\n");
     entry_tick = osal_get_tick();
+
+    /* Reset all commands and error flags upon entering INIT (Global Reset) */
+    RobotState_ResetMobilityCommands();
+    RobotState_ClearAllErrorFlags();
+    LOG_INFO(LOG_TAG, "Global Reset: Commands and Error Flags cleared.\r\n");
 }
 
 void State_Init_Run(void) {

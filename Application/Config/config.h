@@ -10,16 +10,19 @@
 /**
  * Common Motor Parameters (JGB520)
  */
-#define MOTOR_TICKS_PER_CIRCLE 3960.0f
-#define MOTOR_PID_KP           63.0f
-#define MOTOR_PID_KI           2.6f
-#define MOTOR_PID_KD           2.4f
-#define MOTOR_RPS_LIMIT        1.5f
+#define ROBOT_STATE_DEFAULT_PID_ENABLED 0
+#define MOTOR_TICKS_PER_CIRCLE          3960.0f
+#define MOTOR_RPS_LIMIT                 1.0f
+#define MOTOR_PULSE_DEADZONE            1000.0f
+// #define MOTOR_PID_KP                    63.0f
+// #define MOTOR_PID_KI                    2.6f
+// #define MOTOR_PID_KD                    2.4f
+// #define MOTOR_RPS_LIMIT                 1.5f
 
 /**
  * Chassis Physical Parameters (4WCL Mecanum)
  */
-#define ROBOT_WHEEL_DIAMETER   0.08f    /* 80mm */
+#define ROBOT_WHEEL_DIAMETER   0.08f    /* mm */
 #define ROBOT_SHAFT_WIDTH      0.170f   /* Distance from the center of the wheel and the center of the other wheel */
 #define ROBOT_WHEELBASE_LENGTH 0.150f   /* Distance between the center of the front wheels and the center of the rear wheels */
 

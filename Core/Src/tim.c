@@ -98,7 +98,6 @@ void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -568,10 +567,10 @@ void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* tim_encoderHandle)
   }
 }
 
-void HAL_TIM_OC_MspInit(TIM_HandleTypeDef* tim_ocHandle)
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
 {
 
-  if(tim_ocHandle->Instance==TIM9)
+  if(tim_pwmHandle->Instance==TIM9)
   {
   /* USER CODE BEGIN TIM9_MspInit 0 */
 
@@ -794,10 +793,10 @@ void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* tim_encoderHandle)
   }
 }
 
-void HAL_TIM_OC_MspDeInit(TIM_HandleTypeDef* tim_ocHandle)
+void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
 {
 
-  if(tim_ocHandle->Instance==TIM9)
+  if(tim_pwmHandle->Instance==TIM9)
   {
   /* USER CODE BEGIN TIM9_MspDeInit 0 */
 

@@ -64,12 +64,12 @@ static void handle_autonomous(const AutonomousMsg_t *msg)
  */
 static void handle_mobility_mode(const SysConfigMsg_t *msg)
 {
-    uint8_t current_mode = RobotState_GetTargetMobilityMode();
+    MobilityMode_t current_mode = RobotState_GetTargetMobilityMode();
     uint8_t current_auto = RobotState_IsAutonomous();
 
-    if (msg->mobility_mode != current_mode || msg->is_autonomous != current_auto)
+    if ((MobilityMode_t)msg->mobility_mode != current_mode || msg->is_autonomous != current_auto)
     {
-        RobotState_SetTargetMobilityMode(msg->mobility_mode);
+        RobotState_SetTargetMobilityMode((MobilityMode_t)msg->mobility_mode);
         RobotState_SetAutonomous(msg->is_autonomous);
         LOG_INFO(LOG_TAG, "Config Change: Mode=%u, Auto=%u\r\n", msg->mobility_mode, msg->is_autonomous);
     }

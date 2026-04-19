@@ -1,5 +1,6 @@
 #include "robot_state.h"
 #include "FreeRTOS.h"
+#include "debug_module.h"
 #include "task.h"
 #include "main.h"
 #include "osal.h"
@@ -14,7 +15,8 @@ RobotState_t RobotState_4wcl = {
         .current_state = STATE_SUPERVISOR_INIT,
         .heartbeat_count = 0,
         .error_flags = 0 // 0 = No Error
-    }
+    },
+    .pid_enabled = ROBOT_STATE_DEFAULT_PID_ENABLED // Enabled by default
 };
 
 void RobotState_SetErrorFlag(uint64_t flag) {
@@ -111,6 +113,28 @@ uint8_t RobotState_IsAutonomous(void) {
         taskEXIT_CRITICAL();
     }
     return is_auto;
+}
+
+void RobotState_SetPIDEnabled(uint8_t enabled) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.pid_enabled = enabled;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.pid_enabled = enabled;
+        taskEXIT_CRITICAL();
+    }
+}
+
+uint8_t RobotState_PIDIsEnabled(void) {
+    uint8_t enabled;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        enabled = RobotState_4wcl.pid_enabled;
+    } else {
+        taskENTER_CRITICAL();
+        enabled = RobotState_4wcl.pid_enabled;
+        taskEXIT_CRITICAL();
+    }
+    return enabled;
 }
 
 void RobotState_SetMobilityState(MobilityState_t state) {
@@ -263,6 +287,27 @@ void RobotState_SetBoardTemperature(float temp) {
     }
 }
 
+void RobotState_ResetMobilityCommands(void) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Commands.target_linear_x = 0.0f;
+        RobotState_4wcl.Commands.target_angular_z = 0.0f;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Commands.target_linear_x = 0.0f;
+        RobotState_4wcl.Commands.target_angular_z = 0.0f;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_ResetArmCommands(void) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Commands.target_arm_j1 = 0.0f;
+        RobotState_4wcl.Commands.target_arm_j2 = 0.0f;
+        RobotState_4wcl.Commands.target_arm_j3 = 0.0f;
+        taskEXIT_CRITICAL();
+    }
+}
+
 void RobotState_SetTargetVelocity(float linear_x, float angular_z) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         RobotState_4wcl.Commands.target_linear_x = linear_x;
@@ -315,7 +360,7 @@ void RobotState_GetTargetArmPose(float *j1, float *j2, float *j3) {
     }
 }
 
-void RobotState_SetTargetMobilityMode(uint8_t mode) {
+void RobotState_SetTargetMobilityMode(MobilityMode_t mode) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         RobotState_4wcl.Commands.target_mobility_mode = mode;
     } else {
@@ -325,8 +370,8 @@ void RobotState_SetTargetMobilityMode(uint8_t mode) {
     }
 }
 
-uint8_t RobotState_GetTargetMobilityMode(void) {
-    uint8_t mode;
+MobilityMode_t RobotState_GetTargetMobilityMode(void) {
+    MobilityMode_t mode;
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         mode = RobotState_4wcl.Commands.target_mobility_mode;
     } else {

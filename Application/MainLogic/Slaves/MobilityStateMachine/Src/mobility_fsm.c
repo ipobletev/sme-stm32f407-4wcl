@@ -5,8 +5,13 @@
 #include "robot_state.h"
 #include "debug_module.h"
 #include "osal.h"
+#include "config.h"
 #include <stdio.h>
 #include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 /* Motor Objects visible to states */
 static EncoderMotorObjectTypeDef motor_instances[4];
@@ -37,7 +42,7 @@ const char* FSM_Mobility_StateToStr(MobilityState_t state) {
     }
 }
 
-const char* FSM_Mobility_ModeToStr(uint8_t mode) {
+const char* FSM_Mobility_ModeToStr(MobilityMode_t mode) {
     switch(mode) {
         case MOB_MODE_DIRECT:    return "DIR";
         case MOB_MODE_DIFF:      return "DIF";
@@ -153,8 +158,10 @@ void FSM_Mobility_ProcessEvent(MobilityEvent_t event) {
 }
 
 void FSM_Mobility_ProcessLogic(void) {
+    /* 1. Update Hardware Measurements (Encoders -> RPS) */
+    FSM_Mobility_UpdateMeasurements(0.020f); // 50Hz = 20ms
 
-    /* Execute Current State Periodic Logic */
+    /* 2. Execute Current State Periodic Logic */
     switch (mob_state) {
         case STATE_MOB_INIT:     MobState_Init_Run();     break;
         case STATE_MOB_IDLE:     MobState_Idle_Run();     break;
@@ -165,5 +172,41 @@ void FSM_Mobility_ProcessLogic(void) {
         case STATE_MOB_ABORT:    MobState_Abort_Run();    break;
         default: break;
     }
+}
 
+void FSM_Mobility_UpdateMeasurements(float period) {
+    /* 1. Read Encoders and update motor RPS */
+    for (int i = 0; i < 4; i++) {
+        int64_t counts = BSP_Motor_Hardware_GetEncoderCount(i);
+        encoder_update(motors[i], period, counts);
+    }
+
+    /* 3. Sync to RobotState for Telemetry */
+    RobotState_SetEncoderCounts(
+        (int32_t)motors[0]->counter, (int32_t)motors[1]->counter,
+        (int32_t)motors[2]->counter, (int32_t)motors[3]->counter
+    );
+
+    RobotState_SetMeasuredRPS(
+        motors[0]->rps, motors[1]->rps,
+        motors[2]->rps, motors[3]->rps
+    );
+
+    /* 4. Calculate Forward Kinematics (Mecanum assumption for now) */
+    /* Note: Right side motors (2 and 3) were flipped in state_moving.c, 
+       so we must flip their RPS back for forward kinematics. */
+    float v1 = motors[0]->rps;
+    float v2 = motors[1]->rps;
+    float v3 = -motors[2]->rps; /* Restore sign */
+    float v4 = -motors[3]->rps; /* Restore sign */
+
+    /* Convert RPS to m/s */
+    float r_pi_d = M_PI * ROBOT_WHEEL_DIAMETER;
+    v1 *= r_pi_d; v2 *= r_pi_d; v3 *= r_pi_d; v4 *= r_pi_d;
+
+    float l_plus_w = ROBOT_WHEELBASE_LENGTH + ROBOT_SHAFT_WIDTH;
+    float vx = (v1 + v2 + v3 + v4) / 4.0f;
+    float az = (-v1 - v2 + v3 + v4) / (4.0f * l_plus_w);
+
+    RobotState_SetMeasuredVelocity(vx, az);
 }

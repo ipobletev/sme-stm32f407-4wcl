@@ -1,7 +1,9 @@
 #include "encoder_motor.h"
 #include "config.h"
+#include "debug_module.h"
 #include "motor_hardware.h"
 #include "motor_param.h"
+#include "robot_state.h"
 #include <stdbool.h>
 
 /**
@@ -29,15 +31,20 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t count
  * @param self Motor object
  * @param period Time step (s)
  */
-void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period) 
+void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, float period) 
 {
     float pulse = 0;
     
-    /* Update incremental PID */
-    pid_controller_update(&self->pid_controller, self->rps, period);
-    
-    /* Calculate new PWM pulse (current + increment) */
-    pulse = self->current_pulse + self->pid_controller.output;
+    if (RobotState_PIDIsEnabled()) {
+        /* Update incremental PID */
+        pid_controller_update(&self->pid_controller, self->rps, period);
+        
+        /* Calculate new PWM pulse (current + increment) */
+        pulse = self->current_pulse + self->pid_controller.output;
+    } else {
+        /* Open Loop: Simple linear mapping for debugging/testing */
+        pulse = (self->target_rps / self->rps_limit) * MOTOR_PWM_MAX;
+    }
     
     /* Clamp output to timer range (-MOTOR_PWM_MAX to MOTOR_PWM_MAX) */
     if (pulse > MOTOR_PWM_MAX) pulse = MOTOR_PWM_MAX;
@@ -46,12 +53,12 @@ void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period)
     /* Apply deadband if necessary (approx +/- 1000 for 16-bit range) */
     float output_pulse = pulse;
     if (self->pid_controller.set_point == 0) {
-        if (output_pulse < 1000.0f && output_pulse > -1000.0f) {
+        if (output_pulse < MOTOR_PULSE_DEADZONE && output_pulse > -MOTOR_PULSE_DEADZONE) {
             output_pulse = 0;
             pulse = 0; /* Reset incremental accumulator to stop the whine */
         }
     }
-    
+    LOG_DEBUG("MOTOR", "Motor %d: Target RPS: %.2f, Current RPS: %.2f, Pulse: %d\r\n", motor_id, self->target_rps, self->rps, (int)output_pulse);
     self->set_pulse(self, (int)output_pulse);
     self->current_pulse = pulse;
 }
@@ -94,8 +101,8 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self)
     self->target_rps = 0;
     self->current_pulse = 0;
     self->ticks_overflow = 0; 
-    self->ticks_per_circle = 3960; /* Default for common motors */
-    self->rps_limit = 1.0f;
+    self->ticks_per_circle = MOTOR_TICKS_PER_CIRCLE; /* Default for common motors */
+    self->rps_limit = MOTOR_RPS_LIMIT;
     pid_controller_init(&self->pid_controller, 0, 0, 0);
 }
 
