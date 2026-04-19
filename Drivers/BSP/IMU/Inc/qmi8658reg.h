@@ -87,6 +87,8 @@ typedef struct {
 	unsigned short ssvt_a;
 	unsigned short ssvt_g;
 	float imu[6];
+	float bias_a[3];
+	float bias_g[3];
 } qmi8658_state;
 
 #endif

@@ -1,16 +1,57 @@
-# React + Vite
+# SerialROS Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Real-time diagnostic and control dashboard for the SME STM32 Robotics project. Built with React + Vite and optimized for both desktop and mobile devices.
 
-Currently, two official plugins are available:
+## 🚀 Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 1. Prerequisites
+Ensure you have [Node.js](https://nodejs.org/) installed in your system.
 
-## React Compiler
+### 2. Installation
+Install dependencies from the root of this directory:
+```bash
+npm install
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. Running the Dashboard
+Start the development server and the communication relay. It is recommended to use two separate terminal windows:
 
-## Expanding the ESLint configuration
+**Terminal A: Frontend**
+```bash
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Terminal B: Network Relay (Bridge)**
+```bash
+npm run relay
+```
+
+## 📱 Mobile & Network Access
+
+The dashboard is fully responsive and can be accessed from any device on your local network (LAN).
+
+### Steps to connect from a Phone:
+
+1.  **Find your PC's IP Address**:
+    Open a terminal and run `ipconfig`. Look for the "IPv4 Address" (e.g., `192.168.1.X`).
+2.  **Access URL**:
+    On your mobile browser, navigate to `http://YOUR_PC_IP:5173`.
+3.  **Master Connection**:
+    *   One tab **on the PC** must be connected physically to the robot via USB-Serial (click the "Connect" button in the header).
+    *   Once the PC tab is connected, it will act as a **Master**, retransmitting telemetry to the Relay server.
+    *   The phone will automatically pick up the data from the relay and show live updates.
+
+## 🏗️ Architecture
+
+*   **Vite Dev Server (Port 5173)**: Serves the React frontend. Configured with `--host` to be visible on the LAN.
+*   **Node.js Relay (Port 3001)**: A WebSocket-based bridge that synchronizes telemetry between all open tabs (local and remote).
+*   **Serial Master**: The browser tab that possesses the Serial Port handle (using Web Serial API).
+*   **Vite Proxy**: Automatically routes `/ws-robot` requests from the frontend to the local Node.js relay.
+
+## 🛠️ Tech Stack
+- **Framework**: React 19
+- **Bundler**: Vite 5
+- **3D Visualization**: React Three Fiber + Three.js (for IMU orientation)
+- **Styling**: Vanilla CSS (Custom design system)
+- **Icons**: Lucide React
+- **Communications**: Web Serial API + WebSockets

@@ -16,5 +16,6 @@ typedef struct {
 unsigned char qmi8658_begin(void);
 void          qmi8658_read_xyz(float acc[3], float gyro[3]);
 void          qmi8658_get_euler(float *pitch, float *roll, float *yaw);
+void          qmi8658_set_bias(float ax, float ay, float az, float gx, float gy, float gz);
 
 #endif

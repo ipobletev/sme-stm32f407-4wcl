@@ -32,11 +32,11 @@ static float gx_bias = 0.0f, gy_bias = 0.0f, gz_bias = 0.0f;
  */
 static void PerformCalibration(void) {
     IMU_RawData_t raw;
-    int samples = 50;
+    int samples = 100;
     float sum_ax = 0, sum_ay = 0, sum_az = 0;
     float sum_gx = 0, sum_gy = 0, sum_gz = 0;
 
-    LOG_INFO(LOG_TAG, "Stabilizing Sensors...\r\n");
+    LOG_INFO(LOG_TAG, "Stabilizing Sensors (ZUPT Init)...\r\n");
     
     for (int i = 0; i < samples; i++) {
         if (BSP_IMU_ReadRaw(&raw) == IMU_OK) {
@@ -47,15 +47,24 @@ static void PerformCalibration(void) {
             sum_gy += (float)raw.gy;
             sum_gz += (float)raw.gz;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
-    ax_bias = sum_ax / samples;
-    ay_bias = sum_ay / samples;
-    az_bias = (sum_az / samples) - accel_sf; 
-    gx_bias = sum_gx / samples;
-    gy_bias = sum_gy / samples;
-    gz_bias = sum_gz / samples;
+    /* Convert raw averages to SI units for the driver bias */
+    float ax_b = (sum_ax / samples) * GRAVITY_MSS / accel_sf;
+    float ay_b = (sum_ay / samples) * GRAVITY_MSS / accel_sf;
+    float az_b = ((sum_az / samples) - accel_sf) * GRAVITY_MSS / accel_sf;
+    float gx_b = (sum_gx / samples) * M_PI / (gyro_sf * 180.0f);
+    float gy_b = (sum_gy / samples) * M_PI / (gyro_sf * 180.0f);
+    float gz_b = (sum_gz / samples) * M_PI / (gyro_sf * 180.0f);
+
+    BSP_IMU_SetBias(ax_b, ay_b, az_b, gx_b, gy_b, gz_b);
+    
+    /* Reset local biases as they are now handled by the driver */
+    ax_bias = 0; ay_bias = 0; az_bias = 0;
+    gx_bias = 0; gy_bias = 0; gz_bias = 0;
+    
+    LOG_INFO(LOG_TAG, "Calibration Complete. Gz_Bias: %.4f rad/s\r\n", gz_b);
 }
 
 /**
@@ -135,12 +144,51 @@ void StartSensorsTask(void *argument) {
             BSP_IMU_ReadOrientation(&pitch, &roll, &yaw);
 
             if (s == IMU_OK) {
-                float ax = ((float)raw.ax - ax_bias) / accel_sf;
-                float ay = ((float)raw.ay - ay_bias) / accel_sf;
-                float az_imu = ((float)raw.az - az_bias) / accel_sf;
-                float gx = ((float)raw.gx - gx_bias) / gyro_sf;
-                float gy = ((float)raw.gy - gy_bias) / gyro_sf;
-                float gz = ((float)raw.gz - gz_bias) / gyro_sf;
+                /* Values from BSP_IMU_ReadRaw are already de-biased if QMI8658 */
+                float ax = (float)raw.ax / accel_sf;
+                float ay = (float)raw.ay / accel_sf;
+                float az_imu = (float)raw.az / accel_sf;
+                float gx = (float)raw.gx / gyro_sf;
+                float gy = (float)raw.gy / gyro_sf;
+                float gz = (float)raw.gz / gyro_sf;
+
+                /* --- Dynamic ZUPT (Zero Velocity Update) --- */
+                /* If robot is static (encoders), gently update gyro bias to kill thermal drift */
+                static int static_count = 0;
+                static float accum_gx = 0, accum_gy = 0, accum_gz = 0;
+                
+                if (fabsf(vx) < 0.001f && fabsf(az) < 0.001f) {
+                    static_count++;
+                    accum_gx += gx * TO_RAD;
+                    accum_gy += gy * TO_RAD;
+                    accum_gz += gz * TO_RAD;
+
+                    if (static_count >= 100) { // Every 1 second of stability
+                        /* Calculate average drift in this window */
+                        float avg_gx = accum_gx / static_count;
+                        float avg_gy = accum_gy / static_count;
+                        float avg_gz = accum_gz / static_count;
+
+                        /* Feed back it to the driver bias (using a small gain to avoid oscillation) */
+                        /* Current bias in driver is already subtracted from readings. 
+                           So avg_gx is the REMAINING error. */
+                        static float cal_gx = 0, cal_gy = 0, cal_gz = 0;
+                        cal_gx += avg_gx * 0.2f;
+                        cal_gy += avg_gy * 0.2f;
+                        cal_gz += avg_gz * 0.2f;
+
+                        BSP_IMU_SetBias(0, 0, 0, cal_gx, cal_gy, cal_gz);
+
+                        /* Reset accumulators */
+                        static_count = 0;
+                        accum_gx = 0; accum_gy = 0; accum_gz = 0;
+                    }
+                    /* While stationary, force readings to 0 to prevent visual jitter */
+                    gx = 0; gy = 0; gz = 0;
+                } else {
+                    static_count = 0;
+                    accum_gx = 0; accum_gy = 0; accum_gz = 0;
+                }
 
                 taskENTER_CRITICAL();
                 RobotState_4wcl.Telemetry.accel_x = ax * GRAVITY_MSS;

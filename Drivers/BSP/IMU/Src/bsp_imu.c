@@ -139,6 +139,14 @@ IMU_Status_t BSP_IMU_SetAccelFSR(uint8_t fsr, float *sf) {
     *sf = 8192.0f; return IMU_OK;
 }
 
+IMU_Status_t BSP_IMU_SetBias(float ax, float ay, float az, float gx, float gy, float gz) {
+    if (imu_type == IMU_TYPE_QMI8658) {
+        qmi8658_set_bias(ax, ay, az, gx, gy, gz);
+        return IMU_OK;
+    }
+    return IMU_ERROR_ID;
+}
+
 IMU_Status_t BSP_IMU_SetRate(uint32_t rate_hz) { return IMU_OK; }
 bool         BSP_IMU_IsDataReady(void) { return true; }
 IMU_Type_t   BSP_IMU_GetDetectedType(void) { return imu_type; }

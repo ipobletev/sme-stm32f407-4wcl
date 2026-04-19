@@ -61,6 +61,7 @@ IMU_Status_t BSP_IMU_ReadRaw(IMU_RawData_t *data);
 IMU_Status_t BSP_IMU_ReadOrientation(float *pitch, float *roll, float *yaw);
 IMU_Status_t BSP_IMU_SetGyroFSR(uint8_t fsr, float *sf);
 IMU_Status_t BSP_IMU_SetAccelFSR(uint8_t fsr, float *sf);
+IMU_Status_t BSP_IMU_SetBias(float ax, float ay, float az, float gx, float gy, float gz);
 IMU_Status_t BSP_IMU_SetRate(uint32_t rate_hz);
 bool         BSP_IMU_IsDataReady(void);
 IMU_Type_t   BSP_IMU_GetDetectedType(void);

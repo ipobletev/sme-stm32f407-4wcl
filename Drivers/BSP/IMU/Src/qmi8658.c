@@ -131,8 +131,8 @@ void qmi8658_read_xyz(float acc[3], float gyro[3]) {
     raw_gyro[2] = (short)readWord_reg(Qmi8658Register_Gz_L);
 
     for (int i=0; i<3; i++) {
-        acc[i] = (float)(raw_acc[i] * ONE_G) / g_imu.ssvt_a;
-        gyro[i] = (float)(raw_gyro[i] * M_PI) / (g_imu.ssvt_g * 180.0f);
+        acc[i] = ((float)(raw_acc[i] * ONE_G) / g_imu.ssvt_a) - g_imu.bias_a[i];
+        gyro[i] = ((float)(raw_gyro[i] * M_PI) / (g_imu.ssvt_g * 180.0f)) - g_imu.bias_g[i];
         g_imu.imu[i] = acc[i];
         g_imu.imu[i+3] = gyro[i];
     }
@@ -145,4 +145,13 @@ void qmi8658_get_euler(float *pitch, float *roll, float *yaw) {
     *pitch = ea.pitch;
     *roll = ea.roll;
     *yaw = ea.yaw;
+}
+
+void qmi8658_set_bias(float ax, float ay, float az, float gx, float gy, float gz) {
+    g_imu.bias_a[0] = ax;
+    g_imu.bias_a[1] = ay;
+    g_imu.bias_a[2] = az;
+    g_imu.bias_g[0] = gx;
+    g_imu.bias_g[1] = gy;
+    g_imu.bias_g[2] = gz;
 }
