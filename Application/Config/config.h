@@ -35,3 +35,12 @@
  * PWM Configuration
  */
 #define MOTOR_PWM_MAX           65535.0f
+
+/**
+ * Motor Direction Inversion (1 for Normal, -1 for Inverted)
+ * Use this to easily flip a motor that is rotating in the wrong direction.
+ */
+#define MOTOR1_INVERT           1
+#define MOTOR2_INVERT           1
+#define MOTOR3_INVERT           1
+#define MOTOR4_INVERT           1

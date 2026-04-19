@@ -1,5 +1,6 @@
 #include "motor_hardware.h"
 #include "main.h"
+#include "config.h"
 #include <stdbool.h>
 
 /* Timer handles from tim.c */
@@ -174,7 +175,16 @@ int64_t BSP_Motor_Hardware_GetEncoderCount(uint8_t motor_idx)
         delta = (int32_t)(now - last_raw_values[motor_idx]);
     }
     
-    accumulated_counts[motor_idx] += delta;
+    int32_t invert = 1;
+    switch(motor_idx) {
+        case 0: invert = MOTOR1_INVERT; break;
+        case 1: invert = MOTOR2_INVERT; break;
+        case 2: invert = MOTOR3_INVERT; break;
+        case 3: invert = MOTOR4_INVERT; break;
+        default: break;
+    }
+    
+    accumulated_counts[motor_idx] += (delta * invert);
     last_raw_values[motor_idx] = now;
 
     return accumulated_counts[motor_idx];
@@ -184,6 +194,7 @@ int64_t BSP_Motor_Hardware_GetEncoderCount(uint8_t motor_idx)
 
 static void BSP_motor1_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
+    speed *= MOTOR1_INVERT;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR1_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR1_FI_CHANNEL, speed);
@@ -198,6 +209,7 @@ static void BSP_motor1_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor2_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
+    speed *= MOTOR2_INVERT;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR2_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR2_FI_CHANNEL, speed);
@@ -212,6 +224,7 @@ static void BSP_motor2_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor3_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
+    speed *= MOTOR3_INVERT;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim9, MOTOR3_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim9, MOTOR3_FI_CHANNEL, speed);
@@ -226,6 +239,7 @@ static void BSP_motor3_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor4_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
+    speed *= MOTOR4_INVERT;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim10, MOTOR4_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim11, MOTOR4_FI_CHANNEL, speed);
