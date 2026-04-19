@@ -30,12 +30,14 @@ The protocol uses a **Binary Framing** format to ensure the smallest possible HE
 | **0x03** | `cmd_vel`         | `float linear_x, float angular_z`         | Movement setpoints.                      |
 | **0x04** | `arm_goal`        | `float j1, float j2, float j3`            | Robotic arm joint targets.               |
 | **0x05** | `sys_event`       | `uint8 event_id`                           | Logic events (START, RESET, STOP, etc.). |
+| **0x06** | `actuator_pwm`    | `uint8 id, float pulse`                   | Raw actuator PWM control (Testing).      |
+| **0x07** | `actuator_vel`    | `uint8 id, float rps`                     | Raw actuator Velocity control (Testing). |
 
 ### Tx Topics — MCU → PC (Published)
 
 | ID       | Name          | Payload Structure                                                          | Description                               |
 | :------- | :------------ | :------------------------------------------------------------------------- | :---------------------------------------- |
-| **0x81** | `sys_status`  | `uint8 state, uint64 errors, float temp, float v_batt, float i_batt`      | System state, health flags, and battery.  |
+| **0x81** | `sys_status`  | `uint64 errors, float temp, float v_batt, uint8 sup, uint8 mob, uint8 arm` | System state, health flags, and battery.  |
 | **0x82** | `imu`         | `float roll, pitch, yaw, gyro_x/y/z, accel_x/y/z`                        | Full IMU telemetry (9 floats).            |
 | **0x83** | `odometry`    | `float linear_x, float angular_z, int32 enc_1/2/3/4`                      | Velocity estimates and encoder counts.    |
 
@@ -54,11 +56,12 @@ typedef struct { uint8_t mobility_mode; uint8_t is_autonomous; } SysConfigMsg_t;
 
 /* Tx */
 typedef struct {
-    uint8_t  current_state;
     uint64_t error_flags;
     float    mcu_temp;
     float    battery_voltage;
-    float    battery_current;
+    uint8_t  current_state;
+    uint8_t  mobility_state;
+    uint8_t  arm_state;
 } SystemStatusMsg_t;                                                          // 0x81
 
 typedef struct {
@@ -82,8 +85,8 @@ The SerialRos module uses two thread-safe FreeRTOS queues to decouple producers/
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│              SystemVariablesTimerCallback               │
-│  (timer_system_sensors.c — runs at configurable rate)  │
+│                      TelemetryTask                      │
+│        (task_telemetry.c — runs at 10ms base)          │
 │                                                        │
 │  SerialRos_EnqueueTx(0x81, &status_msg, ...)           │
 │  SerialRos_EnqueueTx(0x82, &imu_msg,    ...)           │

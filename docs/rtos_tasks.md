@@ -11,8 +11,10 @@ This document describes the FreeRTOS tasks and timers implemented in the robot f
 | **ControllerTask** | Thread | Normal | Polling (100ms) | Polls physical K1/K2/SW3 buttons and publishes events to the system. |
 | **MobilityTask** | Thread | Normal | Event-based | Executes the motor control state machine (Slave FSM). |
 | **ArmTask** | Thread | Normal | Event-based | Executes the robotic arm control state machine (Slave FSM). |
+| **SerialRosTask**| Thread | **High** | Event-based | Handles binary protocol communication for ROS. |
+| **TelemetryTask**| Thread | Normal | **10ms** | Multi-rate telemetry publisher (IMU/Odom/Status). |
+| **IMUTask**      | Thread | **High** | **10ms** | High-precision IMU sampling and orientation. |
 | **defaultTask** | Thread | Normal | Yielding | Background task for low-priority system processing. |
-| **SystemSensors** | Timer | N/A | 500ms | Samples Battery, MCU Temperature, and Vref. |
 | **Heartbeat** | Timer | N/A | 1000ms | Provides system heartbeat (LED blink) and status logging. |
 
 ---
@@ -31,8 +33,17 @@ Centralizes event inputs. It combines physical button presses (K1, K2, SW3) with
 ### [MobilityTask / ArmTask](file:///c:/GIT/sme/sme-stm32f407-4wcl/Application/MainLogic/Slaves/)
 These tasks host the slave state machines. They execute subsystem-specific logic independently of the supervisor, allowing parallel execution of movement and arm poses while respecting global pause/stop commands.
 
-### [SystemSensors Timer](file:///c:/GIT/sme/sme-stm32f407-4wcl/Application/RTOSLogic/Src/timer_system_sensors.c)
-A periodic callback that ensures hardware health data is always fresh in the `RobotState` structure. It uses ADC DMA to perform non-blocking reads of voltages and temperatures.
+### [SerialRosTask](file:///c:/GIT/sme/sme-stm32f407-4wcl/Application/RTOSLogic/Src/task_serial_ros.c)
+Decouples the timing-critical UART communication from the rest of the application. It manages the `rosTxQueue` and `rosRxQueue`, parsing incoming binary frames and dispatching them to the internal system state.
+
+### [TelemetryTask](file:///c:/GIT/sme/sme-stm32f407-4wcl/Application/RTOSLogic/Src/task_telemetry.c)
+A consolidated reporting hub. Instead of each module sending its own UART data, this task snapshots the global `RobotState` at a fixed rate (10ms) and enqueues messages at different intervals:
+- **IMU**: 100Hz (Every cycle)
+- **Odometry**: 10Hz (Every 10 cycles)
+- **System Status**: 2Hz (Every 50 cycles)
+
+### [IMUTask](file:///c:/GIT/sme/sme-stm32f407-4wcl/Application/RTOSLogic/Src/task_imu.c)
+Responsible for high-frequency sampling of the on-board MPU6050/ICM20948. It performs sensor fusion (if enabled) and updates the global telemetry structure.
 
 ---
 
@@ -41,3 +52,5 @@ A periodic callback that ensures hardware health data is always fresh in the `Ro
 The system uses two main queues for thread-safe communication:
 1.  **`uartEventQueueHandle`**: Buffers events from the UART interrupt/task to the Controller.
 2.  **`stateMsgQueueHandle`**: Transmits unified commands from the Controller to the Supervisor Manager.
+3.  **`rosTxQueueHandle`**: Buffers binary packets to be transmitted to ROS.
+4.  **`rosRxQueueHandle`**: Buffers received binary packets for processing.

@@ -20,6 +20,7 @@ The system is composed of one **Supervisor Controller** and multiple **Subsystem
 | **STATE_MANUAL** | Operator driving mode. | Slaves follow local control commands. |
 | **STATE_AUTO** | ROS-driven autonomous mode. | Slaves follow ROS commands. |
 | **STATE_PAUSED**| Temporary halt (Manual/Auto). | Forces slaves to **STOP** (Holding positions). |
+| **STATE_TESTING**| Diagnostic and test mode.     | Slaves allow raw hardware access. |
 | **STATE_FAULT** | Critical error detected. | Immediate **DISABLED** of all power systems. |
 
 ---
@@ -96,7 +97,10 @@ When the system is in `STATE_PAUSED`, it records the authority level of the sour
 | **STATE_IDLE** | `EVENT_START` | **STATE_MANUAL** | Slaves begin wakeup (Homing Arm). |
 | **STATE_IDLE** | `EVENT_MODE_AUTO` | **STATE_AUTO** | Control authority to ROS. |
 | **STATE_MANUAL** | `EVENT_PAUSE` | **STATE_PAUSED** | `BREAK` (Mob) / `IDLE` (Arm). |
+| **STATE_MANUAL** | `EVENT_TESTING` | **STATE_TESTING** | Transition to diagnostic mode. |
+| **STATE_AUTO**   | `EVENT_TESTING` | **STATE_TESTING** | Transition to diagnostic mode. |
 | **STATE_PAUSED** | `EVENT_RESUME` | *Prev Mode* | Resumes previous motion context. |
+| **STATE_TESTING**| `EVENT_STOP` | **STATE_IDLE** | Return to standby. |
 | **ANY** | `EVENT_ERROR` | **STATE_FAULT** | **CRITICAL**: Full system shutdown. |
 
 ---
@@ -139,15 +143,21 @@ stateDiagram-v2
         
         STATE_MANUAL --> STATE_PAUSED : PAUSE
         STATE_AUTO --> STATE_PAUSED : PAUSE
+
+        STATE_MANUAL --> STATE_SUPERVISOR_TESTING : TESTING
+        STATE_AUTO --> STATE_SUPERVISOR_TESTING : TESTING
         
         STATE_PAUSED --> STATE_IDLE : STOP
         STATE_PAUSED --> STATE_MANUAL : RESUME (if prev was MAN)
         STATE_PAUSED --> STATE_AUTO : RESUME (if prev was AUTO)
 
+        STATE_SUPERVISOR_TESTING --> STATE_IDLE : STOP
+
         STATE_IDLE --> STATE_FAULT : ERROR
         STATE_MANUAL --> STATE_FAULT : ERROR
         STATE_AUTO --> STATE_FAULT : ERROR
         STATE_PAUSED --> STATE_FAULT : ERROR
+        STATE_SUPERVISOR_TESTING --> STATE_FAULT : ERROR
         
         STATE_FAULT --> STATE_INIT : RESET
     }
