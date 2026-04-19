@@ -324,9 +324,22 @@ export function useSerial() {
   }, [connected]);
 
   const connect = useCallback(async () => {
+    if (connected) return;
     try {
       const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 115200 });
+      
+      // If the port is already open, we might have lost state but keep the lock
+      // We check if we can open it; if it fails with 'already open', we try to use it if it's ours
+      try {
+        await port.open({ baudRate: 115200 });
+      } catch (err) {
+        if (err.name === 'InvalidStateError') {
+          console.warn('Port already open, attempting to use current state');
+        } else {
+          throw err;
+        }
+      }
+      
       portRef.current = port;
       const parser = new FrameParser(handleFrame);
       readLoopRef.current = true;

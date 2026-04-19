@@ -91,7 +91,8 @@ export function parsePayload(topicId, data) {
           v_batt: readFloat32(view, 12),
           state: view.getUint8(16),
           mobility_state: view.getUint8(17),
-          arm_state: view.getUint8(18)
+          arm_state: view.getUint8(18),
+          mobility_mode: view.getUint8(19)
         };
 
       case TOPIC_IDS.TX.IMU: // 0x82

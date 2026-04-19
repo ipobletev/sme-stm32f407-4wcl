@@ -12,7 +12,8 @@ import CommandPanel from './components/CommandPanel';
 import ActuatorControl from './components/ActuatorControl';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
-import { Activity, Power } from 'lucide-react';
+import OperatorControl from './components/OperatorControl';
+import { Activity, Power, Gamepad2 } from 'lucide-react';
 import './index.css';
 
 const TOPIC_LABELS = {
@@ -128,9 +129,19 @@ export default function App() {
                 sysStatus={telemetry.sysStatus}
               />
             </div>
-          ) : (
+          ) : activeTab === 'actuator-tool' ? (
             <div className="diagnostics-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
               <ActuatorControl sendPacket={sendPacket} connected={connected} sysStatus={telemetry.sysStatus} />
+            </div>
+          ) : activeTab === 'operator-control' ? (
+            <OperatorControl 
+              sendPacket={sendPacket} 
+              connected={connected} 
+              sysStatus={telemetry.sysStatus} 
+            />
+          ) : (
+            <div className="empty-state">
+              <p>Unknown tab: {activeTab}</p>
             </div>
           )}
         </div>

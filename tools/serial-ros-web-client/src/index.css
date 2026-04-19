@@ -1704,3 +1704,409 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-family: var(--font-mono);
   font-size: 0.65rem;
 }
+
+/* ===== OPERATOR CONTROL PANEL ===== */
+.operator-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: 40px;
+}
+
+.control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.control-header .title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.control-header .title-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.control-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.control-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.status-badge.active {
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.1);
+  animation: badge-pulse 2s infinite;
+}
+
+.status-badge.inactive {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-color: var(--border-color);
+}
+
+@keyframes badge-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.control-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 24px;
+  align-items: start;
+}
+
+.control-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.limit-group {
+  margin-bottom: 20px;
+}
+
+.limit-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.limit-value {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}
+
+.live-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.stat-value small {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Joystick Area */
+.joystick-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.mode-warning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--accent-amber);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.joystick-container {
+  width: 320px;
+  height: 320px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.joystick-container.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.joystick-base {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 
+    inset 0 0 40px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.joystick-guide-x, .joystick-guide-y {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.joystick-guide-x {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+}
+
+.joystick-guide-y {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+}
+
+.joystick-center-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  top: calc(50% - 3px);
+  left: calc(50% - 3px);
+}
+
+.joystick-knob {
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  cursor: grab;
+  transition: transform 0.1s ease-out, box-shadow 0.2s;
+  z-index: 10;
+}
+
+.joystick-knob.active {
+  cursor: grabbing;
+}
+
+.knob-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border: 3px solid #374151;
+  border-radius: 50%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 2px 5px rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.joystick-knob.active .knob-inner {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3), inset 0 2px 5px rgba(255,255,255,0.1);
+}
+
+.knob-glow {
+  position: absolute;
+  top: -10px; left: -10px; right: -10px; bottom: -10px;
+  background: var(--accent-indigo);
+  border-radius: 50%;
+  filter: blur(15px);
+  opacity: 0.2;
+  z-index: -1;
+  animation: knob-glow-pulse 1.5s infinite;
+}
+
+@keyframes knob-glow-pulse {
+  0% { transform: scale(1); opacity: 0.1; }
+  50% { transform: scale(1.1); opacity: 0.25; }
+  100% { transform: scale(1); opacity: 0.1; }
+}
+
+.e-stop-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.btn-estop.large {
+  width: 100%;
+  padding: 20px;
+  font-size: 1.2rem;
+  border-radius: 16px;
+}
+
+.security-item {
+  margin-bottom: 20px;
+}
+
+.security-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.security-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 24px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border-left: 3px solid var(--accent-indigo);
+}
+
+@media (max-width: 1100px) {
+  .control-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-card, .info-card {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .joystick-section {
+    order: -1;
+  }
+}
+
+/* ===== D-PAD CONTROL (3x3 Grid) ===== */
+.dpad-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  user-select: none;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dpad-container.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.dpad-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.dpad-btn {
+  width: 52px;
+  height: 52px;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dpad-btn.diag {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.dpad-btn:hover {
+  border-color: var(--accent-indigo);
+  color: var(--text-primary);
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.2);
+}
+
+.dpad-btn:active {
+  transform: translateY(1px) scale(0.95);
+  background: var(--accent-indigo);
+  color: white;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+  border-color: white;
+}
+
+.dpad-center {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.dpad-center .active {
+  color: var(--accent-cyan);
+  filter: drop-shadow(0 0 6px var(--accent-cyan));
+  animation: dpad-pulse 1.2s infinite alternate;
+}
+
+@keyframes dpad-pulse {
+  from { opacity: 0.5; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1.05); }
+}
+
+

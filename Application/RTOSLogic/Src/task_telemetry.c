@@ -83,6 +83,7 @@ void StartTelemetryTask(void *argument) {
             status_msg.current_state   = (uint8_t)RobotState_GetSystemState();
             status_msg.mobility_state  = (uint8_t)RobotState_GetMobilityState();
             status_msg.arm_state       = (uint8_t)RobotState_GetArmState();
+            status_msg.mobility_mode    = (uint8_t)RobotState_GetTargetMobilityMode();
 
             SerialRos_EnqueueTx(TOPIC_ID_SYS_STATUS, &status_msg, sizeof(SystemStatusMsg_t));
 
@@ -94,7 +95,7 @@ void StartTelemetryTask(void *argument) {
             uint32_t s_arm  = osal_thread_get_stack_space(armTaskHandle);
             uint32_t s_ros  = osal_thread_get_stack_space(serialRosTaskHandle);
             uint32_t s_tel  = osal_thread_get_stack_space(telemetryTaskHandle);
-            uint32_t s_imu  = osal_thread_get_stack_space(imuTaskHandle);
+            uint32_t s_imu  = osal_thread_get_stack_space(sensorsTaskHandle);
 
             uint64_t errs = RobotState_GetErrorFlags();
             char err_str[19];

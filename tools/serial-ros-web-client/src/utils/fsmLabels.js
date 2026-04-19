@@ -3,6 +3,7 @@
 export const SUPERVISOR_STATE_NAMES = ['INIT', 'IDLE', 'MANUAL', 'AUTO', 'PAUSED', 'FAULT', 'TESTING'];
 export const MOBILITY_STATE_NAMES = ['INIT', 'IDLE', 'BREAK', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
 export const ARM_STATE_NAMES = ['INIT', 'HOMING', 'IDLE', 'MOVING', 'TESTING', 'FAULT', 'ABORT'];
+export const MOBILITY_MODE_NAMES = ['DIRECT', 'DIFF', 'ACKERMANN', 'MECANUM'];
 
 export const SUPERVISOR_STATE_CLASSES = ['state-idle', 'state-ready', 'state-running', 'state-running', 'state-paused', 'state-fault', 'state-running'];
 export const MOBILITY_STATE_CLASSES = ['state-idle', 'state-ready', 'state-paused', 'state-running', 'state-running', 'state-fault', 'state-paused'];
@@ -30,6 +31,10 @@ export function getArmStateName(code) {
 
 export function getArmStateClass(code) {
   return ARM_STATE_CLASSES[code] ?? 'state-idle';
+}
+
+export function getMobilityModeName(code) {
+  return MOBILITY_MODE_NAMES[code] ?? `UNK(${code})`;
 }
 
 /** @param {bigint | number | string} v */

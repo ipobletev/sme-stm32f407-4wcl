@@ -43,13 +43,13 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 # Custom Application Source Files
-file(GLOB_RECURSE APP_SOURCES 
+file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
     "Application/*.c"
     "Application/*.cpp"
 )
 
 # Custom BSP Source Files
-file(GLOB_RECURSE BSP_SOURCES 
+file(GLOB_RECURSE BSP_SOURCES CONFIGURE_DEPENDS
     "Drivers/BSP/*.c"
 )
 

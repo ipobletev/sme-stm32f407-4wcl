@@ -14,10 +14,4 @@ extern EncoderMotorObjectTypeDef *motors[4];
 extern float target_linear_x;
 extern float target_angular_z;
 
-/**
- * @brief Periodic update functions for control and measurement
- */
-void FSM_Mobility_UpdateMeasurements(float period);
-void FSM_Mobility_UpdateControl(float period);
-
 #endif /* __MOBILITY_FSM_INTERNAL_H */

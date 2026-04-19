@@ -7,6 +7,7 @@ import {
   getMobilityStateClass as getMobStateClass,
   getArmStateName as getArmStateName,
   getArmStateClass as getArmStateClass,
+  getMobilityModeName,
 } from '../utils/fsmLabels';
 
 function getBatteryPercent(voltage) {
@@ -67,6 +68,12 @@ export default function TelemetryPanel({ telemetry, frequencies }) {
                     <span className={`state-badge ${getArmStateClass(sysStatus.arm_state)}`}>
                       {getArmStateName(sysStatus.arm_state)}
                     </span>
+                  </div>
+                  <div className="telemetry-item">
+                    <div className="label">Mobility Model</div>
+                    <div className="value value-cyan" style={{ fontSize: '0.9rem' }}>
+                      {getMobilityModeName(sysStatus.mobility_mode)}
+                    </div>
                   </div>
                   <div className="telemetry-item">
                     <div className="label">MCU Temp</div>

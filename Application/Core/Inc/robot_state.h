@@ -6,6 +6,9 @@
 #include "mobility_fsm.h"
 #include "arm_fsm.h"
 #include <stdint.h>
+#include "encoder_motor.h"
+
+extern EncoderMotorObjectTypeDef *motors[4];
 
 /**
  * @brief Actuator Testing Command

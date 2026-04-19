@@ -22,7 +22,7 @@ osal_thread_h mobilityTaskHandle;
 osal_thread_h armTaskHandle;
 osal_thread_h serialRosTaskHandle;
 osal_thread_h telemetryTaskHandle;
-osal_thread_h imuTaskHandle;
+osal_thread_h sensorsTaskHandle;
 osal_timer_h  heartbeatTimerHandle;
 
 
@@ -71,10 +71,10 @@ const osal_thread_attr_t telemetryTask_attributes = {
   .priority = OSAL_PRIO_NORMAL,
 };
 
-const osal_thread_attr_t imuTask_attributes = {
-  .name = "IMUTask",
+const osal_thread_attr_t sensorsTask_attributes = {
+  .name = "SensorsTask",
   .stack_size = 512 * 4,
-  .priority = OSAL_PRIO_HIGH, /* IMU needs high frequency and low jitter */
+  .priority = OSAL_PRIO_HIGH, /* IMU/Encoders need high frequency and low jitter */
 };
 
 /**
@@ -123,8 +123,8 @@ void App_RTOS_Init(void) {
     telemetryTaskHandle = osal_thread_create(StartTelemetryTask, NULL, &telemetryTask_attributes);
     if (telemetryTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    imuTaskHandle = osal_thread_create(StartImuTask, NULL, &imuTask_attributes);
-    if (imuTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    sensorsTaskHandle = osal_thread_create(StartSensorsTask, NULL, &sensorsTask_attributes);
+    if (sensorsTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     /* 3. Start Heartbeat Timer (1Hz) */
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);

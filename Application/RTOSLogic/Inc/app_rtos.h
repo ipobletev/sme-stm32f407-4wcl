@@ -23,7 +23,7 @@ extern osal_thread_h mobilityTaskHandle;
 extern osal_thread_h armTaskHandle;
 extern osal_thread_h serialRosTaskHandle;
 extern osal_thread_h telemetryTaskHandle;
-extern osal_thread_h imuTaskHandle;
+extern osal_thread_h sensorsTaskHandle;
 
 /* Thread Prototypes */
 void StartManagerTask(void *argument);
@@ -34,7 +34,7 @@ void StartMobilityTask(void *argument);
 void StartArmTask(void *argument);
 void StartSerialRosTask(void *argument);
 void StartTelemetryTask(void *argument);
-void StartImuTask(void *argument);
+void StartSensorsTask(void *argument);
 
 /* --- TIMERS --- */
 extern osal_timer_h heartbeatTimerHandle;

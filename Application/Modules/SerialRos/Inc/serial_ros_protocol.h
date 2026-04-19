@@ -119,6 +119,7 @@ typedef struct {
     uint8_t current_state;      /* 1-byte state (at offset 16) */
     uint8_t mobility_state;     /* 1-byte mobility state (at offset 17) */
     uint8_t arm_state;          /* 1-byte arm state (at offset 18) */
+    uint8_t mobility_mode;      /* 1-byte mobility mode (at offset 19) */
     /* float battery_current; */ /* Unsupported by hardware */
 } SystemStatusMsg_t;
 

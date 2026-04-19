@@ -19,6 +19,15 @@ RobotState_t RobotState_4wcl = {
     .pid_enabled = ROBOT_STATE_DEFAULT_PID_ENABLED // Enabled by default
 };
 
+/* Actuator Instances */
+static EncoderMotorObjectTypeDef motor_instances[4];
+EncoderMotorObjectTypeDef *motors[4] = {
+    &motor_instances[0], 
+    &motor_instances[1], 
+    &motor_instances[2], 
+    &motor_instances[3]
+};
+
 void RobotState_SetErrorFlag(uint64_t flag) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         RobotState_4wcl.Telemetry.error_flags |= flag;
