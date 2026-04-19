@@ -55,9 +55,9 @@ void MobState_Moving_Run(void) {
     
     /* 5. Set targets for individual PID controllers */
     /* Note: Right side motors (3 and 4) are physically flipped, hence the minus sign */
-    encoder_motor_set_speed(motors[0], velocity_wheels[0] * rps_conv);
+    encoder_motor_set_speed(motors[0], -velocity_wheels[0] * rps_conv);
     encoder_motor_set_speed(motors[1], velocity_wheels[1] * rps_conv);
-    encoder_motor_set_speed(motors[2], velocity_wheels[2] * rps_conv); 
+    encoder_motor_set_speed(motors[2], -velocity_wheels[2] * rps_conv); 
     encoder_motor_set_speed(motors[3], velocity_wheels[3] * rps_conv); 
 
     /* Run Motors. Run PID loop (if ROBOT_STATE_DEFAULT_PID_ENABLED enabled) for each motor */

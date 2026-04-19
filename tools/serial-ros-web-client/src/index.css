@@ -2109,4 +2109,76 @@ input[type="range"]::-webkit-slider-thumb:hover {
   to { opacity: 1; transform: scale(1.05); }
 }
 
+/* ===== QUICK ACTIONS (Header Buttons) ===== */
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+}
+
+.action-btn span {
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.action-btn.start {
+  color: var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.action-btn.start:hover {
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+}
+
+.action-btn.auto {
+  color: var(--accent-indigo);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+.action-btn.auto:hover {
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+}
+
+.action-btn.reset {
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.action-btn.reset:hover {
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+@media (max-width: 900px) {
+  .control-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .quick-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+
 

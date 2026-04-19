@@ -88,12 +88,12 @@ void StartSerialRosTask(void *argument) {
 
             if (was_connected && !is_connected) {
                 /* Disconnection Pulse Detected */
-                LOG_WARNING(LOG_TAG, "Client Disconnected! Safety fallback to MANUAL.\r\n");
+                LOG_WARNING(LOG_TAG, "Client Disconnected.\r\n");
                 if (RobotState_GetSystemState() == STATE_SUPERVISOR_AUTO) {
                     Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_INTERNAL_SUPERVISOR);
                 }
             } else if (!was_connected && is_connected) {
-                LOG_INFO(LOG_TAG, "Client Connected (First handshake detected)\r\n");
+                LOG_INFO(LOG_TAG, "Client Connected.\r\n");
             }
             was_connected = is_connected;
         }

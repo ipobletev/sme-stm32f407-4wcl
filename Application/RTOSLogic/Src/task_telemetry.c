@@ -87,6 +87,7 @@ void StartTelemetryTask(void *argument) {
 
             SerialRos_EnqueueTx(TOPIC_ID_SYS_STATUS, &status_msg, sizeof(SystemStatusMsg_t));
 
+#if (APP_DEBUG_LEVEL >= LOG_LEVEL_DEBUG)
             /* Report Status via DEBUG COM with Stack Diagnostics */
             uint32_t s_mng  = osal_thread_get_stack_space(managerTaskHandle);
             uint32_t s_ctl  = osal_thread_get_stack_space(controllerTaskHandle);
@@ -96,6 +97,7 @@ void StartTelemetryTask(void *argument) {
             uint32_t s_ros  = osal_thread_get_stack_space(serialRosTaskHandle);
             uint32_t s_tel  = osal_thread_get_stack_space(telemetryTaskHandle);
             uint32_t s_imu  = osal_thread_get_stack_space(sensorsTaskHandle);
+#endif
 
             uint64_t errs = RobotState_GetErrorFlags();
             char err_str[19];
@@ -127,6 +129,7 @@ void StartTelemetryTask(void *argument) {
             snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
 
             /* Periodically log board health to console */
+#if (APP_DEBUG_LEVEL >= LOG_LEVEL_DEBUG)
             LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
@@ -137,6 +140,16 @@ void StartTelemetryTask(void *argument) {
                 err_str,
                 (unsigned long)s_mng, (unsigned long)s_ctl, (unsigned long)s_urt, (unsigned long)s_mob,
                 (unsigned long)s_arm, (unsigned long)s_ros, (unsigned long)s_tel, (unsigned long)s_imu);
+#else
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s, %s] | Batt: %sV | MCU: %sC | Errors: %s\r\n", 
+                Supervisor_StateToStr(RobotState_GetSystemState()),
+                FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
+                FSM_Arm_StateToStr(RobotState_GetArmState()),
+                cmd_lx_str, cmd_az_str, FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
+                batt_str,
+                mcu_str,
+                err_str);
+#endif
         }
 
         cycle_counter++;

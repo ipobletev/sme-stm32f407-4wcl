@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Gamepad2, Zap, ShieldAlert, Sliders, Play, Square, AlertCircle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight } from 'lucide-react';
+import { Gamepad2, Zap, ShieldAlert, Sliders, Play, Square, AlertCircle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight, RotateCcw } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 import { getSupervisorStateName, getSupervisorStateClass } from '../utils/fsmLabels';
 
@@ -160,6 +160,18 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
   const isOperational = isAuto;
   const stateName = getSupervisorStateName(currentState);
 
+  const handleStart = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Encoders.sysEvent(0x01))); // START
+  };
+
+  const handleReset = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Encoders.sysEvent(0x05))); // RESET
+  };
+
+  const handleSetAuto = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Encoders.autonomous(true)));
+  };
+
   return (
     <div className="operator-control-panel">
       <div className="control-header">
@@ -171,6 +183,21 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
           </div>
         </div>
         
+        <div className="quick-actions">
+          <button className="action-btn start" onClick={handleStart} title="Start System">
+            <Play size={18} />
+            <span>START</span>
+          </button>
+          <button className="action-btn auto" onClick={handleSetAuto} title="Switch to AUTO mode">
+            <Zap size={18} />
+            <span>MODE: AUTO</span>
+          </button>
+          <button className="action-btn reset" onClick={handleReset} title="Reset System">
+            <RotateCcw size={18} />
+            <span>RESET</span>
+          </button>
+        </div>
+
         <div className="status-group">
           <div className={`status-badge ${isAuto ? 'active' : 'inactive'}`}>
             <Zap size={14} />
@@ -232,7 +259,12 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
               </p>
             </div>
           )}
-          
+          <div className="e-stop-container">
+            <button className="btn-estop large" onClick={handleEStop}>
+              <Square fill="white" size={18} />
+              EMERGENCY STOP
+            </button>
+          </div>
           <div 
             className={`joystick-container ${!isAuto || !connected ? 'disabled' : ''}`}
             ref={joystickRef}
@@ -286,13 +318,6 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
                  <ArrowDownRight size={20} />
                </button>
              </div>
-          </div>
-          
-          <div className="e-stop-container">
-            <button className="btn-estop large" onClick={handleEStop}>
-              <Square fill="white" size={18} />
-              EMERGENCY STOP
-            </button>
           </div>
         </div>
 

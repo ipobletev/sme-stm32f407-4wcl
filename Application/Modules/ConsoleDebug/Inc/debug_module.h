@@ -6,12 +6,18 @@
 #include "config.h"
 
 /* Trace levels */
+#define LOG_LEVEL_NONE  0
+#define LOG_LEVEL_ERROR 1
+#define LOG_LEVEL_WARN  2
+#define LOG_LEVEL_INFO  3
+#define LOG_LEVEL_DEBUG 4
+
 typedef enum {
-    DEBUG_LEVEL_NONE  = 0,
-    DEBUG_LEVEL_ERROR = 1,
-    DEBUG_LEVEL_WARN  = 2,
-    DEBUG_LEVEL_INFO  = 3,
-    DEBUG_LEVEL_DEBUG = 4
+    DEBUG_LEVEL_NONE  = LOG_LEVEL_NONE,
+    DEBUG_LEVEL_ERROR = LOG_LEVEL_ERROR,
+    DEBUG_LEVEL_WARN  = LOG_LEVEL_WARN,
+    DEBUG_LEVEL_INFO  = LOG_LEVEL_INFO,
+    DEBUG_LEVEL_DEBUG = LOG_LEVEL_DEBUG
 } debug_level_t;
 
 /* Standard log function */
