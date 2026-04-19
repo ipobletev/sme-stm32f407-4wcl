@@ -30,9 +30,10 @@ function RobotModel({ imu }) {
   useFrame(() => {
     if (!groupRef.current) return;
     if (imu) {
-      const r = THREE.MathUtils.degToRad(imu.roll || 0);
-      const p = THREE.MathUtils.degToRad(imu.pitch || 0);
-      const y = THREE.MathUtils.degToRad(imu.yaw || 0);
+      // Data is now natively in Radians (ROS standard)
+      const r = imu.roll || 0;
+      const p = imu.pitch || 0;
+      const y = imu.yaw || 0;
       targetRotation.current.set(p, y, r);
     }
 

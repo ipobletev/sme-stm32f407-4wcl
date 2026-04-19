@@ -46,15 +46,14 @@ static float invSqrt(float number) {
     return y;
 }
 
-static EulerAngles get_euler_angles(float gx, float gy, float gz, float ax, float ay, float az) {
+static void get_orientation_internal(float gx, float gy, float gz, float ax, float ay, float az, Quaternion *q, EulerAngles *ea) {
     static float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
     static float exInt = 0, eyInt = 0, ezInt = 0;
-    EulerAngles eulaer = {0};
     float recipNorm;
     float vx, vy, vz;
     float ex, ey, ez;
 
-    if (ax*ax + ay*ay + az*az == 0) return eulaer;
+    if (ax*ax + ay*ay + az*az == 0) return;
 
     recipNorm = invSqrt(ax*ax + ay*ay + az*az);
     ax *= recipNorm; ay *= recipNorm; az *= recipNorm;
@@ -83,11 +82,20 @@ static EulerAngles get_euler_angles(float gx, float gy, float gz, float ax, floa
     recipNorm = invSqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
     q0 *= recipNorm; q1 *= recipNorm; q2 *= recipNorm; q3 *= recipNorm;
 
-    eulaer.roll = atan2f(2*q2*q3 + 2*q0*q1, -2*q1*q1 - 2*q2*q2 + 1) * 57.3f;
-    eulaer.pitch = asinf(2*q1*q3 - 2*q0*q2) * 57.3f;
-    eulaer.yaw = -atan2f(2*q1*q2 + 2*q0*q3, -2*q2*q2 - 2*q3*q3 + 1) * 57.3f;
+    if (q) {
+        q->qw = q0; q->qx = q1; q->qy = q2; q->qz = q3;
+    }
+    if (ea) {
+        ea->roll = atan2f(2*q2*q3 + 2*q0*q1, -2*q1*q1 - 2*q2*q2 + 1);
+        ea->pitch = asinf(2*q1*q3 - 2*q0*q2);
+        ea->yaw = -atan2f(2*q1*q2 + 2*q0*q3, -2*q2*q2 - 2*q3*q3 + 1);
+    }
+}
 
-    return eulaer;
+void qmi8658_get_orientation(Quaternion *q, EulerAngles *ea) {
+    float acc[3], gyro[3];
+    qmi8658_read_xyz(acc, gyro);
+    get_orientation_internal(gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2], q, ea);
 }
 
 static void qmi8658_on_demand_cali(void) {
@@ -139,12 +147,11 @@ void qmi8658_read_xyz(float acc[3], float gyro[3]) {
 }
 
 void qmi8658_get_euler(float *pitch, float *roll, float *yaw) {
-    float acc[3], gyro[3];
-    qmi8658_read_xyz(acc, gyro);
-    EulerAngles ea = get_euler_angles(gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2]);
-    *pitch = ea.pitch;
-    *roll = ea.roll;
-    *yaw = ea.yaw;
+    EulerAngles ea;
+    qmi8658_get_orientation(NULL, &ea);
+    if (pitch) *pitch = ea.pitch;
+    if (roll)  *roll  = ea.roll;
+    if (yaw)   *yaw   = ea.yaw;
 }
 
 void qmi8658_set_bias(float ax, float ay, float az, float gx, float gy, float gz) {

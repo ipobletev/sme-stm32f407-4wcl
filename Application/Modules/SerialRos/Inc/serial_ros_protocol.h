@@ -91,9 +91,10 @@ typedef struct {
  * @brief Message: ImuMsg [Topic 0x82]
  */
 typedef struct {
-    float roll, pitch, yaw;
+    float qx, qy, qz, qw;
     float gyro_x, gyro_y, gyro_z;
     float accel_x, accel_y, accel_z;
+    float roll, pitch, yaw;
 } ImuMsg_t;
 
 /**

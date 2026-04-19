@@ -17,15 +17,22 @@ Raw data acquisition is performed at a frequency of **100Hz**. The sensor driver
 The attitude is estimated using a **Mahony Filter**, a computationally efficient complementary-style filter that combines gyroscope integration with accelerometer-derived gravity vector references.
 
 ### 2.1 Orientation Representation
-Orientation is maintained Internally as a normalized quaternion ($q_0, q_1, q_2, q_3$) to avoid the gimbal lock singularity inherent in Euler angles.
+Orientation is maintained internally as a normalized quaternion ($q_x, q_y, q_z, q_w$) to avoid the gimbal lock singularity inherent in Euler angles. This representation is compliant with the **REP-103** standard for 3D orientation in ROS.
 
 ### 2.2 Gravity Correction
 The accelerometer provides a reference for the gravity vector. The filter calculates a rotational error by comparing the estimated gravity vector (from the current quaternion) with the normalized accelerometer reading:
 $$e = a_{raw} \times v_{est}$$
 This error is integrated and fed back into the gyroscope readings via Proportional-Integral (PI) gains ($K_p$ and $K_i$), correcting for pitch and roll drift.
 
-### 2.3 Yaw Constraints
-Since the accelerometer cannot provide a reference for rotation around the gravity vector (Yaw), the Filter relies on pure gyroscope integration for the vertical axis. Long-term stability is managed through the external ZUPT mechanism.
+### 2.3 Unit Standardization
+To align with professional robotics frameworks, the system uses the following units:
+- **Angular Velocity**: Radians per second ($rad/s$).
+- **Linear Acceleration**: Meters per second squared ($m/s^2$).
+- **Orientation (Euler)**: Radians ($rad$) for Roll, Pitch, and Yaw.
+- **Orientation (Quaternion)**: Dimensionless normalized components.
+
+### 2.4 Yaw Constraints
+Since the accelerometer cannot provide a reference for rotation around the gravity vector (Yaw), the filter relies on high-rate gyroscope integration for the vertical axis. Long-term stability is managed through the external ZUPT mechanism and can be fused with odometry in higher-level EKF filters.
 
 ## 3. Drift Mitigation (Zero-Velocity Update - ZUPT)
 
@@ -45,8 +52,8 @@ Additionally, angular velocity outputs are clamped to zero during the stationary
 ## 4. System Architecture
 
 The IMU data flow is managed by the `SensorsTask` in the FreeRTOS environment:
-1. **Acquisition**: `BSP_IMU_ReadRaw` retrieves de-biased SI values.
-2. **Estimation**: `BSP_IMU_ReadOrientation` executes the Mahony update and Euler conversion.
+1. **Acquisition**: `BSP_IMU_ReadRaw` retrieves de-biased SI values ($m/s^2$, $rad/s$).
+2. **Estimation**: `BSP_IMU_ReadOrientationFull` executes the Mahony update and provides both the current state as a Quaternion and Euler angles (in radians).
 3. **Kinematics**: Encoder values are processed to determine the stationary state.
 4. **Correction**: ZUPT logic updates the bias parameters if applicable.
-5. **Telemetry**: Final state variables (Roll, Pitch, Yaw, Accel, Gyro) are synchronized with the `RobotState` global structure within a critical section.
+5. **Telemetry**: Final state variables (Roll, Pitch, Yaw, Quaternions, Accel, Gyro) are synchronized with the `RobotState` global structure within a critical section.

@@ -19,6 +19,8 @@ typedef struct {
     uint8_t use_velocity; /* 0: PWM Mode, 1: Velocity Mode */
 } MotorTestCommand_t;
 
+#include "imu_types.h"
+
 /**
  * @brief Main structure for RobotState-4wcl
  * Organized to separate ROS Commands (Rx) from Telemetry (Tx)
@@ -83,15 +85,12 @@ typedef struct {
         float arm_j3_eff;
 
         /* IMU 9-DOF */
-        float roll;
-        float pitch;
-        float yaw;
-        float gyro_x;
-        float gyro_y;
-        float gyro_z;
-        float accel_x;                  /* Linear Acceleration X */
-        float accel_y;                  /* Linear Acceleration Y */
-        float accel_z;                  /* Linear Acceleration Z */
+        float roll;                     /* Radians */
+        float pitch;                    /* Radians */
+        float yaw;                      /* Radians */
+        float qx, qy, qz, qw;           /* Orientation Quaternion (REP-103) */
+        float gyro_x, gyro_y, gyro_z;   /* Rad/s */
+        float accel_x, accel_y, accel_z; /* m/s^2 */
 
     } Telemetry;
 
@@ -161,5 +160,8 @@ void RobotState_ResetTestCommands(void);
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);
 void RobotState_SetMeasuredVelocity(float linear_x, float angular_z);
 void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4);
+
+/* IMU Setters */
+void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea);
 
 #endif /* __ROBOT_STATE_H */

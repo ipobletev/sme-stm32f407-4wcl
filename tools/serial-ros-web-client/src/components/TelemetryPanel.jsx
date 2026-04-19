@@ -25,9 +25,10 @@ function getBatteryColor(pct) {
 function fmt(v, d = 2) {
   if (v === null || v === undefined) return '—';
   return Number(v).toFixed(d);
+}function toDeg(rad) {
+  if (rad === null || rad === undefined) return 0;
+  return rad * (180 / Math.PI);
 }
-
-
 
 export default function TelemetryPanel({ telemetry, frequencies }) {
   const { sysStatus, imu, odometry } = telemetry;
@@ -148,29 +149,29 @@ export default function TelemetryPanel({ telemetry, frequencies }) {
               <div className="imu-angles">
                 <div className="imu-angle">
                   <div className="angle-label">Roll</div>
-                  <div className="angle-value value-cyan">{fmt(imu.roll, 2)}°</div>
+                  <div className="angle-value value-cyan">{fmt(toDeg(imu.roll), 1)}°</div>
                 </div>
                 <div className="imu-angle">
                   <div className="angle-label">Pitch</div>
-                  <div className="angle-value value-violet">{fmt(imu.pitch, 2)}°</div>
+                  <div className="angle-value value-violet">{fmt(toDeg(imu.pitch), 1)}°</div>
                 </div>
                 <div className="imu-angle">
                   <div className="angle-label">Yaw</div>
-                  <div className="angle-value value-emerald">{fmt(imu.yaw, 2)}°</div>
+                  <div className="angle-value value-emerald">{fmt(toDeg(imu.yaw), 1)}°</div>
                 </div>
               </div>
               <div className="telemetry-grid" style={{ marginTop: '10px' }}>
                 <div className="telemetry-item">
                   <div className="label">Gyro X</div>
-                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.x, 2)}<span className="unit">°/s</span></div>
+                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.x, 3)}<span className="unit">rad/s</span></div>
                 </div>
                 <div className="telemetry-item">
                   <div className="label">Gyro Y</div>
-                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.y, 2)}<span className="unit">°/s</span></div>
+                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.y, 3)}<span className="unit">rad/s</span></div>
                 </div>
                 <div className="telemetry-item">
                   <div className="label">Gyro Z</div>
-                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.z, 2)}<span className="unit">°/s</span></div>
+                  <div className="value value-cyan" style={{ fontSize: '0.85rem' }}>{fmt(imu.gyro?.z, 3)}<span className="unit">rad/s</span></div>
                 </div>
                 <div className="telemetry-item">
                   <div className="label">Accel X</div>

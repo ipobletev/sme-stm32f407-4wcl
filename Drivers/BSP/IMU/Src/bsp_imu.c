@@ -107,6 +107,14 @@ IMU_Status_t BSP_IMU_ReadOrientation(float *pitch, float *roll, float *yaw) {
     return IMU_ERROR_ID;
 }
 
+IMU_Status_t BSP_IMU_ReadOrientationFull(Quaternion *q, EulerAngles *ea) {
+    if (imu_type == IMU_TYPE_QMI8658) {
+        qmi8658_get_orientation(q, ea);
+        return IMU_OK;
+    }
+    return IMU_ERROR_ID;
+}
+
 /* Fallback MPU6050 Driver */
 static IMU_Status_t MPU6050_Init(void) {
     uint8_t data = 0x80;

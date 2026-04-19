@@ -97,11 +97,15 @@ export function parsePayload(topicId, data) {
 
       case TOPIC_IDS.TX.IMU: // 0x82
         return {
-          roll: readFloat32(view, 0),
-          pitch: readFloat32(view, 4),
-          yaw: readFloat32(view, 8),
-          gyro: { x: readFloat32(view, 12), y: readFloat32(view, 16), z: readFloat32(view, 20) },
-          accel: { x: readFloat32(view, 24), y: readFloat32(view, 28), z: readFloat32(view, 32) }
+          qx: readFloat32(view, 0),
+          qy: readFloat32(view, 4),
+          qz: readFloat32(view, 8),
+          qw: readFloat32(view, 12),
+          gyro: { x: readFloat32(view, 16), y: readFloat32(view, 20), z: readFloat32(view, 24) },
+          accel: { x: readFloat32(view, 28), y: readFloat32(view, 32), z: readFloat32(view, 36) },
+          roll: readFloat32(view, 40),
+          pitch: readFloat32(view, 44),
+          yaw: readFloat32(view, 48)
         };
 
       case TOPIC_IDS.TX.ODOMETRY: // 0x83

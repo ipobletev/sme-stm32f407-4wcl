@@ -74,7 +74,6 @@ static void PerformCalibration(void) {
 void StartSensorsTask(void *argument) {
     IMU_Status_t status;
     IMU_RawData_t raw;
-    float roll, pitch, yaw;
     uint32_t last_wake_time;
     
     /* --- 1. Init IMU --- */
@@ -141,7 +140,9 @@ void StartSensorsTask(void *argument) {
         /* --- 3. IMU (100Hz) --- */
         if (status == IMU_OK) {
             IMU_Status_t s = BSP_IMU_ReadRaw(&raw);
-            BSP_IMU_ReadOrientation(&pitch, &roll, &yaw);
+            Quaternion q;
+            EulerAngles ea;
+            BSP_IMU_ReadOrientationFull(&q, &ea);
 
             if (s == IMU_OK) {
                 /* Values from BSP_IMU_ReadRaw are already de-biased if QMI8658 */
@@ -197,10 +198,10 @@ void StartSensorsTask(void *argument) {
                 RobotState_4wcl.Telemetry.gyro_x = gx * TO_RAD;
                 RobotState_4wcl.Telemetry.gyro_y = gy * TO_RAD;
                 RobotState_4wcl.Telemetry.gyro_z = gz * TO_RAD;
-                RobotState_4wcl.Telemetry.roll = roll;
-                RobotState_4wcl.Telemetry.pitch = pitch;
-                RobotState_4wcl.Telemetry.yaw = yaw;
                 taskEXIT_CRITICAL();
+
+                /* Update full orientation (thread-safe setter) */
+                RobotState_SetIMUOrientation(q, ea);
             }
         }
     }

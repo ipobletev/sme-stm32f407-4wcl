@@ -5,17 +5,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "qmi8658reg.h"
-
-typedef struct {
-    float roll;
-    float pitch;
-    float yaw;
-} EulerAngles;
+#include "imu_types.h"
 
 /* BSP Public Interface for QMI8658 */
 unsigned char qmi8658_begin(void);
 void          qmi8658_read_xyz(float acc[3], float gyro[3]);
-void          qmi8658_get_euler(float *pitch, float *roll, float *yaw);
+void          qmi8658_get_orientation(Quaternion *q, EulerAngles *ea);
+void          qmi8658_get_euler(float *pitch, float *roll, float *yaw); // Deprecated, use get_orientation
 void          qmi8658_set_bias(float ax, float ay, float az, float gx, float gy, float gz);
 
 #endif

@@ -513,3 +513,25 @@ void RobotState_ResetTestCommands(void) {
         taskEXIT_CRITICAL();
     }
 }
+
+void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.qw = q.qw;
+        RobotState_4wcl.Telemetry.qx = q.qx;
+        RobotState_4wcl.Telemetry.qy = q.qy;
+        RobotState_4wcl.Telemetry.qz = q.qz;
+        RobotState_4wcl.Telemetry.roll = ea.roll;
+        RobotState_4wcl.Telemetry.pitch = ea.pitch;
+        RobotState_4wcl.Telemetry.yaw = ea.yaw;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.qw = q.qw;
+        RobotState_4wcl.Telemetry.qx = q.qx;
+        RobotState_4wcl.Telemetry.qy = q.qy;
+        RobotState_4wcl.Telemetry.qz = q.qz;
+        RobotState_4wcl.Telemetry.roll = ea.roll;
+        RobotState_4wcl.Telemetry.pitch = ea.pitch;
+        RobotState_4wcl.Telemetry.yaw = ea.yaw;
+        taskEXIT_CRITICAL();
+    }
+}

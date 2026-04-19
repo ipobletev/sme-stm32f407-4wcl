@@ -39,15 +39,19 @@ void StartTelemetryTask(void *argument) {
         /* --- 1. IMU TOPIC (100Hz) --- */
         ImuMsg_t imu_msg;
         taskENTER_CRITICAL();
-        imu_msg.roll    = RobotState_4wcl.Telemetry.roll;
-        imu_msg.pitch   = RobotState_4wcl.Telemetry.pitch;
-        imu_msg.yaw     = RobotState_4wcl.Telemetry.yaw;
+        imu_msg.qx      = RobotState_4wcl.Telemetry.qx;
+        imu_msg.qy      = RobotState_4wcl.Telemetry.qy;
+        imu_msg.qz      = RobotState_4wcl.Telemetry.qz;
+        imu_msg.qw      = RobotState_4wcl.Telemetry.qw;
         imu_msg.gyro_x  = RobotState_4wcl.Telemetry.gyro_x;
         imu_msg.gyro_y  = RobotState_4wcl.Telemetry.gyro_y;
         imu_msg.gyro_z  = RobotState_4wcl.Telemetry.gyro_z;
         imu_msg.accel_x = RobotState_4wcl.Telemetry.accel_x;
         imu_msg.accel_y = RobotState_4wcl.Telemetry.accel_y;
         imu_msg.accel_z = RobotState_4wcl.Telemetry.accel_z;
+        imu_msg.roll    = RobotState_4wcl.Telemetry.roll;
+        imu_msg.pitch   = RobotState_4wcl.Telemetry.pitch;
+        imu_msg.yaw     = RobotState_4wcl.Telemetry.yaw;
         taskEXIT_CRITICAL();
         SerialRos_EnqueueTx(TOPIC_ID_IMU, &imu_msg, sizeof(ImuMsg_t));
 

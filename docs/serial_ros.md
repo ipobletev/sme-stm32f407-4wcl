@@ -38,7 +38,7 @@ The protocol uses a **Binary Framing** format to ensure the smallest possible HE
 | ID       | Name          | Payload Structure                                                          | Description                               |
 | :------- | :------------ | :------------------------------------------------------------------------- | :---------------------------------------- |
 | **0x81** | `sys_status`  | `uint64 errors, float temp, float v_batt, uint8 sup, uint8 mob, uint8 arm` | System state, health flags, and battery.  |
-| **0x82** | `imu`         | `float roll, pitch, yaw, gyro_x/y/z, accel_x/y/z`                        | Full IMU telemetry (9 floats).            |
+| **0x82** | `imu`         | `float qx, qy, qz, qw, gx, gy, gz, ax, ay, az, roll, pitch, yaw` | Full IMU state (Rep-103: Quaternions + Radians). |
 | **0x83** | `odometry`    | `float linear_x, float angular_z, int32 enc_1/2/3/4`                      | Velocity estimates and encoder counts.    |
 
 ---
@@ -65,9 +65,10 @@ typedef struct {
 } SystemStatusMsg_t;                                                          // 0x81
 
 typedef struct {
-    float roll, pitch, yaw;
-    float gyro_x, gyro_y, gyro_z;
-    float accel_x, accel_y, accel_z;
+    float qx, qy, qz, qw;           /* Orientation Quaternion */
+    float gyro_x, gyro_y, gyro_z;   /* Velocity (rad/s) */
+    float accel_x, accel_y, accel_z; /* Acceleration (m/s^2) */
+    float roll, pitch, yaw;         /* Euler Angles (rad) */
 } ImuMsg_t;                                                                   // 0x82
 
 typedef struct {
