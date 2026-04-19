@@ -39,4 +39,9 @@ void State_Fault_OnEnter(void);
 void State_Fault_Run(void);
 void State_Fault_OnExit(void);
 
+/* TESTING State */
+void State_Testing_OnEnter(void);
+void State_Testing_Run(void);
+void State_Testing_OnExit(void);
+
 #endif /* __STATE_HANDLERS_H */

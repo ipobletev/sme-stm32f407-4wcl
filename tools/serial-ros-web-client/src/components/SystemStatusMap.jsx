@@ -14,6 +14,7 @@ const SUPERVISOR_FSM = {
     { id: 3, label: 'AUTO', x: 440, y: 180, color: '#10b981' },
     { id: 4, label: 'PAUSED', x: 620, y: 120, color: '#f59e0b' },
     { id: 5, label: 'FAULT', x: 360, y: 260, color: '#ef4444' },
+    { id: 6, label: 'TESTING', x: 540, y: 120, color: '#06b6d4' },
   ],
   edges: [
     { from: 0, to: 1, label: 'READY' },
@@ -32,6 +33,10 @@ const SUPERVISOR_FSM = {
     { from: 3, to: 5, label: 'ERR' },
     { from: 4, to: 5, label: 'ERR' },
     { from: 5, to: 0, label: 'RESET' },
+    { from: 2, to: 6, label: 'TEST' },
+    { from: 3, to: 6, label: 'TEST' },
+    { from: 6, to: 1, label: 'STOP' },
+    { from: 6, to: 5, label: 'ERR' },
   ]
 };
 

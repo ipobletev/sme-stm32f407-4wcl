@@ -126,11 +126,11 @@ void StartTelemetryTask(void *argument) {
             snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
 
             /* Periodically log board health to console */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s, %s] | Batt: %sV | MCU: %sC | Errors: %s | FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
                 FSM_Arm_StateToStr(RobotState_GetArmState()),
-                cmd_lx_str, cmd_az_str,
+                cmd_lx_str, cmd_az_str, FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
                 batt_str,
                 mcu_str,
                 err_str,

@@ -13,7 +13,8 @@ typedef enum {
     STATE_SUPERVISOR_MANUAL,       /* Manual control */
     STATE_SUPERVISOR_AUTO,         /* Autonomous control */
     STATE_SUPERVISOR_PAUSED,       /* Paused */
-    STATE_SUPERVISOR_FAULT         /* Fault */
+    STATE_SUPERVISOR_FAULT,        /* Fault */
+    STATE_SUPERVISOR_TESTING       /* Diagnostic/Testing Mode */
 } SystemState_t;
 
 typedef enum {
@@ -22,6 +23,7 @@ typedef enum {
     EVENT_SUPERVISOR_READY,        /* Ready to Idle */
     EVENT_SUPERVISOR_START,        /* Enable system. transition to STATE_MANUAL */
     EVENT_SUPERVISOR_STOP,         /* Disable system. transition to STATE_IDLE */
+    EVENT_SUPERVISOR_TESTING,      /* Enable system. transition to STATE_TESTING */
     EVENT_SUPERVISOR_ERROR,        /* Set system to STATE_FAULT - STOP EMERGENCY */
     EVENT_SUPERVISOR_RESET,        /* Set system to STATE_INIT (if in STATE_FAULT) - CLEAR EMERGENCY */
     EVENT_SUPERVISOR_MODE_MANUAL,  /* Set system to STATE_MANUAL - MANUAL MODE */

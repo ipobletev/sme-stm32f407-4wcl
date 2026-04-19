@@ -36,6 +36,9 @@ export default function SystemEventsControl({ sendPacket, connected }) {
           <button className="event-btn fault" disabled={disabled} onClick={() => sendEvent(0x06)}>
             <AlertTriangle size={12} /> FAULT (E-STOP)
           </button>
+          <button className="event-btn test" disabled={disabled} onClick={() => sendEvent(0x07)} style={{ background: 'var(--accent-blue)', color: 'white' }}>
+            <Zap size={12} /> TEST/DIAG
+          </button>
         </div>
       </div>
     </div>

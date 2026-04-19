@@ -450,3 +450,57 @@ void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
     }
 }
 
+
+void RobotState_SetMotorTestCommand(uint8_t id, float value, uint8_t use_velocity) {
+    if (id >= 4) return;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        if (use_velocity) {
+            RobotState_4wcl.Commands.motor_test[id].velocity = value;
+            RobotState_4wcl.Commands.motor_test[id].use_velocity = 1;
+        } else {
+            RobotState_4wcl.Commands.motor_test[id].pwm = value;
+            RobotState_4wcl.Commands.motor_test[id].use_velocity = 0;
+        }
+    } else {
+        taskENTER_CRITICAL();
+        if (use_velocity) {
+            RobotState_4wcl.Commands.motor_test[id].velocity = value;
+            RobotState_4wcl.Commands.motor_test[id].use_velocity = 1;
+        } else {
+            RobotState_4wcl.Commands.motor_test[id].pwm = value;
+            RobotState_4wcl.Commands.motor_test[id].use_velocity = 0;
+        }
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_GetMotorTestCommand(uint8_t id, float *value, uint8_t *use_velocity) {
+    if (id >= 4) return;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        *use_velocity = RobotState_4wcl.Commands.motor_test[id].use_velocity;
+        *value = (*use_velocity) ? RobotState_4wcl.Commands.motor_test[id].velocity : RobotState_4wcl.Commands.motor_test[id].pwm;
+    } else {
+        taskENTER_CRITICAL();
+        *use_velocity = RobotState_4wcl.Commands.motor_test[id].use_velocity;
+        *value = (*use_velocity) ? RobotState_4wcl.Commands.motor_test[id].velocity : RobotState_4wcl.Commands.motor_test[id].pwm;
+        taskEXIT_CRITICAL();
+    }
+}
+
+void RobotState_ResetTestCommands(void) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        for (int i = 0; i < 4; i++) {
+            RobotState_4wcl.Commands.motor_test[i].pwm = 0.0f;
+            RobotState_4wcl.Commands.motor_test[i].velocity = 0.0f;
+            RobotState_4wcl.Commands.motor_test[i].use_velocity = 0;
+        }
+    } else {
+        taskENTER_CRITICAL();
+        for (int i = 0; i < 4; i++) {
+            RobotState_4wcl.Commands.motor_test[i].pwm = 0.0f;
+            RobotState_4wcl.Commands.motor_test[i].velocity = 0.0f;
+            RobotState_4wcl.Commands.motor_test[i].use_velocity = 0;
+        }
+        taskEXIT_CRITICAL();
+    }
+}

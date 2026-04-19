@@ -65,4 +65,4 @@ add_subdirectory(cmake/stm32cubemx)
 
 # The generated logic already calls target_sources and target_link_libraries
 # for ${CMAKE_PROJECT_NAME}, so we just need to ensure the order is correct.
-# Updated state machine file structure - Standardizing ABORT Handlers.
+# Updated state machine file structure - Standardizing ABORT Handlers and Diagnostic states.

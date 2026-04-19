@@ -8,6 +8,15 @@
 #include <stdint.h>
 
 /**
+ * @brief Actuator Testing Command
+ */
+typedef struct {
+    float pwm;
+    float velocity;
+    uint8_t use_velocity; /* 0: PWM Mode, 1: Velocity Mode */
+} MotorTestCommand_t;
+
+/**
  * @brief Main structure for RobotState-4wcl
  * Organized to separate ROS Commands (Rx) from Telemetry (Tx)
  */
@@ -23,6 +32,9 @@ typedef struct {
         float target_arm_j1;
         float target_arm_j2;
         float target_arm_j3;
+
+        /* Test Commands */
+        MotorTestCommand_t motor_test[4];
     } Commands;
 
     /* 2. TELEMETRY TO ROS (Tx) */
@@ -138,6 +150,9 @@ void RobotState_SetTargetArmPose(float j1, float j2, float j3);
 void RobotState_GetTargetArmPose(float *j1, float *j2, float *j3);
 void RobotState_SetTargetMobilityMode(MobilityMode_t mode);
 MobilityMode_t RobotState_GetTargetMobilityMode(void);
+void RobotState_SetMotorTestCommand(uint8_t id, float value, uint8_t use_velocity);
+void RobotState_GetMotorTestCommand(uint8_t id, float *value, uint8_t *use_velocity);
+void RobotState_ResetTestCommands(void);
 
 /* Mobility Feedback Setters */
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);

@@ -16,6 +16,7 @@
 #define TOPIC_ID_ARM_GOAL       0x04    /* Rx: Robotic arm joint targets */
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
 #define TOPIC_ID_ACTUATOR_PWM   0x06    /* Rx: Raw actuator PWM control (ID + Pulse) */
+#define TOPIC_ID_ACTUATOR_VEL   0x07    /* Rx: Raw actuator Velocity control (ID + RPS) */
 
 /* Tx (Virtual Published) Topics */
 #define TOPIC_ID_SYS_STATUS     0x81    /* Tx: System state, health, and battery */
@@ -30,6 +31,7 @@ typedef enum {
     SYS_EVENT_RESUME = 0x04,
     SYS_EVENT_RESET  = 0x05,
     SYS_EVENT_FAULT  = 0x06,
+    SYS_EVENT_TEST   = 0x07,
 } SysEventId_t;
 
 /* --- Message Structures (Packed) --- */

@@ -24,6 +24,7 @@ const char* Supervisor_StateToStr(SystemState_t state) {
         case STATE_SUPERVISOR_AUTO:   return "AUTO";
         case STATE_SUPERVISOR_PAUSED: return "PAUSED";
         case STATE_SUPERVISOR_FAULT:  return "FAULT";
+        case STATE_SUPERVISOR_TESTING:return "TESTING";
         default:           return "UNKNOWN";
     }
 }
@@ -89,12 +90,13 @@ static void TransitionToState(SystemState_t new_state) {
 
     /* Call Exit Handler of current state */
     switch (current_state) {
-        case STATE_SUPERVISOR_INIT:   State_Init_OnExit();   break;
-        case STATE_SUPERVISOR_IDLE:   State_Idle_OnExit();   break;
-        case STATE_SUPERVISOR_MANUAL: State_Manual_OnExit(); break;
-        case STATE_SUPERVISOR_AUTO:   State_Auto_OnExit();   break;
-        case STATE_SUPERVISOR_PAUSED: State_Paused_OnExit(); break;
-        case STATE_SUPERVISOR_FAULT:  State_Fault_OnExit();  break;
+        case STATE_SUPERVISOR_INIT:     State_Init_OnExit();   break;
+        case STATE_SUPERVISOR_IDLE:     State_Idle_OnExit();   break;
+        case STATE_SUPERVISOR_MANUAL:   State_Manual_OnExit(); break;
+        case STATE_SUPERVISOR_AUTO:     State_Auto_OnExit();   break;
+        case STATE_SUPERVISOR_PAUSED:   State_Paused_OnExit(); break;
+        case STATE_SUPERVISOR_FAULT:    State_Fault_OnExit();  break;
+        case STATE_SUPERVISOR_TESTING:  State_Testing_OnExit();break;
         default: break;
     }
 
@@ -103,12 +105,13 @@ static void TransitionToState(SystemState_t new_state) {
 
     /* Call Enter Handler of new state */
     switch (current_state) {
-        case STATE_SUPERVISOR_INIT:   State_Init_OnEnter();   break;
-        case STATE_SUPERVISOR_IDLE:   State_Idle_OnEnter();   break;
-        case STATE_SUPERVISOR_MANUAL: State_Manual_OnEnter(); break;
-        case STATE_SUPERVISOR_AUTO:   State_Auto_OnEnter();   break;
-        case STATE_SUPERVISOR_PAUSED: State_Paused_OnEnter(); break;
-        case STATE_SUPERVISOR_FAULT:  State_Fault_OnEnter();  break;
+        case STATE_SUPERVISOR_INIT:     State_Init_OnEnter();   break;
+        case STATE_SUPERVISOR_IDLE:     State_Idle_OnEnter();   break;
+        case STATE_SUPERVISOR_MANUAL:   State_Manual_OnEnter(); break;
+        case STATE_SUPERVISOR_AUTO:     State_Auto_OnEnter();   break;
+        case STATE_SUPERVISOR_PAUSED:   State_Paused_OnEnter(); break;
+        case STATE_SUPERVISOR_FAULT:    State_Fault_OnEnter();  break;
+        case STATE_SUPERVISOR_TESTING:  State_Testing_OnEnter();break;
         default: break;
     }
 }
@@ -154,6 +157,7 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
         case STATE_SUPERVISOR_MANUAL:
             if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
             else if (event == EVENT_SUPERVISOR_MODE_AUTO) next_state = STATE_SUPERVISOR_AUTO;
+            else if (event == EVENT_SUPERVISOR_TESTING) next_state = STATE_SUPERVISOR_TESTING;
             else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             else if (event == EVENT_SUPERVISOR_PAUSE) {
                 previous_mode = STATE_SUPERVISOR_MANUAL;
@@ -165,6 +169,7 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
         case STATE_SUPERVISOR_AUTO:
             if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
             else if (event == EVENT_SUPERVISOR_MODE_MANUAL) next_state = STATE_SUPERVISOR_MANUAL;
+            else if (event == EVENT_SUPERVISOR_TESTING) next_state = STATE_SUPERVISOR_TESTING;
             else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             else if (event == EVENT_SUPERVISOR_PAUSE) {
                 previous_mode = STATE_SUPERVISOR_AUTO;
@@ -184,6 +189,11 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
                     LOG_WARNING(LOG_TAG, "Supervisor: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pause_auth_level);
                 }
             }
+            break;
+
+        case STATE_SUPERVISOR_TESTING:
+            if (event == EVENT_SUPERVISOR_STOP) next_state = STATE_SUPERVISOR_IDLE;
+            else if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
             break;
 
         case STATE_SUPERVISOR_FAULT:
@@ -217,12 +227,13 @@ void Supervisor_ProcessLogic(void) {
 
     /* 2. Execute Current State Periodic Logic */
     switch (current_state) {
-        case STATE_SUPERVISOR_INIT:   State_Init_Run();   break;
-        case STATE_SUPERVISOR_IDLE:   State_Idle_Run();   break;
-        case STATE_SUPERVISOR_MANUAL: State_Manual_Run(); break;
-        case STATE_SUPERVISOR_AUTO:   State_Auto_Run();   break;
-        case STATE_SUPERVISOR_PAUSED: State_Paused_Run(); break;
-        case STATE_SUPERVISOR_FAULT:  State_Fault_Run();  break;
+        case STATE_SUPERVISOR_INIT:     State_Init_Run();   break;
+        case STATE_SUPERVISOR_IDLE:     State_Idle_Run();   break;
+        case STATE_SUPERVISOR_MANUAL:   State_Manual_Run(); break;
+        case STATE_SUPERVISOR_AUTO:     State_Auto_Run();   break;
+        case STATE_SUPERVISOR_PAUSED:   State_Paused_Run(); break;
+        case STATE_SUPERVISOR_FAULT:    State_Fault_Run();  break;
+        case STATE_SUPERVISOR_TESTING:  State_Testing_Run();break;
         default: break;
     }
 }

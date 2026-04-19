@@ -138,6 +138,7 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         case SYS_EVENT_RESUME:  event = EVENT_SUPERVISOR_RESUME;      break;
         case SYS_EVENT_RESET:   event = EVENT_SUPERVISOR_RESET;       break;
         case SYS_EVENT_FAULT:   event = EVENT_SUPERVISOR_ERROR;       break;
+        case SYS_EVENT_TEST:    event = EVENT_SUPERVISOR_TESTING;        break;
         default:
             LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
             valid = false;
@@ -157,14 +158,28 @@ static void handle_sys_event(const SysEventMsg_t *msg)
  */
 static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 {
-    LOG_INFO(LOG_TAG, "Actuator Test: ID=%u Pulse=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
+    // LOG_INFO(LOG_TAG, "Actuator Test (PWM): ID=%u Pulse=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
 
-    if (msg->actuator_id < 10) {
-        /* 0-9: Mobility Motors */
-        // Mobility_SetRawPulse(msg->actuator_id, (int16_t)msg->pulse);
+    if (msg->actuator_id < 4) {
+        /* 0-3: Mobility Motors */
+        RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 0); /* 0 = PWM */
     } else {
-        /* 10+: Arm Servos */
-        // FSM_Arm_SetRawServoPulse(msg->actuator_id - 10, (int16_t)msg->pulse);
+        /* 10+: Arm Servos (Optional / Not implemented yet) */
+    }
+}
+
+/**
+ * @brief [TOPIC 0x07] Handle raw actuator velocity for debugging.
+ *
+ * @param msg Pointer to the parsed ActuatorTestMsg_t payload.
+ */
+static void handle_actuator_velocity(const ActuatorTestMsg_t *msg)
+{
+    // LOG_INFO(LOG_TAG, "Actuator Test (VEL): ID=%u RPS=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
+
+    if (msg->actuator_id < 4) {
+        /* 0-3: Mobility Motors */
+        RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 1); /* 1 = Velocity */
     }
 }
 
@@ -251,6 +266,12 @@ void SerialRos_ProcessPacket(uint8_t *buffer, uint16_t size)
         case TOPIC_ID_ACTUATOR_PWM:
             if (len >= sizeof(ActuatorTestMsg_t)) {
                 handle_actuator_test((const ActuatorTestMsg_t *)payload);
+            }
+            break;
+
+        case TOPIC_ID_ACTUATOR_VEL:
+            if (len >= sizeof(ActuatorTestMsg_t)) {
+                handle_actuator_velocity((const ActuatorTestMsg_t *)payload);
             }
             break;
 
