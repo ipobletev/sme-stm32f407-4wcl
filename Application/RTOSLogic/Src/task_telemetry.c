@@ -19,10 +19,10 @@
  * Manages all outgoing ROS topics at different rates to ensure
  * stable transmission and minimal RTOS overhead.
  * 
- * Rates (Base Loop 10ms):
- * - IMU: 100Hz (Every cycle)
- * - Odometry: 10Hz (Every 10 cycles)
- * - System Status: 2Hz (Every 50 cycles)
+ * Rates (Base Loop controlled by AppConfig):
+ * - IMU: Configurable (AppConfig->imu_publish_period_ms)
+ * - Odometry: Configurable (AppConfig->odom_publish_period_ms)
+ * - System Status: Configurable (AppConfig->sys_vars_period_ms)
  */
 void StartTelemetryTask(void *argument) {
 
@@ -61,8 +61,8 @@ void StartTelemetryTask(void *argument) {
         }
 
 
-        /* --- 2. ODOMETRY & WHEEL STATE (Unified 50Hz - Every 20ms) --- */
-        if (current_tick - last_odom_tick >= 20) {
+        /* --- 2. ODOMETRY & WHEEL STATE (Configurable Rate) --- */
+        if (current_tick - last_odom_tick >= AppConfig->odom_publish_period_ms) {
             last_odom_tick = current_tick;
             OdometryMsg_t odom_msg;
             
@@ -177,7 +177,7 @@ void StartTelemetryTask(void *argument) {
             }
 
             // Debug configuration values (Split to avoid buffer overflow)
-            LOG_DEBUG(LOG_TAG, "Cfg-Sys: [Dbg:%d | Tel:%d | SysV:%d | IMU:%d | Odom:%d | PID:%d]\r\n", 
+            LOG_DEBUG(LOG_TAG, "Cfg-Sys: [Dbg:%d | Tel.ms:%d | SysV.ms:%d | IMU.ms:%d | Odom.ms:%d | PIDenable:%d]\r\n", 
                 AppConfig->debug_level, AppConfig->telemetry_period_ms, AppConfig->sys_vars_period_ms, 
                 AppConfig->imu_publish_period_ms, AppConfig->odom_publish_period_ms, AppConfig->pid_enabled);
 
