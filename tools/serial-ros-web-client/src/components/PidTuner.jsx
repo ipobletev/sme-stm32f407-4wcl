@@ -85,6 +85,16 @@ export default function PidTuner({ history, appConfig, sendPacket, connected }) 
   const [selectedMotor, setSelectedMotor] = useState(0); // 0-3
   const [testRps, setTestRps] = useState(1.0);
   const [isCapturing, setIsCapturing] = useState(true);
+  const [lastAutoEnable, setLastAutoEnable] = useState(0);
+
+  // Auto-enable PID on mount if disabled
+  useEffect(() => {
+    if (appConfig && appConfig.pid_enabled === 0 && (Date.now() - lastAutoEnable > 5000)) {
+        console.log('[PidTuner] Auto-enabling PID Controller...');
+        sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(0x10, 1.0)));
+        setLastAutoEnable(Date.now());
+    }
+  }, [appConfig, sendPacket, lastAutoEnable]);
 
   // Analysis logic
   const chartData = useMemo(() => {
@@ -224,6 +234,19 @@ export default function PidTuner({ history, appConfig, sendPacket, connected }) 
               M{i + 1}
             </button>
           ))}
+        </div>
+
+        <div className="status-control-dock">
+           <div className={`pid-status-indicator ${appConfig?.pid_enabled ? 'active' : ''}`}>
+             <div className="status-dot"></div>
+             <span>PID: {appConfig?.pid_enabled ? 'ENABLED' : 'DISABLED'}</span>
+           </div>
+           <button 
+             className={`btn btn-sm ${appConfig?.pid_enabled ? 'btn-ghost' : 'btn-accent'}`}
+             onClick={() => sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(0x10, appConfig?.pid_enabled ? 0 : 1)))}
+           >
+             {appConfig?.pid_enabled ? 'DISABLE' : 'ENABLE'}
+           </button>
         </div>
       </div>
 
