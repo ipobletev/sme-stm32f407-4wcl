@@ -50,10 +50,11 @@ void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, fl
     if (pulse > AppConfig->motor_pwm_max) pulse = AppConfig->motor_pwm_max;
     if (pulse < -AppConfig->motor_pwm_max) pulse = -AppConfig->motor_pwm_max;
     
-    /* Apply deadband if necessary (approx +/- 1000 for 16-bit range) */
+    /* Apply individual deadband if necessary */
     float output_pulse = pulse;
+    
     if (self->pid_controller.set_point == 0) {
-        if (output_pulse < AppConfig->motor_pulse_deadzone && output_pulse > -AppConfig->motor_pulse_deadzone) {
+        if (output_pulse < self->deadzone && output_pulse > -self->deadzone) {
             output_pulse = 0;
             pulse = 0; /* Reset incremental accumulator to stop the whine */
         }
@@ -100,16 +101,30 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self)
     self->rps = 0;
     self->target_rps = 0;
     self->current_pulse = 0;
+    self->motor_id = 0; /* Default, should be set during configure */
     self->ticks_overflow = 0; 
     self->ticks_per_circle = AppConfig->motor_ticks_per_circle; /* Default for common motors */
     self->rps_limit = AppConfig->motor_rps_limit;
+    self->deadzone = 0;
     pid_controller_init(&self->pid_controller, 0, 0, 0);
 }
 
 void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self) {
     self->ticks_per_circle = AppConfig->motor_ticks_per_circle;
     self->rps_limit = AppConfig->motor_rps_limit;
-    /* Note: If we had global PID gains, we would update them here too */
+    
+    /* Update per-motor PID gains */
+    float kp = DEFAULT_MOTOR_KP, ki = DEFAULT_MOTOR_KI, kd = DEFAULT_MOTOR_KD, deadzone = 0;
+    
+    switch(self->motor_id) {
+        case 1: kp = AppConfig->motor1_kp; ki = AppConfig->motor1_ki; kd = AppConfig->motor1_kd; deadzone = AppConfig->motor1_deadzone; break;
+        case 2: kp = AppConfig->motor2_kp; ki = AppConfig->motor2_ki; kd = AppConfig->motor2_kd; deadzone = AppConfig->motor2_deadzone; break;
+        case 3: kp = AppConfig->motor3_kp; ki = AppConfig->motor3_ki; kd = AppConfig->motor3_kd; deadzone = AppConfig->motor3_deadzone; break;
+        case 4: kp = AppConfig->motor4_kp; ki = AppConfig->motor4_ki; kd = AppConfig->motor4_kd; deadzone = AppConfig->motor4_deadzone; break;
+    }
+    
+    self->deadzone = deadzone;
+    pid_controller_init(&self->pid_controller, kp, ki, kd);
 }
 
 
@@ -118,15 +133,19 @@ bool encoder_motor_init_hw_system(EncoderMotorObjectTypeDef *motors[4])
     return BSP_Motor_Hardware_Init(motors);
 }
 
-bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t motor_type)
+bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t id, uint8_t motor_type)
 {
     /* 1. Initialize logic object */
     encoder_motor_object_init(self);
+    self->motor_id = id;
     
     /* 2. Apply hardware profile (PID, TPC, etc) */
     BSP_Motor_Hardware_SetType(self, (MotorTypeEnum)motor_type);
     
-    /* 3. Ensure hardware is in a safe state */
+    /* 3. Apply individual configuration (PID gains, ticks, etc) */
+    encoder_motor_refresh_config(self);
+    
+    /* 4. Ensure hardware is in a safe state */
     encoder_motor_brake(self);
 
     /* Note: Currently BSP_Motor_Hardware_SetType doesn't fail, 

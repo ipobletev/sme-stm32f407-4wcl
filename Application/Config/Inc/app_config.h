@@ -23,7 +23,6 @@ typedef struct {
     uint32_t pid_enabled;
     float    motor_ticks_per_circle;
     float    motor_rps_limit;
-    float    motor_pulse_deadzone;
     float    motor_pwm_max;
     
     /* Chassis Parameters */
@@ -36,6 +35,12 @@ typedef struct {
     int32_t  motor2_invert;
     int32_t  motor3_invert;
     int32_t  motor4_invert;
+
+    /* Individual Motor PID & Deadzone */
+    float motor1_kp, motor1_ki, motor1_kd, motor1_deadzone;
+    float motor2_kp, motor2_ki, motor2_kd, motor2_deadzone;
+    float motor3_kp, motor3_ki, motor3_kd, motor3_deadzone;
+    float motor4_kp, motor4_ki, motor4_kd, motor4_deadzone;
     
     uint32_t crc;                   /* CRC32 or simple checksum for integrity */
 } AppConfig_t;
@@ -58,7 +63,6 @@ typedef enum {
     CONF_PID_ENABLED            = 0x10,
     CONF_MOTOR_TICKS            = 0x11,
     CONF_MOTOR_RPS_LIMIT        = 0x12,
-    CONF_MOTOR_DEADZONE         = 0x13,
     CONF_MOTOR_PWM_MAX          = 0x14,
 
     /* Chassis (0x20-0x2F) */
@@ -71,6 +75,27 @@ typedef enum {
     CONF_MOTOR2_INV             = 0x32,
     CONF_MOTOR3_INV             = 0x33,
     CONF_MOTOR4_INV             = 0x34,
+
+    /* Individual Motor Calibration (0x40 - 0x5F) */
+    CONF_MOTOR1_KP              = 0x40,
+    CONF_MOTOR1_KI              = 0x41,
+    CONF_MOTOR1_KD              = 0x42,
+    CONF_MOTOR1_DEADZONE        = 0x43,
+
+    CONF_MOTOR2_KP              = 0x44,
+    CONF_MOTOR2_KI              = 0x45,
+    CONF_MOTOR2_KD              = 0x46,
+    CONF_MOTOR2_DEADZONE        = 0x47,
+
+    CONF_MOTOR3_KP              = 0x48,
+    CONF_MOTOR3_KI              = 0x49,
+    CONF_MOTOR3_KD              = 0x4A,
+    CONF_MOTOR3_DEADZONE        = 0x4B,
+
+    CONF_MOTOR4_KP              = 0x4C,
+    CONF_MOTOR4_KI              = 0x4D,
+    CONF_MOTOR4_KD              = 0x4E,
+    CONF_MOTOR4_DEADZONE        = 0x4F,
 } AppConfigParamId_t;
 
 /**

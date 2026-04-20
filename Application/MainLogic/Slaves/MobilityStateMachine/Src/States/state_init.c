@@ -22,7 +22,7 @@ void MobState_Init_Run(void) {
 
     /* 2. Configure Motor Objects with specific profile */
     for(int i=0; i<4; i++) {
-        if (!encoder_motor_configure(motors[i], MOTOR_TYPE_JGB520)) {
+        if (!encoder_motor_configure(motors[i], (uint8_t)(i + 1), MOTOR_TYPE_JGB520)) {
             init_success = false;
         }
     }

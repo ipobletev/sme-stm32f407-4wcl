@@ -25,8 +25,10 @@ struct EncoderMotorObject {
     /* Physical parameters */
     int32_t ticks_per_circle; /**< @brief Ticks per output shaft revolution */
     float rps_limit;          /**< @brief Max safe RPS */
+    float deadzone;           /**< @brief PWM deadzone threshold */
 
     /** Hardware Interface **/
+    uint8_t motor_id;        /**< @brief Motor identifier (1-4) */
     void (*set_pulse)(EncoderMotorObjectTypeDef *self, int pulse);
 };
 
@@ -47,9 +49,10 @@ bool encoder_motor_init_hw_system(EncoderMotorObjectTypeDef *motors[4]);
 /**
  * @brief Configure motor with a specific profile and ensure safety
  * @param self Motor object
+ * @param id Motor identifier (1-4)
  * @param motor_type Motor type (casted from MotorTypeEnum to avoid circularity)
  * @return true if configuration succeeded, false otherwise
  */
-bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t motor_type);
+bool encoder_motor_configure(EncoderMotorObjectTypeDef *self, uint8_t id, uint8_t motor_type);
 
 #endif /* __ENCODER_MOTOR_H_ */

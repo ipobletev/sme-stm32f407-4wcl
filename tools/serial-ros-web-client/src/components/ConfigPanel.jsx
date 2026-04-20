@@ -25,8 +25,7 @@ const PARAM_GROUPS = [
       { id: 0x10, key: 'pid_enabled', label: 'PID Enabled by default', type: 'boolean' },
       { id: 0x11, key: 'motor_ticks', label: 'Motor Ticks/Rev', type: 'number', min: 1 },
       { id: 0x12, key: 'motor_rps_limit', label: 'Max Speed (RPS)', type: 'number', step: 0.1, min: 0.1 },
-      { id: 0x13, key: 'motor_deadzone', label: 'PWM Deadzone', type: 'number', min: 0, max: 65535 },
-      { id: 0x14, key: 'motor_pwm_max', label: 'PWM Max Range', type: 'number', min: 1000, max: 65535 },
+      { id: 0x14, key: 'motor_pwm_max', label: 'PWM Max', type: 'number', min: 1000, max: 65535, step: 1 },
     ]
   },
   {
@@ -44,6 +43,42 @@ const PARAM_GROUPS = [
       { id: 0x32, key: 'motor2_inv', label: 'Motor 2 Dir', type: 'select', options: [{label: 'Normal (1)', value: 1}, {label: 'Inverted (-1)', value: -1}] },
       { id: 0x33, key: 'motor3_inv', label: 'Motor 3 Dir', type: 'select', options: [{label: 'Normal (1)', value: 1}, {label: 'Inverted (-1)', value: -1}] },
       { id: 0x34, key: 'motor4_inv', label: 'Motor 4 Dir', type: 'select', options: [{label: 'Normal (1)', value: 1}, {label: 'Inverted (-1)', value: -1}] },
+    ]
+  },
+  {
+    title: 'Motor 1 Calibration',
+    params: [
+      { id: 0x40, key: 'motor1_kp', label: 'M1 Kp', type: 'number', step: 0.1 },
+      { id: 0x41, key: 'motor1_ki', label: 'M1 Ki', type: 'number', step: 0.1 },
+      { id: 0x42, key: 'motor1_kd', label: 'M1 Kd', type: 'number', step: 0.1 },
+      { id: 0x43, key: 'motor1_deadzone', label: 'M1 Deadzone', type: 'number', min: 0, max: 65535 },
+    ]
+  },
+  {
+    title: 'Motor 2 Calibration',
+    params: [
+      { id: 0x44, key: 'motor2_kp', label: 'M2 Kp', type: 'number', step: 0.1 },
+      { id: 0x45, key: 'motor2_ki', label: 'M2 Ki', type: 'number', step: 0.1 },
+      { id: 0x46, key: 'motor2_kd', label: 'M2 Kd', type: 'number', step: 0.1 },
+      { id: 0x47, key: 'motor2_deadzone', label: 'M2 Deadzone', type: 'number', min: 0, max: 65535 },
+    ]
+  },
+  {
+    title: 'Motor 3 Calibration',
+    params: [
+      { id: 0x48, key: 'motor3_kp', label: 'M3 Kp', type: 'number', step: 0.1 },
+      { id: 0x49, key: 'motor3_ki', label: 'M3 Ki', type: 'number', step: 0.1 },
+      { id: 0x4A, key: 'motor3_kd', label: 'M3 Kd', type: 'number', step: 0.1 },
+      { id: 0x4B, key: 'motor3_deadzone', label: 'M3 Deadzone', type: 'number', min: 0, max: 65535 },
+    ]
+  },
+  {
+    title: 'Motor 4 Calibration',
+    params: [
+      { id: 0x4C, key: 'motor4_kp', label: 'M4 Kp', type: 'number', step: 0.1 },
+      { id: 0x4D, key: 'motor4_ki', label: 'M4 Ki', type: 'number', step: 0.1 },
+      { id: 0x4E, key: 'motor4_kd', label: 'M4 Kd', type: 'number', step: 0.1 },
+      { id: 0x4F, key: 'motor4_deadzone', label: 'M4 Deadzone', type: 'number', min: 0, max: 65535 },
     ]
   }
 ];

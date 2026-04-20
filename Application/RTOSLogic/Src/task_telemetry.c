@@ -172,6 +172,13 @@ void StartTelemetryTask(void *argument) {
 
             LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%dmm | W:%dmm | L:%dmm]\r\n", 
                 (int)(AppConfig->wheel_diameter * 1000.0f), (int)(AppConfig->shaft_width * 1000.0f), (int)(AppConfig->wheelbase_length * 1000.0f));
+
+            LOG_DEBUG(LOG_TAG, "Cfg-PID: [M1:%.3f,%.3f,%.3f,%.3f | M2:%.3f,%.3f,%.3f,%.3f | M3:%.3f,%.3f,%.3f,%.3f | M4:%.3f,%.3f,%.3f,%.3f]\r\n", 
+                AppConfig->motor1_kp, AppConfig->motor1_ki, AppConfig->motor1_kd, AppConfig->motor1_deadzone,
+                AppConfig->motor2_kp, AppConfig->motor2_ki, AppConfig->motor2_kd, AppConfig->motor2_deadzone,
+                AppConfig->motor3_kp, AppConfig->motor3_ki, AppConfig->motor3_kd, AppConfig->motor3_deadzone,
+                AppConfig->motor4_kp, AppConfig->motor4_ki, AppConfig->motor4_kd, AppConfig->motor4_deadzone
+            );
         }
 
         cycle_counter++;

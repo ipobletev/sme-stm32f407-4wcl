@@ -27,6 +27,7 @@
 #define TOPIC_ID_ODOMETRY       0x83    /* Tx: Odometry data */
 #define TOPIC_ID_APP_CONFIG_DATA 0x84   /* Tx: Full configuration structure */
 
+#define TX_BUFFER_SIZE          192
 
 /* --- sys_event payload IDs (maps event_id field to Supervisor FSM events) --- */
 typedef enum {
@@ -162,8 +163,8 @@ static inline uint16_t SerialRos_CRC16(const uint8_t *data, uint16_t len) {
  * @brief Container for SerialRos packets in RTOS queues
  */
 typedef struct {
-    uint8_t data[128];
-    uint8_t size;
+    uint8_t data[TX_BUFFER_SIZE];
+    uint16_t size;
 } SerialRos_Packet_t;
 
 #endif /* __SERIAL_ROS_PROTOCOL_H */

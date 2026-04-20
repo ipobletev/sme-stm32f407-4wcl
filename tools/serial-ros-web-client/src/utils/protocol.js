@@ -62,25 +62,20 @@ export function buildPacket(topicId, payload = []) {
 }
 
 /**
- * Parses a Float32 from a buffer (Little Endian)
+ * Binary Read Helpers
  */
-function readFloat32(view, offset) {
-  return view.getFloat32(offset, true);
-}
-
-/**
- * Parses a Uint64 (BigInt) from a buffer (Little Endian)
- */
-function readUint64(view, offset) {
-  return view.getBigUint64(offset, true);
-}
-
-/**
- * Parses an Int32 from a buffer (Little Endian)
- */
-function readInt32(view, offset) {
-  return view.getInt32(offset, true);
-}
+const readFloat32 = (view, offset) => view.getFloat32(offset, true);
+const readUint32 = (view, offset) => view.getUint32(offset, true);
+const readInt32 = (view, offset) => view.getInt32(offset, true);
+const readUint64 = (view, offset) => {
+  try {
+    return view.getBigUint64(offset, true);
+  } catch (e) {
+    const low = view.getUint32(offset, true);
+    const high = view.getUint32(offset + 4, true);
+    return (BigInt(high) << 32n) | BigInt(low);
+  }
+};
 
 export function parsePayload(topicId, data) {
   const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
@@ -90,7 +85,7 @@ export function parsePayload(topicId, data) {
     switch (topicId) {
       case TOPIC_IDS.TX.SYS_STATUS: // 0x81
         return {
-          errors: readUint64(view, 0),
+          errors: readUint64(view, 0).toString(),
           temp: readFloat32(view, 8),
           v_batt: readFloat32(view, 12),
           state: view.getUint8(16),
@@ -125,27 +120,34 @@ export function parsePayload(topicId, data) {
         };
       
       case TOPIC_IDS.TX.APP_CONFIG_DATA: // 0x84
-        return {
-          magic: view.getUint32(0, true),
-          debug_level: view.getUint32(4, true),
-          telemetry_period: view.getUint32(8, true),
-          sys_vars_period: view.getUint32(12, true),
-          imu_period: view.getUint32(16, true),
-          odom_period: view.getUint32(20, true),
-          pid_enabled: view.getUint32(24, true),
+        console.log(`[Protocol] Parsing Config Data (0x84), len: ${data.byteLength}`);
+        const result = {
+          magic: readUint32(view, 0),
+          debug_level: readUint32(view, 4),
+          telemetry_period: readUint32(view, 8),
+          sys_vars_period: readUint32(view, 12),
+          imu_period: readUint32(view, 16),
+          odom_period: readUint32(view, 20),
+          pid_enabled: readUint32(view, 24),
           motor_ticks: readFloat32(view, 28),
           motor_rps_limit: readFloat32(view, 32),
-          motor_deadzone: readFloat32(view, 36),
-          motor_pwm_max: readFloat32(view, 40),
-          wheel_diameter: readFloat32(view, 44),
-          shaft_width: readFloat32(view, 48),
-          wheelbase_length: readFloat32(view, 52),
-          motor1_inv: view.getInt32(56, true),
-          motor2_inv: view.getInt32(60, true),
-          motor3_inv: view.getInt32(64, true),
-          motor4_inv: view.getInt32(68, true),
-          crc: view.getUint32(72, true)
+          motor_pwm_max: readFloat32(view, 36),
+          wheel_diameter: readFloat32(view, 40),
+          shaft_width: readFloat32(view, 44),
+          wheelbase_length: readFloat32(view, 48),
+          motor1_inv: readInt32(view, 52),
+          motor2_inv: readInt32(view, 56),
+          motor3_inv: readInt32(view, 60),
+          motor4_inv: readInt32(view, 64),
+          /* New fields from 68 */
+          motor1_kp: readFloat32(view, 68), motor1_ki: readFloat32(view, 72), motor1_kd: readFloat32(view, 76), motor1_deadzone: readFloat32(view, 80),
+          motor2_kp: readFloat32(view, 84), motor2_ki: readFloat32(view, 88), motor2_kd: readFloat32(view, 92), motor2_deadzone: readFloat32(view, 96),
+          motor3_kp: readFloat32(view, 100), motor3_ki: readFloat32(view, 104), motor3_kd: readFloat32(view, 108), motor3_deadzone: readFloat32(view, 112),
+          motor4_kp: readFloat32(view, 116), motor4_ki: readFloat32(view, 120), motor4_kd: readFloat32(view, 124), motor4_deadzone: readFloat32(view, 128),
+          crc: readUint32(view, 132)
         };
+        console.log(`[Protocol] Config Parse Success, Magic: 0x${result.magic.toString(16)}`);
+        return result;
 
       default:
         return null;
