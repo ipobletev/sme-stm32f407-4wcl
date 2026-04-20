@@ -61,7 +61,7 @@ export default function App() {
     connected, isMaster, connect, disconnect, sendPacket, 
     telemetry, frequencies, lastTopicTicks, linkActive, log 
   } = useSerial();
-  const history = useTelemetryHistory(telemetry, 50);
+  const history = useTelemetryHistory(telemetry, frequencies, 50);
   const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);

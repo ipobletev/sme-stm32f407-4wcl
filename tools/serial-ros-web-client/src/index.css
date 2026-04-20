@@ -2689,3 +2689,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: var(--text-secondary);
   margin-bottom: 24px;
 }
+  
+/* ===== STATISTICS TABLES (GRAPHS) ===== */  
+.stats-table { margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; }  
+.stats-grid-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr; gap: 8px; font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 4px 6px; }  
+.stats-grid-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr; gap: 8px; padding: 6px 4px; border-left: 2px solid transparent; background: rgba(255,255,255,0.02); margin-bottom: 2px; border-radius: 4px; transition: all 0.2s ease; }  
+.stats-grid-row:hover { background: rgba(255,255,255,0.05); }  
+.stats-label { font-size: 0.7rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }  
+.stats-val { font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-secondary); text-align: right; }  
+.stats-val.highlight { color: #f1f5f9; font-weight: 700; }  
+.stats-val.std { color: var(--accent-violet); opacity: 0.8; } 
+.stats-grid-header span:not(:first-child) { text-align: right; } 
+.stats-grid-header { border-left: 2px solid transparent; } 

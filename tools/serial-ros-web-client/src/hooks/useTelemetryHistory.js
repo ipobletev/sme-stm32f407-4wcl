@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 /**
  * Hook to maintain a historical buffer of telemetry data for charting.
  */
-export function useTelemetryHistory(telemetry, maxPoints = 50) {
+export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50) {
   const [history, setHistory] = useState([]);
   const lastUpdateRef = useRef(0);
 
@@ -48,6 +48,11 @@ export function useTelemetryHistory(telemetry, maxPoints = 50) {
       enc2: odometry?.encoders?.[1] || 0,
       enc3: odometry?.encoders?.[2] || 0,
       enc4: odometry?.encoders?.[3] || 0,
+
+      // Frequencies (Hz)
+      freq_sys: frequencies?.['0x81'] || 0,
+      freq_imu: frequencies?.['0x82'] || 0,
+      freq_odom: frequencies?.['0x83'] || 0,
     };
 
     setHistory(prev => {
@@ -57,7 +62,7 @@ export function useTelemetryHistory(telemetry, maxPoints = 50) {
       }
       return updated;
     });
-  }, [telemetry, maxPoints]);
+  }, [telemetry, frequencies, maxPoints]);
 
   return history;
 }

@@ -1,8 +1,84 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Activity, Zap, Compass, Move } from 'lucide-react';
+import { Activity, Zap, Compass, Move, BarChart2 } from 'lucide-react';
+
+function calculateStats(history, key) {
+  const values = history.map(p => p[key]).filter(v => v !== undefined && v !== 0);
+  if (values.length === 0) return { min: 0, max: 0, avg: 0, std: 0, jitter: 0 };
+  
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const std = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length);
+  
+  // Calculate jitter in ms only for frequency keys
+  let jitter = 0;
+  if (key.startsWith('freq_') && min > 0) {
+    const dt_max = 1000 / min;
+    const dt_min = 1000 / max;
+    jitter = dt_max - dt_min;
+  }
+  
+  return { min, max, avg, std, jitter };
+}
+
+function StatisticsTable({ history, dataKeys, unit }) {
+  const isFreq = dataKeys.some(dk => dk.key.startsWith('freq_'));
+  
+  return (
+    <div className="stats-table">
+      <div className="stats-grid-header" style={{ 
+        gridTemplateColumns: isFreq ? '2fr 1fr 1fr 1fr 1fr 1.2fr' : '2fr 1fr 1fr 1fr 1.2fr'
+      }}>
+        <span>Signal</span>
+        <span>Min</span>
+        <span>Max</span>
+        <span>Avg</span>
+        <span>σ (Std)</span>
+        {isFreq && <span>Jitter (ms)</span>}
+      </div>
+      {dataKeys.map((dk, idx) => {
+        const stats = calculateStats(history, dk.key);
+        return (
+          <div key={idx} className="stats-grid-row" style={{ 
+            borderLeftColor: dk.color,
+            gridTemplateColumns: isFreq ? '2fr 1fr 1fr 1fr 1fr 1.2fr' : '2fr 1fr 1fr 1fr 1.2fr'
+          }}>
+            <span className="stats-label" style={{ color: dk.color }}>{dk.name}</span>
+            <span className="stats-val">{stats.min.toFixed(2)}</span>
+            <span className="stats-val">{stats.max.toFixed(2)}</span>
+            <span className="stats-val highlight">{stats.avg.toFixed(2)}</span>
+            <span className="stats-val std">{stats.std.toFixed(3)}</span>
+            {isFreq && <span className="stats-val jitter">{stats.jitter.toFixed(2)}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function GraphsPanel({ history }) {
   const chartConfigs = [
+    {
+      title: 'IMU Sample Rate (Hz)',
+      icon: Activity,
+      color: 'var(--accent-cyan)',
+      dataKeys: [{ key: 'freq_imu', color: 'var(--accent-cyan)', name: 'IMU Hz' }],
+      unit: ' Hz'
+    },
+    {
+      title: 'Odometry Rate (Hz)',
+      icon: Move,
+      color: 'var(--accent-emerald)',
+      dataKeys: [{ key: 'freq_odom', color: 'var(--accent-emerald)', name: 'Odom Hz' }],
+      unit: ' Hz'
+    },
+    {
+      title: 'Sys Status Rate (Hz)',
+      icon: Zap,
+      color: 'var(--accent-rose)',
+      dataKeys: [{ key: 'freq_sys', color: 'var(--accent-rose)', name: 'Sys Hz' }],
+      unit: ' Hz'
+    },
     {
       title: 'Drive Kinematics (Velocity)',
       icon: Move,
@@ -132,6 +208,8 @@ export default function GraphsPanel({ history }) {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+
+            <StatisticsTable history={history} dataKeys={config.dataKeys} unit={config.unit} />
           </div>
         ))}
       </div>
