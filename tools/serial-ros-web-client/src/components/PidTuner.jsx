@@ -7,7 +7,7 @@ import {
   Gauge, Zap, AlertCircle, Info, TrendingUp, Target,
   Activity, ShieldCheck, Send
 } from 'lucide-react';
-import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
+import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
 import './PidTuner.css';
 
 const TooltipWrapper = ({ children, content }) => (
@@ -84,6 +84,8 @@ const GainSlider = ({ label, value, min, max, step, onSend }) => {
 export default function PidTuner({ history, appConfig, sendPacket, connected }) {
   const [selectedMotor, setSelectedMotor] = useState(0); // 0-3
   const [testRps, setTestRps] = useState(1.0);
+  const [testDuration, setTestDuration] = useState(2000);
+  const [testTimer, setTestTimer] = useState(null);
   const [isCapturing, setIsCapturing] = useState(true);
   const [lastAutoEnable, setLastAutoEnable] = useState(0);
 
@@ -185,8 +187,44 @@ export default function PidTuner({ history, appConfig, sendPacket, connected }) 
     }
   };
 
-  const runStep = () => sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(selectedMotor, testRps)));
-  const stopStep = () => sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(selectedMotor, 0)));
+  const runStep = async () => {
+    // 1. Clear existing timer if any
+    if (testTimer) clearTimeout(testTimer);
+    
+    // 2. Ensure robot is in TESTING mode (Topic 0x05, Event 0x07)
+    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Encoders.sysEvent(SYS_EVENTS.TEST)));
+    
+    // 3. Prepare motors to update
+    const motorsToUpdate = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
+    
+    // 4. Start step for each motor
+    for (const mIdx of motorsToUpdate) {
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(mIdx, testRps)));
+      if (motorsToUpdate.length > 1) await new Promise(r => setTimeout(r, 10)); // Prevent UART flooding
+    }
+    
+    // 5. Set auto-stop if duration > 0
+    if (testDuration > 0) {
+        const timer = setTimeout(() => {
+            stopStep();
+            setTestTimer(null);
+        }, testDuration);
+        setTestTimer(timer);
+    }
+  };
+
+  const stopStep = async () => {
+    if (testTimer) {
+        clearTimeout(testTimer);
+        setTestTimer(null);
+    }
+    
+    const motorsToUpdate = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
+    for (const mIdx of motorsToUpdate) {
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(mIdx, 0)));
+      if (motorsToUpdate.length > 1) await new Promise(r => setTimeout(r, 10));
+    }
+  };
 
   if (!appConfig) {
     return (
@@ -365,14 +403,30 @@ export default function PidTuner({ history, appConfig, sendPacket, connected }) 
                     <Info size={12} className="info-icon-dim" />
                   </TooltipWrapper>
                 </div>
+                 <div className="step-input-row" style={{ marginTop: '8px' }}>
+                   <div className="input-with-label">
+                     <span>Amplitude (RPS)</span>
+                     <input 
+                        type="number" 
+                        value={testRps} 
+                        placeholder="RPS"
+                        onChange={(e) => setTestRps(parseFloat(e.target.value))}
+                     />
+                   </div>
+                   <div className="input-with-label">
+                     <span>Duration (ms)</span>
+                     <input 
+                        type="number" 
+                        value={testDuration} 
+                        placeholder="ms"
+                        onChange={(e) => setTestDuration(parseInt(e.target.value) || 0)}
+                     />
+                   </div>
+                </div>
                 <div className="step-input-row">
-                   <input 
-                      type="number" 
-                      value={testRps} 
-                      placeholder="Speed (RPS)"
-                      onChange={(e) => setTestRps(parseFloat(e.target.value))}
-                   />
-                   <button className="btn btn-primary" onClick={runStep}><Play size={14}/> GO</button>
+                   <button className="btn btn-primary" style={{ flex: 1 }} onClick={runStep}>
+                     <Play size={14}/> {testTimer ? 'RESTART' : 'GO'}
+                   </button>
                    <button className="btn btn-ghost" onClick={stopStep}><CircleStop size={14}/>STOP</button>
                 </div>
               </div>

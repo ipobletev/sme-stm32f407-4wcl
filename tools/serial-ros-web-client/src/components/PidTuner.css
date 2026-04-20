@@ -317,6 +317,25 @@
     padding: 8px 12px;
 }
 
+.input-with-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-with-label span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.input-with-label input {
+    width: 100%;
+}
+
 .step-input-row input:focus {
     border-color: var(--accent-indigo);
 }

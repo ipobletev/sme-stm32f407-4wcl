@@ -417,7 +417,7 @@ export function useSerial() {
       // If the port is already open, we might have lost state but keep the lock
       // We check if we can open it; if it fails with 'already open', we try to use it if it's ours
       try {
-        await port.open({ baudRate: 115200 });
+        await port.open({ baudRate: 230400 });
       } catch (err) {
         if (err.name === 'InvalidStateError') {
           console.warn('Port already open, attempting to use current state');

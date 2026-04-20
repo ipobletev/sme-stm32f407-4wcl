@@ -68,50 +68,47 @@ void StartSerialRosTask(void *argument) {
     uint16_t local_rx_size;
 
     for (;;) {
-        /* 1. Retrieve a TX packet if we don't currently have one */
+        /* 1. Wait for signals (RX data or UART TX ready) with adaptive timeout */
+        uint32_t wait_ms = has_pending_tx ? 2 : 10;
+        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG | TX_EVENT_FLAG, wait_ms);
+        
+        /* Clean flags if it was a timeout or error (0x80000000) */
+        if (flags & 0x80000000U) flags = 0;
+
+        /* 2. Handle RX Packets (Prioritized) */
+        if (flags & RX_EVENT_FLAG) {
+            /* Snapshot the shared RX buffer */
+            taskENTER_CRITICAL();
+            local_rx_size = shared_rx_size;
+            if (local_rx_size > sizeof(local_rx_buffer)) local_rx_size = sizeof(local_rx_buffer);
+            memcpy(local_rx_buffer, shared_rx_buffer, local_rx_size);
+            shared_rx_size = 0; 
+            taskEXIT_CRITICAL();
+
+            /* Process in the module logic */
+            SerialRos_ProcessPacket(local_rx_buffer, local_rx_size);
+            
+            /* Forward to debug queue if needed */
+            SerialRos_Packet_t rx_packet;
+            rx_packet.size = local_rx_size;
+            memcpy(rx_packet.data, local_rx_buffer, rx_packet.size);
+            osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
+        }
+
+        /* 3. Handle TX Packets */
         if (!has_pending_tx) {
-            /* Wait up to 2ms to ensure RX events are also processed promptly */
-            if (osal_queue_get(rosTxQueueHandle, &tx_packet, 2U) == OSAL_OK) {
+            /* Non-blocking check for new data to send from other tasks */
+            if (osal_queue_get(rosTxQueueHandle, &tx_packet, 0U) == OSAL_OK) {
                 has_pending_tx = true;
             }
         }
 
-        /* 2. Try to transmit if UART is Free */
         if (has_pending_tx && BSP_SerialRos_IsTxReady()) {
             BSP_SerialRos_Transmit(tx_packet.data, tx_packet.size);
             has_pending_tx = false;
         }
 
-        /* 3. Check for RX packet notifications (non-blocking) */
-        uint32_t flags = osal_thread_flags_wait(RX_EVENT_FLAG | TX_EVENT_FLAG, 0U);
-
-        /* Flags check: Ensure no CMSIS error code (bit 31) */
-        if (!(flags & 0x80000000U)) {
-            if (flags & RX_EVENT_FLAG) {
-                /* Snapshot the shared RX buffer to minimize race conditions with next ISR */
-                taskENTER_CRITICAL();
-                local_rx_size = shared_rx_size;
-                memcpy(local_rx_buffer, shared_rx_buffer, local_rx_size);
-                shared_rx_size = 0; /* Reset size */
-                taskEXIT_CRITICAL();
-
-                /* Process raw packet in the module */
-                SerialRos_ProcessPacket(local_rx_buffer, local_rx_size);
-                
-                /* Put the processed packet into the RX queue for other tasks */
-                SerialRos_Packet_t rx_packet;
-                rx_packet.size = (local_rx_size > sizeof(rx_packet.data)) ? sizeof(rx_packet.data) : local_rx_size;
-                memcpy(rx_packet.data, local_rx_buffer, rx_packet.size);
-                osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
-            }
-        }
-
-        /* 4. If we STILL have pending TX (UART was busy), wait for TX finish or timeout */
-        if (has_pending_tx) {
-            osal_thread_flags_wait(RX_EVENT_FLAG | TX_EVENT_FLAG, 2U);
-        }
-
-        /* 5. Connection Monitoring (approx every 500ms) */
+        /* 4. Connection Monitoring (approx every 500ms) */
         uint32_t current_tick = osal_get_tick();
         if ((current_tick - last_conn_check_tick) >= 500) {
             last_conn_check_tick = current_tick;

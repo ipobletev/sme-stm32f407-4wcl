@@ -28,7 +28,6 @@ export const TOPIC_IDS = {
     SYS_EVENT: 0x05,
     ACTUATOR_PWM: 0x06,
     ACTUATOR_VEL: 0x07,
-    SYS_EVENT_TEST: 0x07, // Added for testing transition
     SET_CONFIG: 0x08,
     GET_CONFIG: 0x09,
     SAVE_CONFIG: 0x0A,
@@ -40,6 +39,17 @@ export const TOPIC_IDS = {
     APP_CONFIG_DATA: 0x84,
     PID_DEBUG: 0x85,
   }
+};
+
+export const SYS_EVENTS = {
+  START: 0x01,
+  STOP: 0x02,
+  PAUSE: 0x03,
+  RESUME: 0x04,
+  RESET: 0x05,
+  FAULT: 0x06,
+  TEST: 0x07,
+  SAVE: 0x08
 };
 
 /**
