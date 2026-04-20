@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Trash2, Terminal } from 'lucide-react';
 
 function formatTime(ts) {
@@ -9,7 +10,7 @@ function topicLabel(id) {
   return '0x' + id.toString(16).padStart(2, '0');
 }
 
-export default function LogPanel({ log, onClear }) {
+const LogPanel = memo(({ log, onClear }) => {
   return (
     <div className="card log-panel-full">
       <div className="card-header">
@@ -38,4 +39,6 @@ export default function LogPanel({ log, onClear }) {
       </div>
     </div>
   );
-}
+});
+
+export default LogPanel;

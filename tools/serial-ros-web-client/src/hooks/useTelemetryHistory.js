@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
  * Hook to maintain a historical buffer of telemetry data for charting.
@@ -6,6 +6,10 @@ import { useState, useEffect, useRef } from 'react';
 export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50) {
   const [history, setHistory] = useState([]);
   const lastUpdateRef = useRef(0);
+
+  const clear = useCallback(() => {
+    setHistory([]);
+  }, []);
 
   useEffect(() => {
     // Throttling to avoid excessive React renders (update approx 5Hz for graphs)
@@ -27,9 +31,11 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
       temp: sysStatus?.temp || 0,
       
       // IMU
-      roll: imu?.roll || 0,
-      pitch: imu?.pitch || 0,
-      yaw: imu?.yaw || 0,
+      /* roll, pitch, yaw removed from binary to save 1.2KB/s. 
+         Frontend could calculate them from quaternions if needed. */
+      roll: 0, 
+      pitch: 0,
+      yaw: 0,
       ax: imu?.accel?.x || 0,
       ay: imu?.accel?.y || 0,
       az: imu?.accel?.z || 0,
@@ -40,16 +46,16 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
       // Odometry
       vx: odometry?.linear_x || 0,
       wz: odometry?.angular_z || 0,
-      rps1: odometry?.rps_1 || 0,
-      rps2: odometry?.rps_2 || 0,
-      rps3: odometry?.rps_3 || 0,
-      rps4: odometry?.rps_4 || 0,
+      rps1: odometry?.measuredRps?.[0] || 0,
+      rps2: odometry?.measuredRps?.[1] || 0,
+      rps3: odometry?.measuredRps?.[2] || 0,
+      rps4: odometry?.measuredRps?.[3] || 0,
       enc1: odometry?.encoders?.[0] || 0,
       enc2: odometry?.encoders?.[1] || 0,
       enc3: odometry?.encoders?.[2] || 0,
       enc4: odometry?.encoders?.[3] || 0,
       
-      // PID Debug
+      // PID Debug (Updated at 10Hz)
       pid_target:   pidDebug?.targetRps   || [0,0,0,0],
       pid_measured: pidDebug?.measuredRps || [0,0,0,0],
       pid_pwm:      pidDebug?.pwmOutput   || [0,0,0,0],
@@ -69,5 +75,6 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
     });
   }, [telemetry, frequencies, maxPoints]);
 
-  return history;
+  return { history, clear };
 }
+

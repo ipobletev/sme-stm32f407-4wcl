@@ -27,5 +27,6 @@ void BSP_SerialRos_Init(SerialRos_RxCallback_t callback);
  */
 HAL_StatusTypeDef BSP_SerialRos_Transmit(uint8_t *data, uint16_t size);
 void BSP_SerialRos_IRQHandler(void);
+bool BSP_SerialRos_IsTxReady(void);
 
 #endif /* __BSP_SERIAL_ROS_H */

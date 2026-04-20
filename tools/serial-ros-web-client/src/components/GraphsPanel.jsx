@@ -1,12 +1,14 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Activity, Zap, Compass, Move, BarChart2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { Activity, Zap, Compass, Move, BarChart2, Trash2, Clock, Settings2, RotateCcw } from 'lucide-react';
 
 function calculateStats(history, key) {
-  const values = history.map(p => p[key]).filter(v => v !== undefined && v !== 0);
+  const values = history.map(p => p[key]).filter(v => v !== undefined);
   if (values.length === 0) return { min: 0, max: 0, avg: 0, std: 0, jitter: 0 };
   
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const filtered = values.filter(v => v !== 0);
+  const min = filtered.length > 0 ? Math.min(...filtered) : 0;
+  const max = filtered.length > 0 ? Math.max(...filtered) : 0;
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
   const std = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length);
   
@@ -23,13 +25,15 @@ function calculateStats(history, key) {
 
 function StatisticsTable({ history, dataKeys, unit }) {
   const isFreq = dataKeys.some(dk => dk.key.startsWith('freq_'));
+  const gridTemplate = isFreq 
+    ? '1.8fr 0.8fr 0.8fr 0.8fr 1fr 0.8fr 1.2fr' 
+    : '2fr 1fr 1fr 1fr 1.2fr';
   
   return (
     <div className="stats-table">
-      <div className="stats-grid-header" style={{ 
-        gridTemplateColumns: isFreq ? '2fr 1fr 1fr 1fr 1fr 1.2fr' : '2fr 1fr 1fr 1fr 1.2fr'
-      }}>
+      <div className="stats-grid-header" style={{ gridTemplateColumns: gridTemplate }}>
         <span>Signal</span>
+        {isFreq && <span>Target</span>}
         <span>Min</span>
         <span>Max</span>
         <span>Avg</span>
@@ -41,9 +45,14 @@ function StatisticsTable({ history, dataKeys, unit }) {
         return (
           <div key={idx} className="stats-grid-row" style={{ 
             borderLeftColor: dk.color,
-            gridTemplateColumns: isFreq ? '2fr 1fr 1fr 1fr 1fr 1.2fr' : '2fr 1fr 1fr 1fr 1.2fr'
+            gridTemplateColumns: gridTemplate
           }}>
             <span className="stats-label" style={{ color: dk.color }}>{dk.name}</span>
+            {isFreq && (
+              <span className="stats-val target" style={{ opacity: dk.target ? 1 : 0.4 }}>
+                {dk.target ? `${dk.target.toFixed(0)}` : '--'}
+              </span>
+            )}
             <span className="stats-val">{stats.min.toFixed(2)}</span>
             <span className="stats-val">{stats.max.toFixed(2)}</span>
             <span className="stats-val highlight">{stats.avg.toFixed(2)}</span>
@@ -56,30 +65,57 @@ function StatisticsTable({ history, dataKeys, unit }) {
   );
 }
 
-export default function GraphsPanel({ history }) {
+export default function GraphsPanel({ history, onClear, maxPoints, setMaxPoints, appConfig }) {
+  const [freqFilter, setFreqFilter] = useState('all');
+  const [yDomains, setYDomains] = useState(() => {
+    const saved = localStorage.getItem('telemetry_y_domains');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('telemetry_y_domains', JSON.stringify(yDomains));
+  }, [yDomains]);
+
+  const handleDomainChange = (id, field, value) => {
+    setYDomains(prev => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || { min: 'auto', max: 'auto' }),
+        [field]: value === '' ? 'auto' : (isNaN(value) ? 'auto' : Number(value))
+      }
+    }));
+  };
+
+  const resetDomain = (id) => {
+    setYDomains(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const targets = {
+    imu: (appConfig && appConfig.imu_period > 0) ? (1000 / appConfig.imu_period) : null,
+    odom: (appConfig && appConfig.odom_period > 0) ? (1000 / appConfig.odom_period) : null,
+    sys: (appConfig && appConfig.sys_vars_period > 0) ? (1000 / appConfig.sys_vars_period) : null,
+  };
+
   const chartConfigs = [
     {
-      title: 'IMU Sample Rate (Hz)',
-      icon: Activity,
-      color: 'var(--accent-cyan)',
-      dataKeys: [{ key: 'freq_imu', color: 'var(--accent-cyan)', name: 'IMU Hz' }],
+      id: 'freq',
+      title: 'System Diagnostic Frequencies (Hz)',
+      icon: BarChart2,
+      color: 'var(--accent-indigo)',
+      dataKeys: [
+        { key: 'freq_imu', color: 'var(--accent-cyan)', name: 'IMU Hz', filter: 'imu', target: targets.imu },
+        { key: 'freq_odom', color: 'var(--accent-emerald)', name: 'Odom Hz', filter: 'odom', target: targets.odom },
+        { key: 'freq_sys', color: 'var(--accent-rose)', name: 'Sys Hz', filter: 'sys', target: targets.sys },
+      ],
       unit: ' Hz'
     },
     {
-      title: 'Odometry & Wheel Rate (Hz)',
-      icon: Move,
-      color: 'var(--accent-emerald)',
-      dataKeys: [{ key: 'freq_odom', color: 'var(--accent-emerald)', name: 'Odom Hz' }],
-      unit: ' Hz'
-    },
-    {
-      title: 'Sys Status Rate (Hz)',
-      icon: Zap,
-      color: 'var(--accent-rose)',
-      dataKeys: [{ key: 'freq_sys', color: 'var(--accent-rose)', name: 'Sys Hz' }],
-      unit: ' Hz'
-    },
-    {
+      id: 'kin',
       title: 'Drive Kinematics (Velocity)',
       icon: Move,
       color: 'var(--accent-cyan)',
@@ -90,6 +126,7 @@ export default function GraphsPanel({ history }) {
       unit: ''
     },
     {
+      id: 'enc',
       title: 'Motor Feedback (Encoders)',
       icon: Activity,
       color: 'var(--accent-indigo)',
@@ -102,6 +139,7 @@ export default function GraphsPanel({ history }) {
       unit: ' pulses'
     },
     {
+      id: 'rpy',
       title: 'IMU Orientation (RPY)',
       icon: Compass,
       color: 'var(--accent-rose)',
@@ -113,6 +151,7 @@ export default function GraphsPanel({ history }) {
       unit: '°'
     },
     {
+      id: 'accel',
       title: 'Linear Acceleration (m/s²)',
       icon: Activity,
       color: 'var(--accent-violet)',
@@ -124,6 +163,7 @@ export default function GraphsPanel({ history }) {
       unit: ' m/s²'
     },
     {
+      id: 'gyro',
       title: 'Angular Velocity (rad/s)',
       icon: Compass,
       color: 'var(--accent-amber)',
@@ -135,6 +175,7 @@ export default function GraphsPanel({ history }) {
       unit: ' rad/s'
     },
     {
+      id: 'batt',
       title: 'Battery Voltage',
       icon: Zap,
       color: 'var(--accent-emerald)',
@@ -144,6 +185,7 @@ export default function GraphsPanel({ history }) {
       unit: 'V'
     },
     {
+      id: 'temp',
       title: 'MCU Temperature',
       icon: Activity,
       color: '#fa709a',
@@ -156,63 +198,174 @@ export default function GraphsPanel({ history }) {
 
   return (
     <div className="graphs-panel">
-      <div className="section-header">
-        <Activity size={20} className="icon-pulse" />
-        <h2>Real-time Telemetry Analysis</h2>
+      <div className="section-header" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Activity size={20} className="icon-pulse" />
+          <h2>Real-time Telemetry Analysis</h2>
+        </div>
+        
+        <div className="graph-controls">
+          <div className="control-group">
+            <Clock size={14} style={{ color: 'var(--accent-cyan)' }} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Scale:</span>
+            <select 
+              value={maxPoints} 
+              onChange={(e) => setMaxPoints(Number(e.target.value))}
+              className="control-select"
+            >
+              <option value={50}>50 pts</option>
+              <option value={100}>100 pts</option>
+              <option value={200}>200 pts</option>
+              <option value={500}>500 pts</option>
+              <option value={1000}>1000 pts</option>
+            </select>
+          </div>
+          
+          <button className="btn btn-danger btn-sm" onClick={onClear}>
+            <Trash2 size={14} />
+            <span>Clear History</span>
+          </button>
+        </div>
       </div>
 
       <div className="graphs-grid">
-        {chartConfigs.map((config, idx) => (
-          <div key={idx} className="chart-card glass-card">
-            <div className="chart-header">
-              <config.icon size={18} style={{ color: config.color }} />
-              <h3>{config.title}</h3>
-            </div>
-            
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={history}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis 
-                    dataKey="timeLabel" 
-                    stroke="rgba(255,255,255,0.3)" 
-                    fontSize={10}
-                    tick={{ fill: 'rgba(255,255,255,0.5)' }}
-                  />
-                  <YAxis 
-                    stroke="rgba(255,255,255,0.3)" 
-                    fontSize={10}
-                    tick={{ fill: 'rgba(255,255,255,0.5)' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(15, 23, 42, 0.9)', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }} 
-                  />
-                  <Legend />
-                  {config.dataKeys.map(dk => (
-                    <Line 
-                      key={dk.key}
-                      type="monotone" 
-                      dataKey={dk.key} 
-                      name={dk.name}
-                      stroke={dk.color} 
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+        {chartConfigs.map((config, idx) => {
+          const dataKeys = config.id === 'freq' && freqFilter !== 'all'
+            ? config.dataKeys.filter(dk => dk.filter === freqFilter)
+            : config.dataKeys;
 
-            <StatisticsTable history={history} dataKeys={config.dataKeys} unit={config.unit} />
-          </div>
-        ))}
+          const domain = yDomains[config.id] || { min: 'auto', max: 'auto' };
+          const isAuto = domain.min === 'auto' && domain.max === 'auto';
+
+          return (
+            <div key={idx} className="chart-card glass-card">
+              <div className="chart-header" style={{ justifyContent: 'space-between', paddingBottom: editingId === config.id ? '4px' : '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <config.icon size={18} style={{ color: config.color }} />
+                  <h3>{config.title}</h3>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {config.id === 'freq' && (
+                    <div className="segmented-control">
+                      {['all', 'imu', 'odom', 'sys'].map(f => (
+                        <button 
+                          key={f}
+                          className={`segment-btn ${freqFilter === f ? 'active' : ''}`}
+                          onClick={() => setFreqFilter(f)}
+                          style={f !== 'all' ? { '--segment-color': `var(--accent-${f === 'imu' ? 'cyan' : f === 'odom' ? 'emerald' : 'rose'})` } : {}}
+                        >
+                          {f.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button 
+                    className={`icon-btn ${!isAuto ? 'active' : ''}`} 
+                    onClick={() => setEditingId(editingId === config.id ? null : config.id)}
+                    title="Y-Axis Limits"
+                  >
+                    <Settings2 size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {editingId === config.id && (
+                <div className="limit-controls-panel">
+                  <div className="limit-input-group">
+                    <span>Min:</span>
+                    <input 
+                      type="text" 
+                      placeholder="auto" 
+                      value={domain.min === 'auto' ? '' : domain.min}
+                      onChange={(e) => handleDomainChange(config.id, 'min', e.target.value)}
+                    />
+                  </div>
+                  <div className="limit-input-group">
+                    <span>Max:</span>
+                    <input 
+                      type="text" 
+                      placeholder="auto" 
+                      value={domain.max === 'auto' ? '' : domain.max}
+                      onChange={(e) => handleDomainChange(config.id, 'max', e.target.value)}
+                    />
+                  </div>
+                  <button className="reset-btn" onClick={() => resetDomain(config.id)}>
+                    <RotateCcw size={12} />
+                  </button>
+                </div>
+              )}
+              
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={history}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis 
+                      dataKey="timeLabel" 
+                      stroke="rgba(255,255,255,0.3)" 
+                      fontSize={10}
+                      tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                      hide={config.id === 'freq'}
+                    />
+                    <YAxis 
+                      domain={[domain.min, domain.max]}
+                      stroke="rgba(255,255,255,0.3)" 
+                      fontSize={10}
+                      tick={{ fill: 'rgba(255,255,255,0.5)' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        fontSize: '12px'
+                      }} 
+                    />
+                    <Legend />
+                    {dataKeys.map(dk => (
+                      <Line 
+                        key={dk.key}
+                        type="monotone" 
+                        dataKey={dk.key} 
+                        name={dk.name}
+                        stroke={dk.color} 
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    ))}
+                    {/* Render reference lines after data lines to ensure they are on top */}
+                    {dataKeys.map(dk => dk.target && (
+                      <ReferenceLine 
+                        key={`${dk.key}-target`}
+                        y={dk.target} 
+                        stroke={dk.color} 
+                        strokeDasharray="4 4" 
+                        strokeOpacity={0.7}
+                        strokeWidth={1.5}
+                        label={{ 
+                          value: `Target: ${dk.target}Hz`, 
+                          position: 'insideRight', 
+                          fill: dk.color, 
+                          fontSize: 10,
+                          fontWeight: 'bold',
+                          opacity: 0.9,
+                          dy: -10
+                        }} 
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <StatisticsTable history={history} dataKeys={dataKeys} unit={config.unit} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
+
+
+

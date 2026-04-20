@@ -145,6 +145,11 @@ export function useSerial() {
   const [frequencies, setFrequencies] = useState({});
   const [log, setLog] = useState([]);
 
+  // High-frequency buffers (REFS) to prevent React OOM
+  const telemetryBufferRef = useRef({ ...telemetry });
+  const logBufferRef = useRef([]);
+  const frequenciesBufferRef = useRef({});
+
   const portRef = useRef(null);
   const readerRef = useRef(null);
   const writerRef = useRef(null);
@@ -157,15 +162,51 @@ export function useSerial() {
   const lastTopicTicksRef = useRef({});
   const lastHeartbeatRef = useRef(0);
 
+  // Periodic flushing of buffers to state (Capped refresh rate)
+  useEffect(() => {
+    const teleInterval = setInterval(() => {
+      setTelemetry(prev => {
+        // Only trigger re-render if data actually changed
+        // We do a shallow comparison check or just copy from buffer
+        return { ...telemetryBufferRef.current };
+      });
+      setFrequencies({ ...frequenciesBufferRef.current });
+    }, 50); // 20Hz UI Refresh (Plenty for humans, saves CPU/Heap)
+
+    const logInterval = setInterval(() => {
+      if (logBufferRef.current.length > 0) {
+          setLog(prev => {
+            // ONLY keep display-essential strings/primitives to prevent DataCloneErrors
+            // and reduce memory overhead during React render cycles.
+            const formatted = logBufferRef.current.map(entry => ({
+              ts: entry.ts,
+              dir: entry.dir,
+              topicId: entry.topicId,
+              raw: Array.from(entry.rawPacket).map(b => b.toString(16).padStart(2, '0')).join(' ')
+            }));
+            const newEntries = [...formatted, ...prev].slice(0, 200);
+            logBufferRef.current = [];
+            return newEntries;
+          });
+      }
+    }, 500); // 2Hz Log Refresh (Enough for manual reading)
+
+    return () => {
+      clearInterval(teleInterval);
+      clearInterval(logInterval);
+    };
+  }, []);
+
   const addLog = useCallback((dir, topicId, raw, parsed) => {
     const entry = {
       ts: Date.now(),
       dir,
       topicId,
-      raw: Array.from(raw).map(b => b.toString(16).padStart(2, '0')).join(' '),
+      rawPacket: raw, // Store raw bytes to defer formatting
       parsed,
     };
-    setLog(prev => [entry, ...prev].slice(0, 200));
+    // Push to buffer, not state
+    logBufferRef.current.push(entry);
   }, []);
 
   const handleFrame = useCallback((topicId, data, isShared = false) => {
@@ -176,6 +217,10 @@ export function useSerial() {
     
     const parsed = parsePayload(topicId, data);
     if (!parsed) return;
+
+    if (topicId === TOPIC_IDS.TX.APP_CONFIG_DATA) {
+      console.log('[Protocol] Received APP_CONFIG_DATA:', parsed);
+    }
 
     if (!isShared) {
       addLog('RX', topicId, data, parsed);
@@ -190,36 +235,40 @@ export function useSerial() {
       }
     }
 
+    // Update Buffer Ref, NOT state
     switch (topicId) {
       case TOPIC_IDS.TX.SYS_STATUS:
-        setTelemetry(prev => ({ ...prev, sysStatus: parsed }));
+        telemetryBufferRef.current.sysStatus = parsed;
         break;
       case TOPIC_IDS.TX.IMU:
-        setTelemetry(prev => ({ ...prev, imu: parsed }));
+        telemetryBufferRef.current.imu = parsed;
         break;
       case TOPIC_IDS.TX.ODOMETRY:
-        setTelemetry(prev => ({ 
-          ...prev, 
-          odometry: parsed,
-          // Maintain pidDebug for components that expect it separately
-          pidDebug: {
-            targetRps: parsed.targetRps,
-            measuredRps: parsed.measuredRps,
-            pwmOutput: parsed.pwmOutput
-          }
-        }));
+        telemetryBufferRef.current.odometry = parsed;
+        // Also update the measured part of pidDebug buffer
+        telemetryBufferRef.current.pidDebug = {
+          ...(telemetryBufferRef.current.pidDebug || {}),
+          measuredRps: parsed.measuredRps
+        };
+        break;
+      case TOPIC_IDS.TX.PID_DEBUG:
+        telemetryBufferRef.current.pidDebug = {
+          ...(telemetryBufferRef.current.pidDebug || {}),
+          targetRps: parsed.targetRps,
+          pwmOutput: parsed.pwmOutput
+        };
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
-        setTelemetry(prev => ({ ...prev, appConfig: parsed }));
+        telemetryBufferRef.current.appConfig = parsed;
         break;
     }
   }, [addLog]);
 
   const sendPacket = useCallback(async (packet) => {
     const rawPacket = Array.from(packet);
-    // Use the current state values but avoid them being dependencies if they trigger loops
-    // In this specific hook, we can rely on the fact that sendPacket is called by user actions
-    if (connected && writerRef.current) {
+    // Use the writerRef directly if available (we are master)
+    // This avoids dependency on the 'connected' state which might be stale in closures
+    if (writerRef.current) {
       try {
         await writerRef.current.write(packet);
         addLog('TX', packet[2], packet, null);
@@ -233,7 +282,7 @@ export function useSerial() {
       wsRef.current.send(JSON.stringify({ type: MSG_TYPES.COMMAND_REQUEST, packet: rawPacket }));
       addLog('TX (Net Proxy)', packet[2], packet, null);
     }
-  }, [connected, sharedConnected, networkConnected, addLog]);
+  }, [sharedConnected, networkConnected, addLog]);
 
   // Network Relay Initialization - STABILIZED
   useEffect(() => {
@@ -264,7 +313,7 @@ export function useSerial() {
             handleFrame(topicId, new Uint8Array(data), true);
             break;
           case MSG_TYPES.FREQ_UPDATE:
-            setFrequencies(rates);
+            frequenciesBufferRef.current = rates;
             break;
         }
       } catch (e) {}
@@ -304,7 +353,7 @@ export function useSerial() {
           handleFrame(topicId, new Uint8Array(data), true);
           break;
         case MSG_TYPES.FREQ_UPDATE:
-          setFrequencies(rates);
+          frequenciesBufferRef.current = rates;
           break;
       }
     };
@@ -322,7 +371,7 @@ export function useSerial() {
     };
   }, [connected, handleFrame, sendPacket]);
 
-  // Master Heartbeat Broadcast
+  // Master Heartbeat & Config Sync
   useEffect(() => {
     if (connected) {
       const hbInterval = setInterval(() => {
@@ -332,10 +381,16 @@ export function useSerial() {
           wsRef.current.send(JSON.stringify(hb));
         }
         
-        // Also send binary heartbeat to the robot
-        console.log('[Heartbeat] Pumping heartbeat packet (0x00) to serial...');
         sendPacket(buildPacket(TOPIC_IDS.RX.HEARTBEAT));
       }, 500);
+
+      // Periodically request config if missing
+      const configInterval = setInterval(() => {
+        if (!telemetryBufferRef.current.appConfig) {
+          console.log('[Sync] Config remains missing, requesting...');
+          sendPacket(buildPacket(TOPIC_IDS.RX.GET_CONFIG));
+        }
+      }, 2000);
 
       freqTrackerRef.current.onUpdate = (rates) => {
         const msg = { type: MSG_TYPES.FREQ_UPDATE, rates };
@@ -343,15 +398,16 @@ export function useSerial() {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify(msg));
         }
-        setFrequencies(rates);
+        frequenciesBufferRef.current = rates;
       };
 
       return () => {
         clearInterval(hbInterval);
+        clearInterval(configInterval);
         freqTrackerRef.current.onUpdate = null;
       };
     }
-  }, [connected]);
+  }, [connected, sendPacket]);
 
   const connect = useCallback(async () => {
     if (connected) return;
@@ -379,6 +435,11 @@ export function useSerial() {
       freqTrackerRef.current.start();
       setConnected(true);
       setSharedConnected(true);
+
+      // Fetch config immediately
+      console.log('[Connection] Triggering initial GET_CONFIG...');
+      sendPacket(buildPacket(TOPIC_IDS.RX.GET_CONFIG));
+
       (async () => {
         try {
           while (readLoopRef.current) {
@@ -405,7 +466,15 @@ export function useSerial() {
     } catch (e) {}
     setConnected(false);
     setFrequencies({});
-    setTelemetry({ sysStatus: null, imu: null, odometry: null });
+    frequenciesBufferRef.current = {};
+    telemetryBufferRef.current = { 
+      sysStatus: null, 
+      imu: null, 
+      odometry: null, 
+      appConfig: null, 
+      pidDebug: null 
+    };
+    setTelemetry({ ...telemetryBufferRef.current });
   }, []);
 
   return {
@@ -420,4 +489,5 @@ export function useSerial() {
     linkActive: (Date.now() - lastTeleTickRef.current) < ((telemetry.appConfig?.sys_vars_period || 1000) + 1000),
     log,
   };
+
 }

@@ -91,7 +91,12 @@ export default function ImuVisualizer({ imu }) {
         <Target size={14} />
       </button>
 
-      <Canvas shadows>
+      <Canvas 
+        onCreated={({ gl }) => {
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFShadowMap;
+        }}
+      >
         <PerspectiveCamera 
           ref={cameraRef}
           makeDefault 
@@ -106,7 +111,10 @@ export default function ImuVisualizer({ imu }) {
         />
         
         <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} castShadow />
+        <directionalLight position={[5, 5, 5]} intensity={1.2} castShadow 
+          shadow-mapSize-width={1024} 
+          shadow-mapSize-height={1024} 
+        />
         <directionalLight position={[-3, 3, -3]} intensity={0.5} color="#818cf8" />
         <pointLight position={[0, -2, 0]} intensity={0.3} color="#22d3ee" />
         <hemisphereLight skyColor="#b1e1ff" groundColor="#444466" intensity={0.4} />

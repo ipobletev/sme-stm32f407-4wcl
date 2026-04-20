@@ -150,6 +150,7 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
   };
 
   if (!localConfig) {
+    const isFetching = connected;
     return (
       <div className="card empty-config">
         <div className="card-header">
@@ -157,15 +158,26 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
           <h2>Device Configuration</h2>
         </div>
         <div className="card-content centered">
-          <p className="description">Configuration hasn't been fetched from the robot yet.</p>
-          <button 
-            className="btn btn-primary btn-with-icon" 
-            onClick={handleFetchConfig}
-            disabled={!connected}
-          >
-            <RefreshCw size={16} />
-            Fetch Configuration
-          </button>
+          {isFetching ? (
+            <>
+              <div className="sync-spinner">
+                <RefreshCw size={24} className="icon-spin" />
+              </div>
+              <p className="description">Sincronizando configuración con el robot...</p>
+            </>
+          ) : (
+            <>
+              <p className="description">La configuración aún no se ha obtenido del robot.</p>
+              <button 
+                className="btn btn-primary btn-with-icon" 
+                onClick={handleFetchConfig}
+                disabled={!connected}
+              >
+                <RefreshCw size={16} />
+                Obtener Configuración
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

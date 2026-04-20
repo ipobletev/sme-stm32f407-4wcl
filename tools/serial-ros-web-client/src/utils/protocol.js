@@ -38,6 +38,7 @@ export const TOPIC_IDS = {
     IMU: 0x82,
     ODOMETRY: 0x83,
     APP_CONFIG_DATA: 0x84,
+    PID_DEBUG: 0x85,
   }
 };
 
@@ -102,11 +103,9 @@ export function parsePayload(topicId, data) {
           qw: readFloat32(view, 12),
           gyro: { x: readFloat32(view, 16), y: readFloat32(view, 20), z: readFloat32(view, 24) },
           accel: { x: readFloat32(view, 28), y: readFloat32(view, 32), z: readFloat32(view, 36) },
-          roll: readFloat32(view, 40),
-          pitch: readFloat32(view, 44),
-          yaw: readFloat32(view, 48)
+          /* roll, pitch, yaw removed from binary (calculate from Q if needed) */
         };
-
+ 
       case TOPIC_IDS.TX.ODOMETRY: {
         return {
           linear_x: view.getFloat32(0, true),
@@ -117,24 +116,28 @@ export function parsePayload(topicId, data) {
             view.getInt32(16, true),
             view.getInt32(20, true)
           ],
-          targetRps: [
+          measuredRps: [
             view.getFloat32(24, true), view.getFloat32(28, true),
             view.getFloat32(32, true), view.getFloat32(36, true)
-          ],
-          measuredRps: [
-            view.getFloat32(40, true), view.getFloat32(44, true),
-            view.getFloat32(48, true), view.getFloat32(52, true)
-          ],
-          pwmOutput: [
-            view.getFloat32(56, true), view.getFloat32(60, true),
-            view.getFloat32(64, true), view.getFloat32(68, true)
           ]
+          /* targetRps and pwmOutput moved to Topic 0x85 */
         };
       }
       
+      case TOPIC_IDS.TX.PID_DEBUG: // 0x85
+        return {
+          targetRps: [
+            view.getFloat32(0, true), view.getFloat32(4, true),
+            view.getFloat32(8, true), view.getFloat32(12, true)
+          ],
+          pwmOutput: [
+            view.getFloat32(16, true), view.getFloat32(20, true),
+            view.getFloat32(24, true), view.getFloat32(28, true)
+          ]
+        };
+
       case TOPIC_IDS.TX.APP_CONFIG_DATA: // 0x84
-        console.log(`[Protocol] Parsing Config Data (0x84), len: ${data.byteLength}`);
-        const result = {
+        return {
           magic: readUint32(view, 0),
           debug_level: readUint32(view, 4),
           telemetry_period: readUint32(view, 8),
@@ -152,7 +155,6 @@ export function parsePayload(topicId, data) {
           motor2_inv: readInt32(view, 56),
           motor3_inv: readInt32(view, 60),
           motor4_inv: readInt32(view, 64),
-          /* New fields from 68 */
           motor1_kp: readFloat32(view, 68), motor1_ki: readFloat32(view, 72), motor1_kd: readFloat32(view, 76), motor1_deadzone: readFloat32(view, 80),
           motor2_kp: readFloat32(view, 84), motor2_ki: readFloat32(view, 88), motor2_kd: readFloat32(view, 92), motor2_deadzone: readFloat32(view, 96),
           motor3_kp: readFloat32(view, 100), motor3_ki: readFloat32(view, 104), motor3_kd: readFloat32(view, 108), motor3_deadzone: readFloat32(view, 112),
@@ -160,15 +162,7 @@ export function parsePayload(topicId, data) {
           mobility_mode: readUint32(view, 132),
           crc: readUint32(view, 136)
         };
-        console.log(`[Protocol] Config Parse Success, Magic: 0x${result.magic.toString(16)}`);
-        return result;
-      
-      case TOPIC_IDS.TX.PID_DEBUG: // 0x85
-        return {
-          targetRps:   [readFloat32(view, 0),  readFloat32(view, 4),  readFloat32(view, 8),  readFloat32(view, 12)],
-          measuredRps: [readFloat32(view, 16), readFloat32(view, 20), readFloat32(view, 24), readFloat32(view, 28)],
-          pwmOutput:   [readFloat32(view, 32), readFloat32(view, 36), readFloat32(view, 40), readFloat32(view, 44)]
-        };
+
 
       default:
         return null;

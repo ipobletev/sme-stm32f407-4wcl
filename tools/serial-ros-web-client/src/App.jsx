@@ -62,7 +62,8 @@ export default function App() {
     connected, isMaster, connect, disconnect, sendPacket, 
     telemetry, frequencies, lastTopicTicks, linkActive, log 
   } = useSerial();
-  const history = useTelemetryHistory(telemetry, frequencies, 50);
+  const [maxPoints, setMaxPoints] = useState(100);
+  const { history, clear: clearHistory } = useTelemetryHistory(telemetry, frequencies, maxPoints);
   const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -115,8 +116,15 @@ export default function App() {
             </>
           ) : activeTab === 'graphs' ? (
             <div className="graphs-view">
-              <GraphsPanel history={history} />
+              <GraphsPanel 
+                history={history} 
+                onClear={clearHistory} 
+                maxPoints={maxPoints} 
+                setMaxPoints={setMaxPoints} 
+                appConfig={telemetry.appConfig}
+              />
             </div>
+
           ) : activeTab === 'fsm' ? (
             <div className="fsm-view">
               <SystemStatusMap

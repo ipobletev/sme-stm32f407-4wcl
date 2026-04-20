@@ -119,6 +119,7 @@ void StartTelemetryTask(void *argument) {
             status_msg.mobility_mode    = (uint8_t)RobotState_GetTargetMobilityMode();
 
             SerialRos_EnqueueTx(TOPIC_ID_SYS_STATUS, &status_msg, sizeof(SystemStatusMsg_t));
+            //LOG_INFO(LOG_TAG, "MCU Heartbeat (Status) Sent\r\n");
 
             uint64_t errs = RobotState_GetErrorFlags();
             char err_str[19];
@@ -150,6 +151,7 @@ void StartTelemetryTask(void *argument) {
             snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
 
             /* Periodically log board health to console */
+
             /* Report basic status to INFO level */
             LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s, %s] | Batt: %sV | MCU: %sC | Errors: %s\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
@@ -162,18 +164,18 @@ void StartTelemetryTask(void *argument) {
 
             /* Report detailed diagnostics only to DEBUG level */
             if (AppConfig->debug_level >= LOG_LEVEL_DEBUG) {
-                uint32_t s_mng  = osal_thread_get_stack_space(managerTaskHandle);
-                uint32_t s_ctl  = osal_thread_get_stack_space(controllerTaskHandle);
-                uint32_t s_urt  = osal_thread_get_stack_space(uartListenerTaskHandle);
-                uint32_t s_mob  = osal_thread_get_stack_space(mobilityTaskHandle);
-                uint32_t s_arm  = osal_thread_get_stack_space(armTaskHandle);
-                uint32_t s_ros  = osal_thread_get_stack_space(serialRosTaskHandle);
-                uint32_t s_tel  = osal_thread_get_stack_space(telemetryTaskHandle);
-                uint32_t s_imu  = osal_thread_get_stack_space(sensorsTaskHandle);
+            uint32_t s_mng  = osal_thread_get_stack_space(managerTaskHandle);
+            uint32_t s_ctl  = osal_thread_get_stack_space(controllerTaskHandle);
+            uint32_t s_urt  = osal_thread_get_stack_space(uartListenerTaskHandle);
+            uint32_t s_mob  = osal_thread_get_stack_space(mobilityTaskHandle);
+            uint32_t s_arm  = osal_thread_get_stack_space(armTaskHandle);
+            uint32_t s_ros  = osal_thread_get_stack_space(serialRosTaskHandle);
+            uint32_t s_tel  = osal_thread_get_stack_space(telemetryTaskHandle);
+            uint32_t s_imu  = osal_thread_get_stack_space(sensorsTaskHandle);
 
-                LOG_DEBUG(LOG_TAG, "FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
-                    (unsigned long)s_mng, (unsigned long)s_ctl, (unsigned long)s_urt, (unsigned long)s_mob,
-                    (unsigned long)s_arm, (unsigned long)s_ros, (unsigned long)s_tel, (unsigned long)s_imu);
+            LOG_DEBUG(LOG_TAG, "FreeStack: [MNG:%lu CTL:%lu URT:%lu MOB:%lu ARM:%lu ROS:%lu TEL:%lu IMU:%lu]\r\n", 
+                (unsigned long)s_mng, (unsigned long)s_ctl, (unsigned long)s_urt, (unsigned long)s_mob,
+                (unsigned long)s_arm, (unsigned long)s_ros, (unsigned long)s_tel, (unsigned long)s_imu);
             }
 
             // Debug configuration values (Split to avoid buffer overflow)

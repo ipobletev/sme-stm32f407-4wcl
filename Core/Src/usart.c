@@ -219,7 +219,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_usart3_rx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_usart3_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_usart3_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_usart3_rx.Init.Mode = DMA_NORMAL;
+    hdma_usart3_rx.Init.Mode = DMA_CIRCULAR;
     hdma_usart3_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     hdma_usart3_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_usart3_rx) != HAL_OK)
@@ -359,29 +359,14 @@ void UART_DMA_Write(UART_HandleTypeDef *huart, uint8_t *data, uint16_t len) {
     /* Max transfer size is 256 due to static buffers buf1/buf3 */
     uint16_t copy_len = (len > 256) ? 256 : len;
 
+    /* Avoid busy-waiting that locks the RTOS */
+    if (huart->gState != HAL_UART_STATE_READY) {
+        return; /* Drop data instead of starving the system */
+    }
+
     static uint8_t buf1[256];
     static uint8_t buf3[256];
     uint8_t *dest_buf = (huart->Instance == USART1) ? buf1 : buf3;
-
-    /* Robust wait for previous transfer to complete */
-    uint32_t timeout = 0x100000;
-    while (huart->gState != HAL_UART_STATE_READY && timeout > 0) {
-        timeout--;
-        /* If in a task, we could yield, but avoid osDelay to keep it generic */
-    }
-
-    /* If still not ready, we must Abort to prevent hard hangs or overlapping DMAs */
-    if (huart->gState != HAL_UART_STATE_READY) {
-        HAL_UART_AbortTransmit(huart);
-        
-        /* Fallback to blocking mode to ensure data is not lost during congestion */
-        for (uint16_t i = 0; i < copy_len; i++) {
-            while (__HAL_UART_GET_FLAG(huart, UART_FLAG_TXE) == RESET);
-            huart->Instance->DR = data[i];
-        }
-        while (__HAL_UART_GET_FLAG(huart, UART_FLAG_TC) == RESET);
-        return;
-    }
 
     /* Start new DMA transfer */
     memcpy(dest_buf, data, copy_len);
