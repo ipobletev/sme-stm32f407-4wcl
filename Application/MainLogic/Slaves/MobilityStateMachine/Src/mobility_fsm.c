@@ -17,7 +17,8 @@
  * This refreshes the internal motor parameters from the new macro values.
  */
 static void FSM_Mobility_ConfigCallback(void) {
-    LOG_INFO(LOG_TAG, "Refreshing motor parameters from new configuration...\r\n");
+    LOG_INFO(LOG_TAG, "Refreshing motor parameters (Mode: %s) from new configuration...\r\n", 
+             FSM_Mobility_ModeToStr((MobilityMode_t)AppConfig->mobility_mode));
     for (int i = 0; i < 4; i++) {
         encoder_motor_refresh_config(motors[i]);
     }

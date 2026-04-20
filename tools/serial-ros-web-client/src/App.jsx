@@ -22,11 +22,10 @@ const TOPIC_LABELS = {
   '0x81': 'sys_status',
   '0x82': 'imu',
   '0x83': 'odometry',
-  '0x85': 'pid_debug',
 };
 
 function FrequencyBar({ frequencies, lastTopicTicks }) {
-  const topics = ['0x81', '0x82', '0x83', '0x85'];
+  const topics = ['0x81', '0x82', '0x83'];
   const now = Date.now();
 
   return (

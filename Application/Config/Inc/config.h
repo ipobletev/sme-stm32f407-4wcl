@@ -24,6 +24,7 @@
 #define DEFAULT_ROBOT_WHEEL_DIAMETER            0.08f
 #define DEFAULT_ROBOT_SHAFT_WIDTH               0.170f
 #define DEFAULT_ROBOT_WHEELBASE_LENGTH          0.150f
+#define DEFAULT_ROBOT_MOBILITY_MODE             3 // MOB_MODE_MECANUM
 /* Motor Directions */
 #define DEFAULT_MOTOR1_INVERT                   1
 #define DEFAULT_MOTOR2_INVERT                   1

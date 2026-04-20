@@ -198,13 +198,19 @@ export function useSerial() {
         setTelemetry(prev => ({ ...prev, imu: parsed }));
         break;
       case TOPIC_IDS.TX.ODOMETRY:
-        setTelemetry(prev => ({ ...prev, odometry: parsed }));
+        setTelemetry(prev => ({ 
+          ...prev, 
+          odometry: parsed,
+          // Maintain pidDebug for components that expect it separately
+          pidDebug: {
+            targetRps: parsed.targetRps,
+            measuredRps: parsed.measuredRps,
+            pwmOutput: parsed.pwmOutput
+          }
+        }));
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
         setTelemetry(prev => ({ ...prev, appConfig: parsed }));
-        break;
-      case TOPIC_IDS.TX.PID_DEBUG:
-        setTelemetry(prev => ({ ...prev, pidDebug: parsed }));
         break;
     }
   }, [addLog]);

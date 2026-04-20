@@ -30,6 +30,13 @@ export default function Header({
         >
           <Menu size={20} />
         </button>
+        <div className="header-brand">
+          <div className="logo-icon">S</div>
+          <div className="brand-text">
+            <span className="brand-primary">SME</span>
+            <span className="brand-secondary">ROBOTICS</span>
+          </div>
+        </div>
         <div className="header-page-title">
           <h2>Dashboard Overview</h2>
           <span className="breadcrumb">Telemetry / Real-time</span>

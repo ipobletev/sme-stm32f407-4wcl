@@ -41,6 +41,9 @@ typedef struct {
     float motor2_kp, motor2_ki, motor2_kd, motor2_deadzone;
     float motor3_kp, motor3_ki, motor3_kd, motor3_deadzone;
     float motor4_kp, motor4_ki, motor4_kd, motor4_deadzone;
+
+    /* Mobility Model */
+    uint32_t mobility_mode;         /* 0: Direct, 1: Diff, 2: Ackermann, 3: Mecanum */
     
     uint32_t crc;                   /* CRC32 or simple checksum for integrity */
 } AppConfig_t;
@@ -69,6 +72,7 @@ typedef enum {
     CONF_WHEEL_DIAMETER         = 0x20,
     CONF_SHAFT_WIDTH            = 0x21,
     CONF_WHEELBASE              = 0x22,
+    CONF_MOBILITY_MODE          = 0x23,
 
     /* Directions (0x30-0x3F) */
     CONF_MOTOR1_INV             = 0x31,

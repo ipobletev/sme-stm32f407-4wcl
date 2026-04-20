@@ -66,7 +66,7 @@ export default function GraphsPanel({ history }) {
       unit: ' Hz'
     },
     {
-      title: 'Odometry Rate (Hz)',
+      title: 'Odometry & Wheel Rate (Hz)',
       icon: Move,
       color: 'var(--accent-emerald)',
       dataKeys: [{ key: 'freq_odom', color: 'var(--accent-emerald)', name: 'Odom Hz' }],
@@ -77,13 +77,6 @@ export default function GraphsPanel({ history }) {
       icon: Zap,
       color: 'var(--accent-rose)',
       dataKeys: [{ key: 'freq_sys', color: 'var(--accent-rose)', name: 'Sys Hz' }],
-      unit: ' Hz'
-    },
-    {
-      title: 'PID Debug Rate (Hz)',
-      icon: BarChart2,
-      color: 'var(--accent-indigo)',
-      dataKeys: [{ key: 'freq_pid', color: 'var(--accent-indigo)', name: 'PID Hz' }],
       unit: ' Hz'
     },
     {

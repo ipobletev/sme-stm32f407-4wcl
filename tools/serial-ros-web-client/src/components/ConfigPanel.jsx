@@ -34,6 +34,12 @@ const PARAM_GROUPS = [
       { id: 0x20, key: 'wheel_diameter', label: 'Wheel Diameter (m)', type: 'number', step: 0.001, min: 0.01 },
       { id: 0x21, key: 'shaft_width', label: 'Shaft Width (m)', type: 'number', step: 0.001, min: 0.05 },
       { id: 0x22, key: 'wheelbase_length', label: 'Wheelbase length (m)', type: 'number', step: 0.001, min: 0.05 },
+      { id: 0x23, key: 'mobility_mode', label: 'Robot Kinematic Model', type: 'select', options: [
+        { label: 'DIRECT (4-Motor Independent)', value: 0 },
+        { label: 'DIFFERENTIAL (2WD / Tank)', value: 1 },
+        { label: 'ACKERMANN (Car Steering)', value: 2 },
+        { label: 'MECANUM (Holonomic 4WD)', value: 3 },
+      ]},
     ]
   },
   {

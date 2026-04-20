@@ -29,9 +29,19 @@ EncoderMotorObjectTypeDef *motors[4] = {
     &motor_instances[3]
 };
 
+static void RobotState_ConfigCallback(void) {
+    LOG_INFO("ROBOT_STATE", "Syncing state from new configuration...\r\n");
+    RobotState_4wcl.pid_enabled = (uint8_t)AppConfig->pid_enabled;
+    RobotState_4wcl.Commands.target_mobility_mode = (MobilityMode_t)AppConfig->mobility_mode;
+}
+
 void RobotState_Init(void) {
     /* Initialize from current configuration shadow */
     RobotState_4wcl.pid_enabled = (uint8_t)AppConfig->pid_enabled;
+    RobotState_4wcl.Commands.target_mobility_mode = (MobilityMode_t)AppConfig->mobility_mode;
+
+    /* Register for future updates */
+    AppConfig_RegisterCallback(RobotState_ConfigCallback);
 }
 
 void RobotState_SetErrorFlag(uint64_t flag) {

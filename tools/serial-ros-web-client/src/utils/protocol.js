@@ -38,7 +38,6 @@ export const TOPIC_IDS = {
     IMU: 0x82,
     ODOMETRY: 0x83,
     APP_CONFIG_DATA: 0x84,
-    PID_DEBUG: 0x85,
   }
 };
 
@@ -108,17 +107,30 @@ export function parsePayload(topicId, data) {
           yaw: readFloat32(view, 48)
         };
 
-      case TOPIC_IDS.TX.ODOMETRY: // 0x83
+      case TOPIC_IDS.TX.ODOMETRY: {
         return {
-          linear_x: readFloat32(view, 0),
-          angular_z: readFloat32(view, 4),
+          linear_x: view.getFloat32(0, true),
+          angular_z: view.getFloat32(4, true),
           encoders: [
-            readInt32(view, 8),
-            readInt32(view, 12),
-            readInt32(view, 16),
-            readInt32(view, 20)
+            view.getInt32(8, true),
+            view.getInt32(12, true),
+            view.getInt32(16, true),
+            view.getInt32(20, true)
+          ],
+          targetRps: [
+            view.getFloat32(24, true), view.getFloat32(28, true),
+            view.getFloat32(32, true), view.getFloat32(36, true)
+          ],
+          measuredRps: [
+            view.getFloat32(40, true), view.getFloat32(44, true),
+            view.getFloat32(48, true), view.getFloat32(52, true)
+          ],
+          pwmOutput: [
+            view.getFloat32(56, true), view.getFloat32(60, true),
+            view.getFloat32(64, true), view.getFloat32(68, true)
           ]
         };
+      }
       
       case TOPIC_IDS.TX.APP_CONFIG_DATA: // 0x84
         console.log(`[Protocol] Parsing Config Data (0x84), len: ${data.byteLength}`);
@@ -145,7 +157,8 @@ export function parsePayload(topicId, data) {
           motor2_kp: readFloat32(view, 84), motor2_ki: readFloat32(view, 88), motor2_kd: readFloat32(view, 92), motor2_deadzone: readFloat32(view, 96),
           motor3_kp: readFloat32(view, 100), motor3_ki: readFloat32(view, 104), motor3_kd: readFloat32(view, 108), motor3_deadzone: readFloat32(view, 112),
           motor4_kp: readFloat32(view, 116), motor4_ki: readFloat32(view, 120), motor4_kd: readFloat32(view, 124), motor4_deadzone: readFloat32(view, 128),
-          crc: readUint32(view, 132)
+          mobility_mode: readUint32(view, 132),
+          crc: readUint32(view, 136)
         };
         console.log(`[Protocol] Config Parse Success, Magic: 0x${result.magic.toString(16)}`);
         return result;

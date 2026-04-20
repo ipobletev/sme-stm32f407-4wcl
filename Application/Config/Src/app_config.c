@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug_module.h"
+#include "mobility_fsm.h"
 
 #define CONFIG_MAGIC_NUMBER     0xABCD1235
 #define LOG_TAG                 "APP_CONFIG"
@@ -64,6 +65,7 @@ void AppConfig_ResetToDefaults(void) {
     g_current_config.wheel_diameter   = DEFAULT_ROBOT_WHEEL_DIAMETER;
     g_current_config.shaft_width      = DEFAULT_ROBOT_SHAFT_WIDTH;
     g_current_config.wheelbase_length = DEFAULT_ROBOT_WHEELBASE_LENGTH;
+    g_current_config.mobility_mode     = DEFAULT_ROBOT_MOBILITY_MODE;
     
     /* Inversion */
     g_current_config.motor1_invert = DEFAULT_MOTOR1_INVERT;
@@ -180,6 +182,9 @@ bool AppConfig_UpdateParam(uint8_t id, float value) {
         case CONF_WHEELBASE:        
             if (value < 0.01f) value = 0.05f;
             g_current_config.wheelbase_length = value; 
+            break;
+        case CONF_MOBILITY_MODE:
+            g_current_config.mobility_mode = (uint32_t)value;
             break;
 
         /* Directions (Normalize to 1 or -1) */

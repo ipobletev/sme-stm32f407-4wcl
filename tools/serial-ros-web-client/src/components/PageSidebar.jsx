@@ -17,10 +17,6 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
 
   return (
     <aside className={`page-sidebar ${collapsed ? 'collapsed' : 'expanded'}`}>
-      <div className="sidebar-brand">
-        <div className="logo-icon">S</div>
-      </div>
-      
       <nav className="sidebar-nav">
         {navItems.map((item) => (
           <button 

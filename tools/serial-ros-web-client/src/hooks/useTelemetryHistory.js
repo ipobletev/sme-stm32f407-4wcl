@@ -58,7 +58,6 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
       freq_sys: frequencies?.['0x81'] || 0,
       freq_imu: frequencies?.['0x82'] || 0,
       freq_odom: frequencies?.['0x83'] || 0,
-      freq_pid: frequencies?.['0x85'] || 0,
     };
 
     setHistory(prev => {
