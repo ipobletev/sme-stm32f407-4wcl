@@ -11,6 +11,11 @@
 extern EncoderMotorObjectTypeDef *motors[4];
 
 /**
+ * @brief Initialize Robot State from configuration
+ */
+void RobotState_Init(void);
+
+/**
  * @brief Actuator Testing Command
  */
 typedef struct {

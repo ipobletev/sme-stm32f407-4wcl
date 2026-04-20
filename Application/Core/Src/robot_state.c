@@ -4,6 +4,7 @@
 #include "task.h"
 #include "main.h"
 #include "osal.h"
+#include "app_config.h"
 
 #define IS_IN_ISR() ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0)
 
@@ -16,7 +17,7 @@ RobotState_t RobotState_4wcl = {
         .heartbeat_count = 0,
         .error_flags = 0 // 0 = No Error
     },
-    .pid_enabled = ROBOT_STATE_DEFAULT_PID_ENABLED // Enabled by default
+    .pid_enabled = 0 // Initialized in RobotState_Init
 };
 
 /* Actuator Instances */
@@ -27,6 +28,11 @@ EncoderMotorObjectTypeDef *motors[4] = {
     &motor_instances[2], 
     &motor_instances[3]
 };
+
+void RobotState_Init(void) {
+    /* Initialize from current configuration shadow */
+    RobotState_4wcl.pid_enabled = (uint8_t)AppConfig->pid_enabled;
+}
 
 void RobotState_SetErrorFlag(uint64_t flag) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {

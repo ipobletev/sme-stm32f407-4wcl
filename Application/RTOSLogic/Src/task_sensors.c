@@ -4,6 +4,7 @@
 #include "encoder_motor.h"
 #include "robot_state.h"
 #include "debug_module.h"
+#include "app_config.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "config.h"
@@ -98,14 +99,17 @@ void StartSensorsTask(void *argument) {
     last_wake_time = osal_get_tick();
 
     while (1) {
-        /* Period: 10ms (100Hz) */
-        osal_delay_until(&last_wake_time, 10);
-        float period = 0.010f;
+        /* Use dynamic period from configuration */
+        uint32_t period_ms = AppConfig->imu_publish_period_ms;
+        if (period_ms < 5) period_ms = 5; // Sanity floor
 
-        /* --- 2. ODOMETRY / ENCODERS (100Hz) --- */
+        osal_delay_until(&last_wake_time, period_ms);
+        float period_sec = (float)period_ms / 1000.0f;
+
+        /* --- 2. ODOMETRY / ENCODERS --- */
         for (int i = 0; i < 4; i++) {
             int64_t counts = BSP_Motor_Hardware_GetEncoderCount(i);
-            encoder_update(motors[i], period, counts);
+            encoder_update(motors[i], period_sec, counts);
         }
 
         /* Update Robot State Feedback */
@@ -127,10 +131,10 @@ void StartSensorsTask(void *argument) {
         float v3 = -motors[2]->rps; /* Restore sign mapping for kinematics */
         float v4 = -motors[3]->rps; /* Restore sign mapping for kinematics */
 
-        float r_pi_d = M_PI * ROBOT_WHEEL_DIAMETER;
+        float r_pi_d = M_PI * AppConfig->wheel_diameter;
         v1 *= r_pi_d; v2 *= r_pi_d; v3 *= r_pi_d; v4 *= r_pi_d;
 
-        float l_plus_w = ROBOT_WHEELBASE_LENGTH + ROBOT_SHAFT_WIDTH;
+        float l_plus_w = AppConfig->wheelbase_length + AppConfig->shaft_width;
         float vx = (v1 + v2 + v3 + v4) / 4.0f;
         float az = (-v1 - v2 + v3 + v4) / (4.0f * l_plus_w);
 

@@ -1,5 +1,6 @@
 #include "app_rtos.h"
-#include "config.h"
+#include "app_config.h"
+#include "debug_module.h"
 #include "robot_state.h"
 #include "serial_ros_protocol.h"
 #include "bsp_console.h"
@@ -129,7 +130,7 @@ void App_RTOS_Init(void) {
     /* 3. Start Heartbeat Timer (1Hz) */
     heartbeatTimerHandle = osal_timer_create(HeartbeatTimerCallback, OSAL_TIMER_PERIODIC, NULL);
     if (heartbeatTimerHandle != NULL) {
-        osal_timer_start(heartbeatTimerHandle, HEARTBEAT_PERIOD_MS);
+        osal_timer_start(heartbeatTimerHandle, 1000);
     }
 }
 

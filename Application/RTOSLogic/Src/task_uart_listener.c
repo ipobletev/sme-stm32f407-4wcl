@@ -75,13 +75,13 @@ void StartUARTListenerTask(void *argument)
                     char *cmd = &cmd_buffer[6];
                     strtok(cmd, "\r\n ");
 
-                    if (strcmp(cmd, "START") == 0)      publish_event(EVENT_SUPERVISOR_START, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "STOP") == 0)  publish_event(EVENT_SUPERVISOR_STOP, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "MANUAL") == 0) publish_event(EVENT_SUPERVISOR_MODE_MANUAL, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "AUTO") == 0)   publish_event(EVENT_SUPERVISOR_MODE_AUTO, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "PAUSE") == 0)  publish_event(EVENT_SUPERVISOR_PAUSE, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "RESUME") == 0) publish_event(EVENT_SUPERVISOR_RESUME, SRC_UART1_LOCAL);
-                    else if (strcmp(cmd, "RESET") == 0)  publish_event(EVENT_SUPERVISOR_RESET, SRC_UART1_LOCAL);
+                    if (strcmp(cmd, "START") == 0)      publish_event(EVENT_SUPERVISOR_START, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "STOP") == 0)  publish_event(EVENT_SUPERVISOR_STOP, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "MANUAL") == 0) publish_event(EVENT_SUPERVISOR_MODE_MANUAL, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "AUTO") == 0)   publish_event(EVENT_SUPERVISOR_MODE_AUTO, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "PAUSE") == 0)  publish_event(EVENT_SUPERVISOR_PAUSE, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "RESUME") == 0) publish_event(EVENT_SUPERVISOR_RESUME, SRC_LOCAL_CONSOLE);
+                    else if (strcmp(cmd, "RESET") == 0)  publish_event(EVENT_SUPERVISOR_RESET, SRC_LOCAL_CONSOLE);
 
                     LOG_INFO(LOG_TAG, "ConsoleDebug: Event %s published\n", cmd);
                 }

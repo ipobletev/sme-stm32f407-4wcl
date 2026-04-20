@@ -76,8 +76,8 @@ Each event sent to the Supervisor includes an `EventSource_t` identifier with an
 | :--- | :---: | :--- | :--- |
 | **SRC_INTERNAL_SUPERVISOR** | 4 | Internal safety monitors (watchdogs, temp). | **CRITICAL**: Highest priority. |
 | **SRC_PHYSICAL** | 3 | On-board physical buttons (K1, K2). | **SAFETY**: Physical operator control. |
-| **SRC_UART1_LOCAL** | 2 | Local Operator Console (UART1/USB). | **DEBUG**: Technician/Field control. |
-| **SRC_UART3_ROS** | 1 | Remote Autonomous Control (UART3). | **AUTO**: Standard operation. |
+| **SRC_LOCAL_CONSOLE** | 2 | Local Operator Console (UART1/USB). | **DEBUG**: Technician/Field control. |
+| **SRC_EXT_CLIENT** | 1 | Remote Autonomous Control (UART3). | **AUTO**: Standard operation. |
 | **SRC_UNKNOWN** | 0 | Unidentified sources. | Lowest priority. |
 
 #### Resume Logic (Safety Guard)

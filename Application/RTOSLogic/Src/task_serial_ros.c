@@ -1,6 +1,6 @@
 #include "app_rtos.h"
 #include "supervisor_fsm.h"
-#include "config.h"
+#include "app_config.h"
 #include "bsp_serial_ros.h"
 #include "serial_ros.h"
 #include "robot_state.h"
@@ -75,7 +75,7 @@ void StartSerialRosTask(void *argument) {
             
             /* Put the processed packet into the RX queue for other tasks */
             SerialRos_Packet_t rx_packet;
-            rx_packet.size = (local_rx_size > 64) ? 64 : local_rx_size;
+            rx_packet.size = (local_rx_size > sizeof(rx_packet.data)) ? sizeof(rx_packet.data) : local_rx_size;
             memcpy(rx_packet.data, local_rx_buffer, rx_packet.size);
             osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
         }

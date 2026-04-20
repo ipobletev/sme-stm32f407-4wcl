@@ -35,8 +35,8 @@ typedef enum {
 /* Event Source Types */
 typedef enum {
     SRC_UNKNOWN = 0,
-    SRC_UART3_ROS = 1,             /* Remote (Only STATE_AUTO) */
-    SRC_UART1_LOCAL = 2,           /* Local Operator Console (Only STATE_MANUAL) */
+    SRC_EXT_CLIENT = 1,            /* Remote (Only STATE_AUTO) */
+    SRC_LOCAL_CONSOLE = 2,         /* Local Operator Console (Only STATE_MANUAL) */
     SRC_PHYSICAL = 3,              /* Physical On-Board System (Only STATE_MANUAL) */
     SRC_PHYSICAL_CRITICAL = 4,     /* Physical Critical (STATE_MANUAL, STATE_AUTO) */
     SRC_INTERNAL_SUPERVISOR = 5    /* Internal Hardware/RTOS Monitor (STATE_MANUAL, STATE_AUTO) */

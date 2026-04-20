@@ -29,11 +29,15 @@ export const TOPIC_IDS = {
     ACTUATOR_PWM: 0x06,
     ACTUATOR_VEL: 0x07,
     SYS_EVENT_TEST: 0x07, // Added for testing transition
+    SET_CONFIG: 0x08,
+    GET_CONFIG: 0x09,
+    SAVE_CONFIG: 0x0A,
   },
   TX: {
     SYS_STATUS: 0x81,
     IMU: 0x82,
     ODOMETRY: 0x83,
+    APP_CONFIG_DATA: 0x84,
   }
 };
 
@@ -119,6 +123,29 @@ export function parsePayload(topicId, data) {
             readInt32(view, 20)
           ]
         };
+      
+      case TOPIC_IDS.TX.APP_CONFIG_DATA: // 0x84
+        return {
+          magic: view.getUint32(0, true),
+          debug_level: view.getUint32(4, true),
+          telemetry_period: view.getUint32(8, true),
+          sys_vars_period: view.getUint32(12, true),
+          imu_period: view.getUint32(16, true),
+          odom_period: view.getUint32(20, true),
+          pid_enabled: view.getUint32(24, true),
+          motor_ticks: readFloat32(view, 28),
+          motor_rps_limit: readFloat32(view, 32),
+          motor_deadzone: readFloat32(view, 36),
+          motor_pwm_max: readFloat32(view, 40),
+          wheel_diameter: readFloat32(view, 44),
+          shaft_width: readFloat32(view, 48),
+          wheelbase_length: readFloat32(view, 52),
+          motor1_inv: view.getInt32(56, true),
+          motor2_inv: view.getInt32(60, true),
+          motor3_inv: view.getInt32(64, true),
+          motor4_inv: view.getInt32(68, true),
+          crc: view.getUint32(72, true)
+        };
 
       default:
         return null;
@@ -169,6 +196,14 @@ export const Encoders = {
     const view = new DataView(buf);
     view.setUint8(0, id);
     view.setFloat32(1, rps, true);
+    return new Uint8Array(buf);
+  },
+
+  setConfig: (id, value) => {
+    const buf = new ArrayBuffer(5);
+    const view = new DataView(buf);
+    view.setUint8(0, id);
+    view.setFloat32(1, value, true);
     return new Uint8Array(buf);
   }
 };

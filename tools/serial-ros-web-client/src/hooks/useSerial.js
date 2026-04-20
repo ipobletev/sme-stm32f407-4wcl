@@ -18,7 +18,7 @@ const MSG_TYPES = {
  */
 class FrequencyTracker {
   constructor() {
-    this.counters = {};
+    this.history = {}; // topicId -> [timestamps]
     this.rates = {};
     this._interval = null;
     this.onUpdate = null;
@@ -27,23 +27,32 @@ class FrequencyTracker {
   start() {
     this.stop();
     this._interval = setInterval(() => {
-      for (const key in this.counters) {
-        this.rates[key] = this.counters[key];
-        this.counters[key] = 0;
+      const now = Date.now();
+      const WINDOW_MS = 2000;
+
+      for (const key in this.history) {
+        // Clean up old timestamps
+        this.history[key] = this.history[key].filter(ts => (now - ts) < WINDOW_MS);
+        
+        // Calculate Hz: Count in window / Window size in seconds
+        const count = this.history[key].length;
+        this.rates[key] = count / (WINDOW_MS / 1000.0);
       }
+      
       if (this.onUpdate) this.onUpdate(this.rates);
     }, 1000);
   }
 
   stop() {
     if (this._interval) clearInterval(this._interval);
-    this.counters = {};
+    this.history = {};
     this.rates = {};
   }
 
   tick(topicId) {
     const key = `0x${topicId.toString(16).padStart(2, '0')}`;
-    this.counters[key] = (this.counters[key] || 0) + 1;
+    if (!this.history[key]) this.history[key] = [];
+    this.history[key].push(Date.now());
     if (this.rates[key] === undefined) this.rates[key] = 0;
   }
 
@@ -126,9 +135,11 @@ export function useSerial() {
   const [networkConnected, setNetworkConnected] = useState(false); // True if WS relay is active
   
   const [telemetry, setTelemetry] = useState({
+    telemetry_period: 0,
     sysStatus: null,
     imu: null,
     odometry: null,
+    appConfig: null,
   });
   const [frequencies, setFrequencies] = useState({});
   const [log, setLog] = useState([]);
@@ -141,6 +152,8 @@ export function useSerial() {
   const freqIntervalRef = useRef(null);
   const bcRef = useRef(null);
   const wsRef = useRef(null);
+  const lastTeleTickRef = useRef(0);
+  const lastTopicTicksRef = useRef({});
   const lastHeartbeatRef = useRef(0);
 
   const addLog = useCallback((dir, topicId, raw, parsed) => {
@@ -156,6 +169,10 @@ export function useSerial() {
 
   const handleFrame = useCallback((topicId, data, isShared = false) => {
     freqTrackerRef.current.tick(topicId);
+    const now = Date.now();
+    lastTeleTickRef.current = now;
+    lastTopicTicksRef.current[`0x${topicId.toString(16).padStart(2, '0')}`] = now;
+    
     const parsed = parsePayload(topicId, data);
     if (!parsed) return;
 
@@ -181,6 +198,9 @@ export function useSerial() {
         break;
       case TOPIC_IDS.TX.ODOMETRY:
         setTelemetry(prev => ({ ...prev, odometry: parsed }));
+        break;
+      case TOPIC_IDS.TX.APP_CONFIG_DATA:
+        setTelemetry(prev => ({ ...prev, appConfig: parsed }));
         break;
     }
   }, [addLog]);
@@ -386,7 +406,8 @@ export function useSerial() {
     sendPacket,
     telemetry,
     frequencies,
-    linkActive: frequencies['0x81'] > 0,
+    lastTopicTicks: lastTopicTicksRef.current,
+    linkActive: (Date.now() - lastTeleTickRef.current) < ((telemetry.appConfig?.sys_vars_period || 1000) + 1000),
     log,
   };
 }

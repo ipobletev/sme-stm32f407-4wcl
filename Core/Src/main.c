@@ -33,6 +33,7 @@
 #include "bsp_mcu_sensors.h"
 #include "bsp_battery.h"
 #include "bsp_console.h"
+#include "app_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -112,6 +113,12 @@ int main(void)
   MX_TIM11_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* App Configuration Init */
+  AppConfig_Init();
+  
+  /* Initialize Robot State from defaults */
+  RobotState_Init();
+
   /* Post-Init Verification */
   if (HAL_ADC_GetState(&hadc1) == HAL_ADC_STATE_ERROR) {
       RobotState_SetErrorFlag(ERR_HAL_ADC);

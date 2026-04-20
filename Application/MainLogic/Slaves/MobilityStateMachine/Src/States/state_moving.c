@@ -3,7 +3,7 @@
 #include "robot_state.h"
 #include "debug_module.h"
 #include "kinematics.h"
-#include "config.h"
+#include "app_config.h"
 #include <math.h>
 
 #ifndef M_PI
@@ -51,7 +51,7 @@ void MobState_Moving_Run(void) {
     }
 
     /* 4. Convert linear velocity (m/s) to RPS: rps = v / (PI * D) */
-    float rps_conv = 1.0f / (M_PI * ROBOT_WHEEL_DIAMETER);
+    float rps_conv = 1.0f / (M_PI * AppConfig->wheel_diameter);
     
     /* 5. Set targets for individual PID controllers */
     /* Note: Right side motors (3 and 4) are physically flipped, hence the minus sign */

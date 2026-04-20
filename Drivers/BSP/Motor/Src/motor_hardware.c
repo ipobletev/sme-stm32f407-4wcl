@@ -1,6 +1,6 @@
 #include "motor_hardware.h"
 #include "main.h"
-#include "config.h"
+#include "app_config.h"
 #include <stdbool.h>
 
 /* Timer handles from tim.c */
@@ -177,10 +177,10 @@ int64_t BSP_Motor_Hardware_GetEncoderCount(uint8_t motor_idx)
     
     int32_t invert = 1;
     switch(motor_idx) {
-        case 0: invert = MOTOR1_INVERT; break;
-        case 1: invert = MOTOR2_INVERT; break;
-        case 2: invert = MOTOR3_INVERT; break;
-        case 3: invert = MOTOR4_INVERT; break;
+        case 0: invert = AppConfig->motor1_invert; break;
+        case 1: invert = AppConfig->motor2_invert; break;
+        case 2: invert = AppConfig->motor3_invert; break;
+        case 3: invert = AppConfig->motor4_invert; break;
         default: break;
     }
     
@@ -194,7 +194,7 @@ int64_t BSP_Motor_Hardware_GetEncoderCount(uint8_t motor_idx)
 
 static void BSP_motor1_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
-    speed *= MOTOR1_INVERT;
+    speed *= AppConfig->motor1_invert;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR1_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR1_FI_CHANNEL, speed);
@@ -209,7 +209,7 @@ static void BSP_motor1_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor2_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
-    speed *= MOTOR2_INVERT;
+    speed *= AppConfig->motor2_invert;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR2_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim1, MOTOR2_FI_CHANNEL, speed);
@@ -224,7 +224,7 @@ static void BSP_motor2_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor3_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
-    speed *= MOTOR3_INVERT;
+    speed *= AppConfig->motor3_invert;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim9, MOTOR3_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim9, MOTOR3_FI_CHANNEL, speed);
@@ -239,7 +239,7 @@ static void BSP_motor3_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 
 static void BSP_motor4_set_pulse(EncoderMotorObjectTypeDef *self, int speed)
 {
-    speed *= MOTOR4_INVERT;
+    speed *= AppConfig->motor4_invert;
     if(speed > 0) {
         __HAL_TIM_SET_COMPARE(&htim10, MOTOR4_BI_CHANNEL, 0);
         __HAL_TIM_SET_COMPARE(&htim11, MOTOR4_FI_CHANNEL, speed);

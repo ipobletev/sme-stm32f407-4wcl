@@ -4,14 +4,13 @@
 #include <string.h>
 #include <stdio.h>
 #include "app_rtos.h"
+#include "app_config.h"
 
 #define DEBUG_BUF_SIZE 256
 
 void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
     // Check global log level
-#ifdef APP_DEBUG_LEVEL
-    if (level > APP_DEBUG_LEVEL) return;
-#endif
+    if (level > AppConfig->debug_level) return;
 
     char buffer[DEBUG_BUF_SIZE];
     memset(buffer, 0, DEBUG_BUF_SIZE);

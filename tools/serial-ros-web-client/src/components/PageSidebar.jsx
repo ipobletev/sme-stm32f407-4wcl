@@ -1,4 +1,4 @@
-import { LayoutDashboard, Wrench, LineChart, Network, AlertTriangle, Table2, Gamepad2 } from 'lucide-react';
+import { LayoutDashboard, Wrench, LineChart, Network, AlertTriangle, Table2, Gamepad2, Settings } from 'lucide-react';
 import { getActiveErrors } from '../utils/ErrorMapping';
 
 export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStatus }) {
@@ -9,6 +9,7 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
     { id: 'fsm', icon: Network, label: 'Logic Map' },
     { id: 'fsm-log', icon: Table2, label: 'State log' },
+    { id: 'settings', icon: Settings, label: 'Device Config' },
   ];
 
   const activeErrors = getActiveErrors(sysStatus?.errors);

@@ -15,6 +15,7 @@
 #include "debug_module.h"
 #include <string.h>
 #include "app_rtos.h"
+#include "app_config.h"
 
 #define LOG_TAG "SERIAL_ROS_MOD"
 
@@ -45,10 +46,10 @@ static void handle_autonomous(const AutonomousMsg_t *msg)
         RobotState_SetAutonomous(msg->is_autonomous);
 
         if (msg->is_autonomous) {
-            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_AUTO, SRC_UART3_ROS);
+            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_AUTO, SRC_EXT_CLIENT);
             LOG_INFO(LOG_TAG, "Autonomous ON (Direct Handover)\r\n");
         } else {
-            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_UART3_ROS);
+            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_EXT_CLIENT);
             LOG_INFO(LOG_TAG, "Autonomous OFF -> Manual Takeover\r\n");
         }
     }
@@ -129,7 +130,7 @@ static void handle_arm_goal(const ArmGoalMsg_t *msg)
 static void handle_sys_event(const SysEventMsg_t *msg)
 {
     SystemEvent_t event;
-    bool valid = true;
+    bool event_to_process = true;
 
     switch (msg->event_id) {
         case SYS_EVENT_START:   event = EVENT_SUPERVISOR_START;       break;
@@ -138,16 +139,50 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         case SYS_EVENT_RESUME:  event = EVENT_SUPERVISOR_RESUME;      break;
         case SYS_EVENT_RESET:   event = EVENT_SUPERVISOR_RESET;       break;
         case SYS_EVENT_FAULT:   event = EVENT_SUPERVISOR_ERROR;       break;
-        case SYS_EVENT_TEST:    event = EVENT_SUPERVISOR_TESTING;        break;
+        case SYS_EVENT_TEST:    event = EVENT_SUPERVISOR_TESTING;     break;
         default:
             LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
-            valid = false;
+            event_to_process=false;
             break;
     }
 
-    if (valid) {
-        // LOG_INFO(LOG_TAG, "SysEvent 0x%02X -> FSM event %d\r\n", msg->event_id, event);
-        Supervisor_ProcessEvent(event, SRC_UART3_ROS);
+    if (event_to_process) {
+        Supervisor_ProcessEvent(event, SRC_EXT_CLIENT);
+    }
+}
+
+/**
+ * @brief [TOPIC 0x08] Handle remote configuration set.
+ *
+ * @param msg Pointer to the parsed SetConfigMsg_t payload.
+ */
+static void handle_set_config(const SetConfigMsg_t *msg)
+{
+    AppConfig_UpdateParam(msg->id, msg->value);
+    
+    /* Broadcast back the full current config to keep all clients in sync (RAM state) */
+    AppConfig_t* config = AppConfig_Get();
+    SerialRos_EnqueueTx(TOPIC_ID_APP_CONFIG_DATA, config, sizeof(AppConfig_t));
+}
+
+/**
+ * @brief [TOPIC 0x09] Handle remote configuration get request.
+ *
+ * Triggers a full dump of the current AppConfig_t to the client.
+ */
+static void handle_get_config(void)
+{
+    /* REFRESH logic: Load from Flash to RAM before sending so the client gets 
+     * the persisted values (Discarding unsaved RAM changes). */
+#ifdef PESISTENT_CONFIG
+    AppConfig_ReloadFromFlash();
+#endif
+    AppConfig_t* config = AppConfig_Get();
+    /* We send the raw struct since it is packed and contains all active fields after magic */
+    if (SerialRos_EnqueueTx(TOPIC_ID_APP_CONFIG_DATA, config, sizeof(AppConfig_t))) {
+        LOG_INFO(LOG_TAG, "Config Dump Sent to Client (%d bytes)\r\n", (int)sizeof(AppConfig_t));
+    } else {
+        LOG_ERROR(LOG_TAG, "Failed to Enqueue Config Dump (%d bytes). Buffer too small?\r\n", (int)sizeof(AppConfig_t));
     }
 }
 
@@ -275,6 +310,21 @@ void SerialRos_ProcessPacket(uint8_t *buffer, uint16_t size)
             }
             break;
 
+        case TOPIC_ID_SET_CONFIG:
+            if (len >= sizeof(SetConfigMsg_t)) {
+                handle_set_config((const SetConfigMsg_t *)payload);
+            }
+            break;
+
+        case TOPIC_ID_GET_CONFIG:
+            handle_get_config();
+            break;
+            
+        case TOPIC_ID_SAVE_CONFIG:
+            LOG_INFO(LOG_TAG, "Command: SAVE CONFIG to Flash\r\n");
+            AppConfig_Save();
+            break;
+
         default:
             LOG_WARNING(LOG_TAG, "Unknown topic ID 0x%02X", msg_id);
             break;
@@ -306,10 +356,10 @@ uint16_t SerialRos_BuildTelemetryPacket(uint8_t *out_buffer, uint16_t max_size)
 
 bool SerialRos_EnqueueTx(uint8_t topic_id, void *msg, uint8_t len)
 {
-    /* 64 byte packet: 4 header + 58 max payload + 2 CRC */
-    if (len > 58) return false;
-
     SerialRos_Packet_t packet;
+    /* Max payload = Total buffer - (4 byte header + 2 byte CRC) */
+    if (len > (sizeof(packet.data) - 6)) return false;
+
     packet.data[0] = SERIAL_ROS_SYNC1;
     packet.data[1] = SERIAL_ROS_SYNC2;
     packet.data[2] = topic_id;

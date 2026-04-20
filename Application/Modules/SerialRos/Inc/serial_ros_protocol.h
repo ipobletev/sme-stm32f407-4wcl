@@ -17,11 +17,16 @@
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
 #define TOPIC_ID_ACTUATOR_PWM   0x06    /* Rx: Raw actuator PWM control (ID + Pulse) */
 #define TOPIC_ID_ACTUATOR_VEL   0x07    /* Rx: Raw actuator Velocity control (ID + RPS) */
+#define TOPIC_ID_SET_CONFIG     0x08    /* Rx: Set single parameter */
+#define TOPIC_ID_GET_CONFIG     0x09    /* Rx: Request full config dump */
+#define TOPIC_ID_SAVE_CONFIG    0x0A    /* Rx: Save all current config to Flash */
 
 /* Tx (Virtual Published) Topics */
 #define TOPIC_ID_SYS_STATUS     0x81    /* Tx: System state, health, and battery */
 #define TOPIC_ID_IMU            0x82    /* Tx: IMU data */
 #define TOPIC_ID_ODOMETRY       0x83    /* Tx: Odometry data */
+#define TOPIC_ID_APP_CONFIG_DATA 0x84   /* Tx: Full configuration structure */
+
 
 /* --- sys_event payload IDs (maps event_id field to Supervisor FSM events) --- */
 typedef enum {
@@ -32,6 +37,7 @@ typedef enum {
     SYS_EVENT_RESET  = 0x05,
     SYS_EVENT_FAULT  = 0x06,
     SYS_EVENT_TEST   = 0x07,
+    SYS_EVENT_SAVE   = 0x08,
 } SysEventId_t;
 
 /* --- Message Structures (Packed) --- */
@@ -86,6 +92,15 @@ typedef struct {
     uint8_t mobility_mode;  /* 0: Direct, 1: DiffDrive, 2: Ackermann, 3: Mecanum */
     uint8_t is_autonomous;  /* 0: Manual, 1: Auto */
 } SysConfigMsg_t;
+
+/**
+ * @brief Message: set_config [Topic 0x08]
+ * Update a specific parameter in RAM.
+ */
+typedef struct {
+    uint8_t  id;        /* Parameter ID (AppConfigParamId_t) */
+    float    value;     /* New value */
+} SetConfigMsg_t;
 
 /**
  * @brief Message: ImuMsg [Topic 0x82]
@@ -147,7 +162,7 @@ static inline uint16_t SerialRos_CRC16(const uint8_t *data, uint16_t len) {
  * @brief Container for SerialRos packets in RTOS queues
  */
 typedef struct {
-    uint8_t data[64];
+    uint8_t data[128];
     uint8_t size;
 } SerialRos_Packet_t;
 

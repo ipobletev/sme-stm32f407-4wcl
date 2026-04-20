@@ -1,9 +1,9 @@
 #include "kinematics.h"
-#include "config.h"
+#include "app_config.h"
 
 void Kinematics_Mecanum(float vx, float vy, float az, float *v_wheels) {
     /* Standard Mecanum Kinematics */
-    float l_plus_w = ROBOT_WHEELBASE_LENGTH + ROBOT_SHAFT_WIDTH;
+    float l_plus_w = AppConfig->wheelbase_length + AppConfig->shaft_width;
 
     v_wheels[0] = vx - vy - l_plus_w * az;
     v_wheels[1] = vx + vy - l_plus_w * az;

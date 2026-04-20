@@ -36,10 +36,11 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/BSP/SerialRos/Inc
     Drivers/BSP/IMU/Inc
     Drivers/BSP/Motor/Inc
+    Drivers/BSP/FlashStorage/Inc
     Application/Modules/MotorControl/Inc
     Application/Modules/SerialRos/Inc
     Application/Modules/ConsoleDebug/Inc
-    Application/Config
+    Application/Config/Inc
 )
 
 # Custom Application Source Files

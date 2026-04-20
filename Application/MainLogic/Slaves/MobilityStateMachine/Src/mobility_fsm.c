@@ -6,8 +6,22 @@
 #include "debug_module.h"
 #include "osal.h"
 #include "config.h"
+#include "app_config.h"
 #include <stdio.h>
 #include <math.h>
+
+#define LOG_TAG "MOBILITY"
+
+/**
+ * @brief Callback for configuration changes.
+ * This refreshes the internal motor parameters from the new macro values.
+ */
+static void FSM_Mobility_ConfigCallback(void) {
+    LOG_INFO(LOG_TAG, "Refreshing motor parameters from new configuration...\r\n");
+    for (int i = 0; i < 4; i++) {
+        encoder_motor_refresh_config(motors[i]);
+    }
+}
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
@@ -78,6 +92,7 @@ void FSM_Mobility_TransitionToState(MobilityState_t newState) {
 }
 
 void FSM_Mobility_Init(void) {    
+    AppConfig_RegisterCallback(FSM_Mobility_ConfigCallback);
     LOG_INFO(LOG_TAG, "FSM Logic Initialized.\r\n");
 }
 

@@ -1,5 +1,5 @@
 #include "encoder_motor.h"
-#include "config.h"
+#include "app_config.h"
 #include "debug_module.h"
 #include "motor_hardware.h"
 #include "motor_param.h"
@@ -43,17 +43,17 @@ void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, fl
         pulse = self->current_pulse + self->pid_controller.output;
     } else {
         /* Open Loop: Simple linear mapping for debugging/testing */
-        pulse = (self->target_rps / self->rps_limit) * MOTOR_PWM_MAX;
+        pulse = (self->target_rps / self->rps_limit) * AppConfig->motor_pwm_max;
     }
     
     /* Clamp output to timer range (-MOTOR_PWM_MAX to MOTOR_PWM_MAX) */
-    if (pulse > MOTOR_PWM_MAX) pulse = MOTOR_PWM_MAX;
-    if (pulse < -MOTOR_PWM_MAX) pulse = -MOTOR_PWM_MAX;
+    if (pulse > AppConfig->motor_pwm_max) pulse = AppConfig->motor_pwm_max;
+    if (pulse < -AppConfig->motor_pwm_max) pulse = -AppConfig->motor_pwm_max;
     
     /* Apply deadband if necessary (approx +/- 1000 for 16-bit range) */
     float output_pulse = pulse;
     if (self->pid_controller.set_point == 0) {
-        if (output_pulse < MOTOR_PULSE_DEADZONE && output_pulse > -MOTOR_PULSE_DEADZONE) {
+        if (output_pulse < AppConfig->motor_pulse_deadzone && output_pulse > -AppConfig->motor_pulse_deadzone) {
             output_pulse = 0;
             pulse = 0; /* Reset incremental accumulator to stop the whine */
         }
@@ -101,10 +101,17 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self)
     self->target_rps = 0;
     self->current_pulse = 0;
     self->ticks_overflow = 0; 
-    self->ticks_per_circle = MOTOR_TICKS_PER_CIRCLE; /* Default for common motors */
-    self->rps_limit = MOTOR_RPS_LIMIT;
+    self->ticks_per_circle = AppConfig->motor_ticks_per_circle; /* Default for common motors */
+    self->rps_limit = AppConfig->motor_rps_limit;
     pid_controller_init(&self->pid_controller, 0, 0, 0);
 }
+
+void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self) {
+    self->ticks_per_circle = AppConfig->motor_ticks_per_circle;
+    self->rps_limit = AppConfig->motor_rps_limit;
+    /* Note: If we had global PID gains, we would update them here too */
+}
+
 
 bool encoder_motor_init_hw_system(EncoderMotorObjectTypeDef *motors[4])
 {

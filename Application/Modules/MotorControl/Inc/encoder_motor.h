@@ -35,6 +35,7 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t new_c
 void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, float period);
 void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps);
 void encoder_motor_brake(EncoderMotorObjectTypeDef *self);
+void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self);
 
 /**
  * @brief High-level hardware initialization for the motor system

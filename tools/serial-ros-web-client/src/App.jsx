@@ -13,7 +13,8 @@ import ActuatorControl from './components/ActuatorControl';
 import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
 import OperatorControl from './components/OperatorControl';
-import { Activity, Power, Gamepad2 } from 'lucide-react';
+import ConfigPanel from './components/ConfigPanel';
+import { Activity, Power, Gamepad2, Settings } from 'lucide-react';
 import './index.css';
 
 const TOPIC_LABELS = {
@@ -22,19 +23,22 @@ const TOPIC_LABELS = {
   '0x83': 'odometry',
 };
 
-function FrequencyBar({ frequencies }) {
+function FrequencyBar({ frequencies, lastTopicTicks }) {
   const topics = ['0x81', '0x82', '0x83'];
+  const now = Date.now();
 
   return (
     <div className="frequency-bar">
       {topics.map(tid => {
         const hz = frequencies[tid] || 0;
-        const active = hz > 0;
+        const lastTick = lastTopicTicks?.[tid] || 0;
+        const active = (now - lastTick) < 5000;
+        
         return (
           <div className="freq-chip" data-active={active ? 'true' : 'false'} key={tid}>
             <Activity 
               size={12} 
-              className={active ? 'icon-pulse' : ''}
+              className={hz > 0 ? 'icon-pulse' : ''}
               style={{ color: active ? 'var(--accent-cyan)' : 'var(--accent-rose)' }} 
             />
             <span className="topic-name">{TOPIC_LABELS[tid] || tid}</span>
@@ -42,7 +46,7 @@ function FrequencyBar({ frequencies }) {
               className="freq-value" 
               style={{ color: active ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}
             >
-              {hz}
+              {hz.toFixed(1)}
             </span>
             <span className="freq-unit">Hz</span>
           </div>
@@ -55,7 +59,7 @@ function FrequencyBar({ frequencies }) {
 export default function App() {
   const { 
     connected, isMaster, connect, disconnect, sendPacket, 
-    telemetry, frequencies, linkActive, log 
+    telemetry, frequencies, lastTopicTicks, linkActive, log 
   } = useSerial();
   const history = useTelemetryHistory(telemetry, 50);
   const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
@@ -88,7 +92,7 @@ export default function App() {
         
         <div className="app-layout">
           {/* Frequency bar — full width */}
-          <FrequencyBar frequencies={frequencies} />
+          <FrequencyBar frequencies={frequencies} lastTopicTicks={lastTopicTicks} />
 
           {activeTab === 'dashboard' ? (
             <>
@@ -139,6 +143,14 @@ export default function App() {
               connected={connected} 
               sysStatus={telemetry.sysStatus} 
             />
+          ) : activeTab === 'settings' ? (
+            <div className="settings-view" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
+              <ConfigPanel 
+                appConfig={telemetry.appConfig} 
+                sendPacket={sendPacket} 
+                connected={connected} 
+              />
+            </div>
           ) : (
             <div className="empty-state">
               <p>Unknown tab: {activeTab}</p>
