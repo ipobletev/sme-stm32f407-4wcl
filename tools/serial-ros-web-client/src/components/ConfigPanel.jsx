@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2 } from 'lucide-react';
+import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2, Send } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 const PARAM_GROUPS = [
@@ -60,14 +60,20 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
 
   const handleFetchConfig = () => {
     sendPacket(buildPacket(TOPIC_IDS.RX.GET_CONFIG));
+    setPendingChanges({});
   };
 
-  const handleUpdateParam = (id, key, value) => {
-    // Send single param packet to robot (Update RAM)
+  const handleLocalParamChange = (key, value) => {
+    // Update only local UI state
+    setLocalConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSendParam = (id, key) => {
+    const value = localConfig[key];
+    // Actually send to robot RAM
     sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(id, parseFloat(value))));
     
-    // Update local state temporarily
-    setLocalConfig(prev => ({ ...prev, [key]: value }));
+    // Mark as pending for Flash save
     setPendingChanges(prev => ({ ...prev, [key]: true }));
   };
 
@@ -83,8 +89,10 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
     if (!appConfig) return;
     const originalValue = appConfig[key];
     
-    // Sync robot RAM back to original value
-    sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(id, originalValue)));
+    // If the value was already in RAM (pending), sync robot RAM back to original value
+    if (pendingChanges[key]) {
+      sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(id, originalValue)));
+    }
     
     // Update local UI
     setLocalConfig(prev => ({ ...prev, [key]: originalValue }));
@@ -173,7 +181,7 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
                       {p.type === 'select' ? (
                         <select 
                           value={localConfig[p.key]} 
-                          onChange={(e) => handleUpdateParam(p.id, p.key, e.target.value)}
+                          onChange={(e) => handleLocalParamChange(p.key, e.target.value)}
                         >
                           {p.options.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -182,7 +190,7 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
                       ) : p.type === 'boolean' ? (
                         <button 
                           className={`toggle ${localConfig[p.key] ? 'active' : ''}`}
-                          onClick={() => handleUpdateParam(p.id, p.key, localConfig[p.key] ? 0 : 1)}
+                          onClick={() => handleLocalParamChange(p.key, localConfig[p.key] ? 0 : 1)}
                         >
                           {localConfig[p.key] ? 'Enabled' : 'Disabled'}
                         </button>
@@ -193,12 +201,19 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
                           step={p.step || 1}
                           min={p.min}
                           max={p.max}
-                          onChange={(e) => handleUpdateParam(p.id, p.key, e.target.value)}
+                          onChange={(e) => handleLocalParamChange(p.key, e.target.value)}
                         />
                       )}
                       
                       {isDirty(p.key) && (
-                        <>
+                        <div className="param-actions">
+                          <button 
+                            className="btn-send" 
+                            title="Send to Robot RAM"
+                            onClick={() => handleSendParam(p.id, p.key)}
+                          >
+                            <Send size={12} />
+                          </button>
                           <button 
                             className="btn-revert" 
                             title="Revert to fetched value"
@@ -207,7 +222,7 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
                             <Undo2 size={12} />
                           </button>
                           <div className="dirty-dot" />
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
