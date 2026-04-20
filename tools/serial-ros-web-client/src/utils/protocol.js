@@ -38,6 +38,7 @@ export const TOPIC_IDS = {
     IMU: 0x82,
     ODOMETRY: 0x83,
     APP_CONFIG_DATA: 0x84,
+    PID_DEBUG: 0x85,
   }
 };
 
@@ -148,6 +149,13 @@ export function parsePayload(topicId, data) {
         };
         console.log(`[Protocol] Config Parse Success, Magic: 0x${result.magic.toString(16)}`);
         return result;
+      
+      case TOPIC_IDS.TX.PID_DEBUG: // 0x85
+        return {
+          targetRps:   [readFloat32(view, 0),  readFloat32(view, 4),  readFloat32(view, 8),  readFloat32(view, 12)],
+          measuredRps: [readFloat32(view, 16), readFloat32(view, 20), readFloat32(view, 24), readFloat32(view, 28)],
+          pwmOutput:   [readFloat32(view, 32), readFloat32(view, 36), readFloat32(view, 40), readFloat32(view, 44)]
+        };
 
       default:
         return null;

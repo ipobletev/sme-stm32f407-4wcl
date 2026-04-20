@@ -59,9 +59,11 @@ void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, fl
             pulse = 0; /* Reset incremental accumulator to stop the whine */
         }
     }
-    LOG_DEBUG("MOTOR", "Motor %d: Target RPS: %.2f, Current RPS: %.2f, Pulse: %d\r\n", motor_id, self->target_rps, self->rps, (int)output_pulse);
     self->set_pulse(self, (int)output_pulse);
     self->current_pulse = pulse;
+    
+    /* Update state for tuning telemetry */
+    RobotState_SetPIDDebug(self->motor_id, self->target_rps, self->rps, output_pulse);
 }
 
 /**

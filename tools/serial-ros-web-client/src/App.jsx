@@ -14,17 +14,19 @@ import LogPanel from './components/LogPanel';
 import ErrorLogPanel from './components/ErrorLogPanel';
 import OperatorControl from './components/OperatorControl';
 import ConfigPanel from './components/ConfigPanel';
-import { Activity, Power, Gamepad2, Settings } from 'lucide-react';
+import PidTuner from './components/PidTuner';
+import { Activity, Power, Gamepad2, Settings, Target } from 'lucide-react';
 import './index.css';
 
 const TOPIC_LABELS = {
   '0x81': 'sys_status',
   '0x82': 'imu',
   '0x83': 'odometry',
+  '0x85': 'pid_debug',
 };
 
 function FrequencyBar({ frequencies, lastTopicTicks }) {
-  const topics = ['0x81', '0x82', '0x83'];
+  const topics = ['0x81', '0x82', '0x83', '0x85'];
   const now = Date.now();
 
   return (
@@ -151,6 +153,13 @@ export default function App() {
                 connected={connected} 
               />
             </div>
+          ) : activeTab === 'pid-tuner' ? (
+            <PidTuner 
+              history={history} 
+              appConfig={telemetry.appConfig} 
+              sendPacket={sendPacket} 
+              connected={connected} 
+            />
           ) : (
             <div className="empty-state">
               <p>Unknown tab: {activeTab}</p>

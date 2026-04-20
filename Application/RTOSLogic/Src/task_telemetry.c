@@ -30,6 +30,7 @@ void StartTelemetryTask(void *argument) {
     uint32_t last_imu_tick = 0;
     uint32_t last_odom_tick = 0;
     uint32_t last_sys_tick = 0;
+    uint32_t last_pid_tick = 0;
     uint32_t cycle_counter = 0;
 
     for (;;) {
@@ -74,6 +75,29 @@ void StartTelemetryTask(void *argument) {
             odom_msg.enc_4     = RobotState_4wcl.Telemetry.enc_4;
             taskEXIT_CRITICAL();
             SerialRos_EnqueueTx(TOPIC_ID_ODOMETRY, &odom_msg, sizeof(OdometryMsg_t));
+        }
+        
+        /* --- 2.1 PID DEBUG TOPIC (50Hz - Every 20ms) --- */
+        if (current_tick - last_pid_tick >= 20) {
+            last_pid_tick = current_tick;
+            PidDebugMsg_t pid_msg;
+            taskENTER_CRITICAL();
+            pid_msg.target_rps[0]   = RobotState_4wcl.Telemetry.target_rps_1;
+            pid_msg.target_rps[1]   = RobotState_4wcl.Telemetry.target_rps_2;
+            pid_msg.target_rps[2]   = RobotState_4wcl.Telemetry.target_rps_3;
+            pid_msg.target_rps[3]   = RobotState_4wcl.Telemetry.target_rps_4;
+            
+            pid_msg.measured_rps[0] = RobotState_4wcl.Telemetry.measured_rps_1;
+            pid_msg.measured_rps[1] = RobotState_4wcl.Telemetry.measured_rps_2;
+            pid_msg.measured_rps[2] = RobotState_4wcl.Telemetry.measured_rps_3;
+            pid_msg.measured_rps[3] = RobotState_4wcl.Telemetry.measured_rps_4;
+            
+            pid_msg.pwm_output[0]   = RobotState_4wcl.Telemetry.pwm_output_1;
+            pid_msg.pwm_output[1]   = RobotState_4wcl.Telemetry.pwm_output_2;
+            pid_msg.pwm_output[2]   = RobotState_4wcl.Telemetry.pwm_output_3;
+            pid_msg.pwm_output[3]   = RobotState_4wcl.Telemetry.pwm_output_4;
+            taskEXIT_CRITICAL();
+            SerialRos_EnqueueTx(TOPIC_ID_PID_DEBUG, &pid_msg, sizeof(PidDebugMsg_t));
         }
 
         /* --- 3. SYSTEM STATUS TOPIC & SENSORS --- */

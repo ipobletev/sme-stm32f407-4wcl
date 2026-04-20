@@ -465,6 +465,28 @@ void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
     }
 }
 
+void RobotState_SetPIDDebug(uint8_t motor_id, float target, float measured, float pwm) {
+    if (motor_id < 1 || motor_id > 4) return;
+    
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        switch(motor_id) {
+            case 1: RobotState_4wcl.Telemetry.target_rps_1 = target; RobotState_4wcl.Telemetry.measured_rps_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
+            case 2: RobotState_4wcl.Telemetry.target_rps_2 = target; RobotState_4wcl.Telemetry.measured_rps_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
+            case 3: RobotState_4wcl.Telemetry.target_rps_3 = target; RobotState_4wcl.Telemetry.measured_rps_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
+            case 4: RobotState_4wcl.Telemetry.target_rps_4 = target; RobotState_4wcl.Telemetry.measured_rps_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
+        }
+    } else {
+        taskENTER_CRITICAL();
+        switch(motor_id) {
+            case 1: RobotState_4wcl.Telemetry.target_rps_1 = target; RobotState_4wcl.Telemetry.measured_rps_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
+            case 2: RobotState_4wcl.Telemetry.target_rps_2 = target; RobotState_4wcl.Telemetry.measured_rps_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
+            case 3: RobotState_4wcl.Telemetry.target_rps_3 = target; RobotState_4wcl.Telemetry.measured_rps_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
+            case 4: RobotState_4wcl.Telemetry.target_rps_4 = target; RobotState_4wcl.Telemetry.measured_rps_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
+        }
+        taskEXIT_CRITICAL();
+    }
+}
+
 
 void RobotState_SetMotorTestCommand(uint8_t id, float value, uint8_t use_velocity) {
     if (id >= 4) return;

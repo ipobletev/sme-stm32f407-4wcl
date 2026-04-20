@@ -1,4 +1,4 @@
-import { LayoutDashboard, Wrench, LineChart, Network, AlertTriangle, Table2, Gamepad2, Settings } from 'lucide-react';
+import { LayoutDashboard, Wrench, LineChart, Network, AlertTriangle, Table2, Gamepad2, Settings, Target } from 'lucide-react';
 import { getActiveErrors } from '../utils/ErrorMapping';
 
 export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStatus }) {
@@ -6,6 +6,7 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'operator-control', icon: Gamepad2, label: 'Operator Control' },
     { id: 'actuator-tool', icon: Wrench, label: 'Actuator Tool' },
+    { id: 'pid-tuner', icon: Target, label: 'PID Tuner' },
     { id: 'graphs', icon: LineChart, label: 'Real-time Graphs' },
     { id: 'fsm', icon: Network, label: 'Logic Map' },
     { id: 'fsm-log', icon: Table2, label: 'State log' },

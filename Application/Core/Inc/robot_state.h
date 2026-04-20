@@ -77,6 +77,10 @@ typedef struct {
         float measured_rps_2;
         float measured_rps_3;
         float measured_rps_4;
+        
+        /* PID Debug */
+        float target_rps_1, target_rps_2, target_rps_3, target_rps_4;
+        float pwm_output_1, pwm_output_2, pwm_output_3, pwm_output_4;
 
         /* Arm Feedback */
         float arm_j1_pos;
@@ -165,6 +169,7 @@ void RobotState_ResetTestCommands(void);
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);
 void RobotState_SetMeasuredVelocity(float linear_x, float angular_z);
 void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4);
+void RobotState_SetPIDDebug(uint8_t motor_id, float target, float measured, float pwm);
 
 /* IMU Setters */
 void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea);

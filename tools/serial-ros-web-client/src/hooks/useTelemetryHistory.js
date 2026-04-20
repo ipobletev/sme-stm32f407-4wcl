@@ -13,10 +13,10 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
     if (now - lastUpdateRef.current < 200) return;
     lastUpdateRef.current = now;
 
-    const { sysStatus, imu, odometry } = telemetry;
+    const { sysStatus, imu, odometry, pidDebug } = telemetry;
     
     // We only add a point if we have at least some data
-    if (!sysStatus && !imu && !odometry) return;
+    if (!sysStatus && !imu && !odometry && !pidDebug) return;
 
     const newPoint = {
       timestamp: now,
@@ -48,11 +48,17 @@ export function useTelemetryHistory(telemetry, frequencies = {}, maxPoints = 50)
       enc2: odometry?.encoders?.[1] || 0,
       enc3: odometry?.encoders?.[2] || 0,
       enc4: odometry?.encoders?.[3] || 0,
+      
+      // PID Debug
+      pid_target:   pidDebug?.targetRps   || [0,0,0,0],
+      pid_measured: pidDebug?.measuredRps || [0,0,0,0],
+      pid_pwm:      pidDebug?.pwmOutput   || [0,0,0,0],
 
       // Frequencies (Hz)
       freq_sys: frequencies?.['0x81'] || 0,
       freq_imu: frequencies?.['0x82'] || 0,
       freq_odom: frequencies?.['0x83'] || 0,
+      freq_pid: frequencies?.['0x85'] || 0,
     };
 
     setHistory(prev => {

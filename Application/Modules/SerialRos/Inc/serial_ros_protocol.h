@@ -26,6 +26,7 @@
 #define TOPIC_ID_IMU            0x82    /* Tx: IMU data */
 #define TOPIC_ID_ODOMETRY       0x83    /* Tx: Odometry data */
 #define TOPIC_ID_APP_CONFIG_DATA 0x84   /* Tx: Full configuration structure */
+#define TOPIC_ID_PID_DEBUG      0x85    /* Tx: PID internal state for tuning */
 
 #define TX_BUFFER_SIZE          192
 
@@ -139,6 +140,15 @@ typedef struct {
     uint8_t mobility_mode;      /* 1-byte mobility mode (at offset 19) */
     /* float battery_current; */ /* Unsupported by hardware */
 } SystemStatusMsg_t;
+
+/**
+ * @brief Message: pid_debug [Topic 0x85]
+ */
+typedef struct {
+    float target_rps[4];
+    float measured_rps[4];
+    float pwm_output[4];
+} PidDebugMsg_t;
 
 #pragma pack(pop)
 

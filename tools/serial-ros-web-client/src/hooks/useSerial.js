@@ -140,6 +140,7 @@ export function useSerial() {
     imu: null,
     odometry: null,
     appConfig: null,
+    pidDebug: null,
   });
   const [frequencies, setFrequencies] = useState({});
   const [log, setLog] = useState([]);
@@ -201,6 +202,9 @@ export function useSerial() {
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
         setTelemetry(prev => ({ ...prev, appConfig: parsed }));
+        break;
+      case TOPIC_IDS.TX.PID_DEBUG:
+        setTelemetry(prev => ({ ...prev, pidDebug: parsed }));
         break;
     }
   }, [addLog]);

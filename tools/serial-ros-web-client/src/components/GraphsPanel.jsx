@@ -80,6 +80,13 @@ export default function GraphsPanel({ history }) {
       unit: ' Hz'
     },
     {
+      title: 'PID Debug Rate (Hz)',
+      icon: BarChart2,
+      color: 'var(--accent-indigo)',
+      dataKeys: [{ key: 'freq_pid', color: 'var(--accent-indigo)', name: 'PID Hz' }],
+      unit: ' Hz'
+    },
+    {
       title: 'Drive Kinematics (Velocity)',
       icon: Move,
       color: 'var(--accent-cyan)',
