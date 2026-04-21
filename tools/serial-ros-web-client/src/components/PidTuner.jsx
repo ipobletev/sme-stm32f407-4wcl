@@ -5,7 +5,7 @@ import {
 import { 
   Settings2, Play, CircleStop, Save, 
   Gauge, Zap, AlertCircle, Info, TrendingUp, Target,
-  Activity, ShieldCheck, Send, Power, RotateCcw, Download
+  Activity, ShieldCheck, Send, Power, RotateCcw, Download, Navigation, Cpu
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
 import './PidTuner.css';
@@ -136,19 +136,23 @@ export default function PidTuner({
   // Mapping history to chart-ready format
   const currentTelemetryData = useMemo(() => {
     if (!history) return [];
-    return history.map(p => ({
-      time: p.timeLabel,
-      ts: p.timestamp,
-      // Current motor
-      target: p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
-      measured: p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
-      pwm: p.pid_pwm?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
-      // Individual traces for 'ALL' mode
-      t1: p.pid_target?.[0], m1: p.pid_measured?.[0],
-      t2: p.pid_target?.[1], m2: p.pid_measured?.[1],
-      t3: p.pid_target?.[2], m3: p.pid_measured?.[2],
-      t4: p.pid_target?.[3], m4: p.pid_measured?.[3],
-    })).slice(-300);
+    return history.map(p => {
+      const target = p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
+      const measured = p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
+      return {
+        time: p.timeLabel,
+        ts: p.timestamp,
+        target,
+        measured,
+        error: target - measured,
+        pwm: p.pid_pwm?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
+        // Individual traces for 'ALL' mode
+        t1: p.pid_target?.[0], m1: p.pid_measured?.[0], e1: (p.pid_target?.[0] || 0) - (p.pid_measured?.[0] || 0),
+        t2: p.pid_target?.[1], m2: p.pid_measured?.[1], e2: (p.pid_target?.[1] || 0) - (p.pid_measured?.[1] || 0),
+        t3: p.pid_target?.[2], m3: p.pid_measured?.[2], e3: (p.pid_target?.[2] || 0) - (p.pid_measured?.[2] || 0),
+        t4: p.pid_target?.[3], m4: p.pid_measured?.[3], e4: (p.pid_target?.[3] || 0) - (p.pid_measured?.[3] || 0),
+      };
+    }).slice(-300);
   }, [history, selectedMotor]);
 
   useEffect(() => {
@@ -193,6 +197,11 @@ export default function PidTuner({
         if (idx90 === -1 && measuredValues[i] >= t90) idx90 = i;
     }
     const riseTime = (idx10 !== -1 && idx90 !== -1) ? (idx90 - idx10) : null;
+    
+    // Calculate Total Error (Integral of Absolute Error)
+    // Formula: Sum(|target - measured|) * dt
+    const rawTotalError = chartData.reduce((acc, p) => acc + Math.abs(p.target - p.measured), 0);
+    const iae = rawTotalError * 0.02; // Assuming 50Hz
 
     let status = 'good';
     let suggestion = 'Locked & Loaded';
@@ -220,7 +229,9 @@ export default function PidTuner({
         icon,
         peak: maxVal,
         riseTime: riseTime ? `${riseTime * 20}ms` : 'N/A', // assuming 50Hz (20ms/sample)
-        settling: Math.abs(error) < (target * 0.02) ? 'Stable' : 'Unstable'
+        settling: Math.abs(error) < (target * 0.02) ? 'Stable' : 'Unstable',
+        totalError: rawTotalError,
+        iae: iae
     };
   }, [chartData]);
 
@@ -254,6 +265,7 @@ export default function PidTuner({
                 kd: appConfig?.[`motor${activeMotorIdx + 1}_kd`],
                 overshoot: analysis.overshoot,
                 error: analysis.error,
+                iae: analysis.iae,
                 status: analysis.status,
                 data: [...persistentData] // Capture the raw data for export
             };
@@ -371,6 +383,18 @@ export default function PidTuner({
     setTestTimer(timer);
   };
 
+  const handleStartAutonomous = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Array.from(Encoders.autonomous(true))));
+  };
+
+  const handleReset = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Array.from(Encoders.sysEvent(SYS_EVENTS.RESET))));
+  };
+
+  const handleStartSystem = () => {
+    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Array.from(Encoders.sysEvent(SYS_EVENTS.START))));
+  };
+
   const downloadCsv = (filename, csvContent) => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -394,11 +418,12 @@ export default function PidTuner({
     csv += `KI,${entry.ki}\n`;
     csv += `KD,${entry.kd}\n`;
     csv += `Overshoot,${entry.overshoot?.toFixed(2)}%\n`;
-    csv += `Steady State Error,${entry.error?.toFixed(4)}\n\n`;
+    csv += `Steady State Error,${entry.error?.toFixed(4)}\n`;
+    csv += `Total Error (IAE),${((entry.data.reduce((acc, p) => acc + Math.abs(p.target - p.measured), 0)) * 0.02).toFixed(4)}\n\n`;
     
-    csv += "N,Timestamp,Target,Measured,PWM\n";
+    csv += "N,Timestamp,Target,Measured,Error,PWM\n";
     entry.data.forEach((p, idx) => {
-      csv += `${idx + 1},${p.ts},${p.target},${p.measured},${p.pwm}\n`;
+      csv += `${idx + 1},${p.ts},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm}\n`;
     });
 
     const filename = `pid_test_${entry.motor.replace(' ', '_')}_${entry.timestamp.replace(/[: ]/g, '-')}.csv`;
@@ -408,11 +433,11 @@ export default function PidTuner({
   const exportAllSectionsToCsv = () => {
     if (tuningHistory.length === 0) return;
     
-    let csv = "Section,N,Timestamp,Motor,KP,KI,KD,Target,Measured,PWM\n";
+    let csv = "Section,N,Timestamp,Motor,KP,KI,KD,Target,Measured,Error,PWM\n";
     tuningHistory.forEach((entry, idx) => {
       const sectionName = `Session_${tuningHistory.length - idx}`;
       entry.data.forEach((p, pIdx) => {
-        csv += `${sectionName},${pIdx + 1},${p.ts},${entry.motor},${entry.kp},${entry.ki},${entry.kd},${p.target},${p.measured},${p.pwm}\n`;
+        csv += `${sectionName},${pIdx + 1},${p.ts},${entry.motor},${entry.kp},${entry.ki},${entry.kd},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm}\n`;
       });
     });
 
@@ -499,24 +524,10 @@ export default function PidTuner({
         </div>
 
         <div className="status-control-dock">
-           {isTesting ? (
-             <button 
-                className="btn btn-sm btn-ghost" 
-                onClick={exitTesting}
-                style={{ color: 'var(--accent-rose)', borderColor: 'var(--accent-rose)' }}
-             >
-                <Power size={14} /> EXIT TESTING
-             </button>
-           ) : (
-             <button 
-                className={`btn btn-sm ${canEnterTest ? 'btn-primary' : 'btn-disabled'}`}
-                onClick={startTesting}
-                disabled={disabled || !canEnterTest}
-                title={!canEnterTest ? "System must be in MANUAL or AUTO mode to enable testing" : "Enable Testing Mode"}
-             >
-                <Power size={14} /> ENABLE TESTING
-             </button>
-           )}
+           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={14} color="var(--accent-emerald)" />
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>SYSTEM ACTIVE</span>
+           </div>
 
            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 8px' }}></div>
 
@@ -579,7 +590,7 @@ export default function PidTuner({
           </div>
 
           <div className="chart-container-box">
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData}>
                 <XAxis dataKey="time" hide />
                 <YAxis 
@@ -620,6 +631,35 @@ export default function PidTuner({
                 )}
               </LineChart>
             </ResponsiveContainer>
+
+            <div style={{ padding: '8px 0', borderTop: '1px dashed rgba(255,255,255,0.05)', marginTop: '8px' }}>
+               <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                  <XAxis dataKey="time" hide />
+                  <YAxis 
+                    stroke="#444" 
+                    fontSize={11} 
+                    tickFormatter={(v) => v.toFixed(2)}
+                    label={{ value: 'Error', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 10 }}
+                  />
+                  <Tooltip 
+                     contentStyle={{ background: 'rgba(10,14,23,0.9)', border: '1px solid #333', borderRadius: '8px', fontSize: '12px' }}
+                  />
+                  {selectedMotor === 'all' ? (
+                    <>
+                      <Line type="monotone" dataKey="e1" name="E1" stroke="var(--accent-cyan)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="e2" name="E2" stroke="var(--accent-emerald)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="e3" name="E3" stroke="var(--accent-amber)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="e4" name="E4" stroke="var(--accent-rose)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                    </>
+                  ) : (
+                    <Line type="monotone" dataKey="error" name="Tracking Error" stroke="var(--accent-rose)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  )}
+                  <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {analysis && (
@@ -656,6 +696,11 @@ export default function PidTuner({
                     <td>{Math.abs(analysis.error) < 0.05 ? '✅ Good' : '❌ Offset'}</td>
                   </tr>
                   <tr>
+                    <td>Total Error (IAE)</td>
+                    <td className="value-cell">{analysis.iae?.toFixed(3)}</td>
+                    <td>Score</td>
+                  </tr>
+                  <tr>
                     <td>Peak Measured</td>
                     <td className="value-cell">{analysis.peak?.toFixed(2)}</td>
                     <td>RPS</td>
@@ -667,12 +712,56 @@ export default function PidTuner({
         </div>
 
         {/* Controls Panel */}
-        <div className="tuner-card">
-          <div className="tuner-card-header">
-            <h3><Gauge size={16} color="var(--accent-violet)" /> Parameters</h3>
+        <div className="tuner-controls-column">
+          {/* New System Actions Card */}
+          <div className="tuner-card system-card" style={{ marginBottom: '16px' }}>
+            <div className="tuner-card-header">
+              <h3><Cpu size={16} color="var(--accent-emerald)" /> System Quick Actions</h3>
+            </div>
+            <div className="card-body" style={{ padding: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ gap: '8px' }}
+                  onClick={handleStartSystem}
+                  disabled={disabled}
+                >
+                  <Play size={14} /> START
+                </button>
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ gap: '8px', color: 'var(--accent-indigo)', background: 'rgba(255, 255, 255, 0.03)' }}
+                  onClick={handleStartAutonomous}
+                  disabled={disabled}
+                >
+                  <Navigation size={14} /> AUTONOMO
+                </button>
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ gap: '8px', color: 'var(--accent-rose)', background: 'rgba(255, 255, 255, 0.03)' }}
+                  onClick={handleReset}
+                  disabled={disabled}
+                >
+                  <RotateCcw size={14} /> RESET
+                </button>
+                <button 
+                  className={`btn ${isTesting ? 'btn-ghost' : (canEnterTest ? 'btn-primary' : 'btn-disabled')}`}
+                  style={{ gap: '8px', color: isTesting ? 'var(--accent-rose)' : 'inherit', borderColor: isTesting ? 'var(--accent-rose)' : 'inherit' }}
+                  onClick={isTesting ? exitTesting : startTesting}
+                  disabled={disabled || (!isTesting && !canEnterTest)}
+                >
+                  <Power size={14} /> {isTesting ? 'TEST ON' : 'TEST OFF'}
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="control-panel">
-            {(selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor]).map(mIdx => (
+
+          <div className="tuner-card">
+            <div className="tuner-card-header">
+              <h3><Gauge size={16} color="var(--accent-violet)" /> Parameters</h3>
+            </div>
+            <div className="control-panel">
+              {(selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor]).map(mIdx => (
               <div className="motor-param-group" key={mIdx}>
                 <div className="motor-group-tag">MOTOR {mIdx + 1} CONFIGURATION</div>
                 <GainSlider 
@@ -787,6 +876,7 @@ export default function PidTuner({
           </div>
         </div>
       </div>
+      </div>
 
       {/* Full-width History Log */}
       <div className="tuner-card history-card" style={{ marginTop: '24px' }}>
@@ -818,6 +908,7 @@ export default function PidTuner({
                 <th>MOTOR</th>
                 <th>PARAMETERS (P/I/D)</th>
                 <th>OVERSHOOT</th>
+                <th>TOTAL ERROR (IAE)</th>
                 <th>ERROR</th>
                 <th>STATUS</th>
                 <th className="action-cell">ACTION</th>
@@ -826,7 +917,7 @@ export default function PidTuner({
             <tbody>
               {tuningHistory.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     No tests recorded in this session. Click 'GO' to start capturing results.
                   </td>
                 </tr>
@@ -843,6 +934,7 @@ export default function PidTuner({
                     <td className={`value ${entry.overshoot > 10 ? 'bad' : 'good'}`}>
                       {entry.overshoot?.toFixed(1)}%
                     </td>
+                    <td className="value">{entry.iae?.toFixed(3)}</td>
                     <td className="value">{entry.error?.toFixed(3)}</td>
                     <td>
                       <div className={`status-pill ${entry.status}`}>
