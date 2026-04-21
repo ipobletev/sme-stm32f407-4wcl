@@ -17,10 +17,10 @@ void MobState_Testing_Run(void) {
         if (use_vel) {
             /* Velocity Mode: Use PID control */
             encoder_motor_set_speed(motors[i], val);
-            encoder_motor_control(i, motors[i], 0.020f);
+            encoder_motor_control(motors[i], 0.020f);
         } else {
-            /* PWM Mode: Direct hardware output */
-            motors[i]->set_pulse(motors[i], (int)val);
+            /* PWM Mode: Use unified output for telemetry sync */
+            encoder_motor_apply_pulse(motors[i], val);
             
             /* Sync motor object state to prevent jumps when returning to PID */
             motors[i]->target_rps = 0;

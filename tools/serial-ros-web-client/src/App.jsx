@@ -166,6 +166,8 @@ export default function App() {
               appConfig={telemetry.appConfig} 
               sendPacket={sendPacket} 
               connected={connected} 
+              sysStatus={telemetry.sysStatus}
+              onClear={clearHistory}
             />
           ) : (
             <div className="empty-state">

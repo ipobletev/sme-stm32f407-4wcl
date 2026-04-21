@@ -166,9 +166,11 @@ export function useSerial() {
   useEffect(() => {
     const teleInterval = setInterval(() => {
       setTelemetry(prev => {
-        // Only trigger re-render if data actually changed
-        // We do a shallow comparison check or just copy from buffer
-        return { ...telemetryBufferRef.current };
+        // Ensure pidDebug is included in the state update from buffer
+        return { 
+          ...telemetryBufferRef.current,
+          pidDebug: telemetryBufferRef.current.pidDebug ? { ...telemetryBufferRef.current.pidDebug } : null
+        };
       });
       setFrequencies({ ...frequenciesBufferRef.current });
     }, 50); // 20Hz UI Refresh (Plenty for humans, saves CPU/Heap)
@@ -245,16 +247,10 @@ export function useSerial() {
         break;
       case TOPIC_IDS.TX.ODOMETRY:
         telemetryBufferRef.current.odometry = parsed;
-        // Also update the measured part of pidDebug buffer
+        // The Odometry topic now includes full PID debug data
         telemetryBufferRef.current.pidDebug = {
-          ...(telemetryBufferRef.current.pidDebug || {}),
-          measuredRps: parsed.measuredRps
-        };
-        break;
-      case TOPIC_IDS.TX.PID_DEBUG:
-        telemetryBufferRef.current.pidDebug = {
-          ...(telemetryBufferRef.current.pidDebug || {}),
           targetRps: parsed.targetRps,
+          measuredRps: parsed.measuredRps,
           pwmOutput: parsed.pwmOutput
         };
         break;

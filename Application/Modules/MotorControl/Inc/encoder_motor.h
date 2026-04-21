@@ -34,9 +34,12 @@ struct EncoderMotorObject {
 
 void encoder_motor_object_init(EncoderMotorObjectTypeDef *self);
 void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t new_counter);
-void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, float period);
+void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period);
+void encoder_motor_pid_control(EncoderMotorObjectTypeDef *self, float period);
+void encoder_motor_open_loop_control(EncoderMotorObjectTypeDef *self);
 void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps);
 void encoder_motor_brake(EncoderMotorObjectTypeDef *self);
+void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse);
 void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self);
 
 /**

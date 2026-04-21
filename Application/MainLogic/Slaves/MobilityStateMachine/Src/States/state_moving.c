@@ -62,7 +62,7 @@ void MobState_Moving_Run(void) {
 
     /* Run Motors. Run PID loop (if ROBOT_STATE_DEFAULT_PID_ENABLED enabled) for each motor */
     for (int i = 0; i < 4; i++) {
-        encoder_motor_control(i, motors[i], 0.02f);
+        encoder_motor_control(motors[i], 0.02f);
     }
 }
 

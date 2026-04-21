@@ -27,43 +27,73 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t count
 }
 
 /**
- * @brief Motor velocity control PID loop
- * @param self Motor object
- * @param period Time step (s)
+ * @brief Public helper to finalize PWM output, handle deadzone and update telemetry.
  */
-void encoder_motor_control(uint8_t motor_id, EncoderMotorObjectTypeDef *self, float period) 
+void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse)
 {
-    float pulse = 0;
-    
-    if (RobotState_PIDIsEnabled()) {
-        /* Update incremental PID */
-        pid_controller_update(&self->pid_controller, self->rps, period);
-        
-        /* Calculate new PWM pulse (current + increment) */
-        pulse = self->current_pulse + self->pid_controller.output;
-    } else {
-        /* Open Loop: Simple linear mapping for debugging/testing */
-        pulse = (self->target_rps / self->rps_limit) * AppConfig->motor_pwm_max;
-    }
-    
     /* Clamp output to timer range (-MOTOR_PWM_MAX to MOTOR_PWM_MAX) */
     if (pulse > AppConfig->motor_pwm_max) pulse = AppConfig->motor_pwm_max;
     if (pulse < -AppConfig->motor_pwm_max) pulse = -AppConfig->motor_pwm_max;
     
-    /* Apply individual deadband if necessary */
     float output_pulse = pulse;
     
-    if (self->pid_controller.set_point == 0) {
-        if (output_pulse < self->deadzone && output_pulse > -self->deadzone) {
-            output_pulse = 0;
-            pulse = 0; /* Reset incremental accumulator to stop the whine */
-        }
+    /* Apply individual deadband if necessary */
+    if (output_pulse < self->deadzone && output_pulse > -self->deadzone) {
+        output_pulse = 0;
+        pulse = 0; /* Reset incremental accumulator to stop the whine */
     }
+    
     self->set_pulse(self, (int)output_pulse);
     self->current_pulse = pulse;
     
-    /* Update state for tuning telemetry */
-    RobotState_SetPIDDebug(self->motor_id, self->target_rps, self->rps, output_pulse);
+    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_rps, self->rps, output_pulse);
+
+}
+
+/**
+ * @brief Motor velocity control using PID loop
+ */
+void encoder_motor_pid_control(EncoderMotorObjectTypeDef *self, float period)
+{
+    /* If target is 0, we must stop driving the motor.
+       Incremental PID will freeze at its last PWM output if error reaches 0. */
+    if (self->target_rps == 0.0f) {
+        encoder_motor_brake(self);
+        return;
+    }
+
+    /* Update incremental PID */
+    pid_controller_update(&self->pid_controller, self->rps, period);
+    
+    /* Calculate new PWM pulse (current + increment) */
+    float pulse = self->current_pulse + self->pid_controller.output;
+    
+    encoder_motor_apply_pulse(self, pulse);
+}
+
+/**
+ * @brief Motor control using Open Loop (Linear RPS-to-PWM mapping)
+ */
+void encoder_motor_open_loop_control(EncoderMotorObjectTypeDef *self)
+{
+    /* Simple linear mapping for debugging/testing */
+    float pulse = (self->target_rps / self->rps_limit) * AppConfig->motor_pwm_max;
+    
+    encoder_motor_apply_pulse(self, pulse);
+}
+
+/**
+ * @brief Motor velocity control dispatcher
+ * @param self Motor object
+ * @param period Time step (s)
+ */
+void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period) 
+{
+    if (RobotState_PIDIsEnabled()) {
+        encoder_motor_pid_control(self, period);
+    } else {
+        encoder_motor_open_loop_control(self);
+    }
 }
 
 /**
@@ -90,6 +120,7 @@ void encoder_motor_brake(EncoderMotorObjectTypeDef *self)
     if (self->set_pulse) {
         self->set_pulse(self, 0);
     }
+    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_rps, self->rps, 0.0f);
 }
 
 /**

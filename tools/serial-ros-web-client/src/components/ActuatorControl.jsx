@@ -103,8 +103,8 @@ export default function ActuatorControl({ sendPacket, connected, sysStatus }) {
   const disabled = !connected;
   const isTesting = sysStatus?.state === 6; /* STATE_SUPERVISOR_TESTING */
   
-  /* Supervisor can enter TEST from IDLE(1), MANUAL(2) or AUTO(3) */
-  const canEnterTest = sysStatus?.state >= 1 && sysStatus?.state <= 3;
+  /* Supervisor can enter TEST only from MANUAL(2) or AUTO(3) */
+  const canEnterTest = sysStatus?.state === 2 || sysStatus?.state === 3;
 
   const startTesting = () => {
     if (disabled || !canEnterTest) return;

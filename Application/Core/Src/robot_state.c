@@ -475,7 +475,7 @@ void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
     }
 }
 
-void RobotState_SetPIDDebug(uint8_t motor_id, float target, float measured, float pwm) {
+void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float measured, float pwm) {
     if (motor_id < 1 || motor_id > 4) return;
     
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {

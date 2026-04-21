@@ -126,11 +126,18 @@ export function parsePayload(topicId, data) {
             view.getInt32(16, true),
             view.getInt32(20, true)
           ],
-          measuredRps: [
+          targetRps: [
             view.getFloat32(24, true), view.getFloat32(28, true),
             view.getFloat32(32, true), view.getFloat32(36, true)
+          ],
+          measuredRps: [
+            view.getFloat32(40, true), view.getFloat32(44, true),
+            view.getFloat32(48, true), view.getFloat32(52, true)
+          ],
+          pwmOutput: [
+            view.getFloat32(56, true), view.getFloat32(60, true),
+            view.getFloat32(64, true), view.getFloat32(68, true)
           ]
-          /* targetRps and pwmOutput moved to Topic 0x85 */
         };
       }
       

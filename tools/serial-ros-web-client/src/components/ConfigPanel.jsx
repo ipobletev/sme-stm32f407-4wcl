@@ -157,26 +157,34 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
           <Settings className="header-icon" />
           <h2>Device Configuration</h2>
         </div>
-        <div className="card-content centered">
-          {isFetching ? (
-            <>
-              <div className="sync-spinner">
-                <RefreshCw size={24} className="icon-spin" />
-              </div>
-              <p className="description">Sincronizando configuración con el robot...</p>
-            </>
-          ) : (
-            <>
-              <p className="description">La configuración aún no se ha obtenido del robot.</p>
-              <button 
-                className="btn btn-primary btn-with-icon" 
-                onClick={handleFetchConfig}
-                disabled={!connected}
-              >
-                <RefreshCw size={16} />
-                Obtener Configuración
-              </button>
-            </>
+        <div className="card-content centered" style={{ padding: '40px 20px' }}>
+          <div className="sync-spinner" style={{ marginBottom: '20px' }}>
+            <RefreshCw size={48} className={connected ? "icon-spin" : ""} style={{ opacity: connected ? 1 : 0.3 }} />
+          </div>
+          
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <h2>{connected ? 'Syncing Configuration...' : 'Disconnected'}</h2>
+            <p className="description" style={{ maxWidth: '300px', margin: '0 auto' }}>
+              {connected 
+                ? 'Requesting parameters from the robot. This usually takes a few seconds.' 
+                : 'Please connect to the robot to manage its configuration.'}
+            </p>
+          </div>
+
+          <button 
+            className="btn btn-primary btn-with-icon" 
+            onClick={handleFetchConfig}
+            disabled={!connected}
+            style={{ minWidth: '200px', justifyContent: 'center' }}
+          >
+            <RefreshCw size={16} />
+            {appConfig ? 'Update Config' : 'Manual Fetch'}
+          </button>
+          
+          {connected && (
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '16px' }}>
+              Waiting for 0x84 (APP_CONFIG_DATA) topic...
+            </p>
           )}
         </div>
       </div>

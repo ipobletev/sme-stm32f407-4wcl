@@ -169,7 +169,7 @@ void RobotState_ResetTestCommands(void);
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);
 void RobotState_SetMeasuredVelocity(float linear_x, float angular_z);
 void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4);
-void RobotState_SetPIDDebug(uint8_t motor_id, float target, float measured, float pwm);
+void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float measured, float pwm);
 
 /* IMU Setters */
 void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea);

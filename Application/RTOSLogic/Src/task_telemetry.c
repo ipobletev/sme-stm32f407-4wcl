@@ -95,6 +95,11 @@ void StartTelemetryTask(void *argument) {
             taskEXIT_CRITICAL();
 
             SerialRos_EnqueueTx(TOPIC_ID_ODOMETRY, &odom_msg, sizeof(OdometryMsg_t));
+
+            LOG_DEBUG(LOG_TAG, "M1 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[0], (int)odom_msg.pwm_output[0], (int)odom_msg.measured_rps[0]);
+            LOG_DEBUG(LOG_TAG, "M2 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[1], (int)odom_msg.pwm_output[1], (int)odom_msg.measured_rps[1]);
+            LOG_DEBUG(LOG_TAG, "M3 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[2], (int)odom_msg.pwm_output[2], (int)odom_msg.measured_rps[2]);
+            LOG_DEBUG(LOG_TAG, "M4 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[3], (int)odom_msg.pwm_output[3], (int)odom_msg.measured_rps[3]);
         }
 
         /* --- 3. SYSTEM CONFIG/APP CONFIG (Low Priority, Async) --- */
@@ -189,7 +194,7 @@ void StartTelemetryTask(void *argument) {
 
             LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%dmm | W:%dmm | L:%dmm]\r\n", 
                 (int)(AppConfig->wheel_diameter * 1000.0f), (int)(AppConfig->shaft_width * 1000.0f), (int)(AppConfig->wheelbase_length * 1000.0f));
-
+            
             // Prepare PID strings (Avoid %f as it may not be supported in some printf versions)
             char m1_pid[40], m2_pid[40], m3_pid[40], m4_pid[40];
             
