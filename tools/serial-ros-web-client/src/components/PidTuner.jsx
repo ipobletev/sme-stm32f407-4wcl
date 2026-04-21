@@ -81,16 +81,26 @@ const GainSlider = ({ label, value, min, max, step, onSend }) => {
 /**
  * PID Optimizer & Visual Tuner Component (Redesigned)
  */
-export default function PidTuner({ history, appConfig, sendPacket, connected, sysStatus, onClear }) {
-  const [selectedMotor, setSelectedMotor] = useState(0); // 0-3
-  const [testRps, setTestRps] = useState(1.0);
-  const [testDuration, setTestDuration] = useState(2000);
-  const [testTail, setTestTail] = useState(1000);
-  const [testLead, setTestLead] = useState(500);
+export default function PidTuner({ 
+  history, appConfig, sendPacket, connected, sysStatus, onClear,
+  tuningHistory, setTuningHistory, 
+  persistentData, setPersistentData,
+  settings, setSettings
+}) {
+  const { rps: testRps, lead: testLead, duration: testDuration, tail: testTail, motor: selectedMotor } = settings;
+  
+  const updateSetting = (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const setTestRps = (v) => updateSetting('rps', v);
+  const setTestLead = (v) => updateSetting('lead', v);
+  const setTestDuration = (v) => updateSetting('duration', v);
+  const setTestTail = (v) => updateSetting('tail', v);
+  const setSelectedMotor = (v) => updateSetting('motor', v);
+
   const [testTimer, setTestTimer] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [persistentData, setPersistentData] = useState([]);
-  const [tuningHistory, setTuningHistory] = useState([]);
   const [lastAutoEnable, setLastAutoEnable] = useState(0);
   const [isInternalTransitioning, setIsInternalTransitioning] = useState(false);
   const [pendingPidState, setPendingPidState] = useState(null); // null, 0, or 1

@@ -63,7 +63,17 @@ export default function App() {
   } = useSerial();
   const [maxPoints, setMaxPoints] = useState(1000);
   const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
-  
+
+  // Persistent PID Tuner State
+  const [pidHistory, setPidHistory] = useState([]);
+  const [pidChartData, setPidChartData] = useState([]);
+  const [pidSettings, setPidSettings] = useState({
+    rps: 1.0,
+    lead: 500,
+    duration: 2000,
+    tail: 1000,
+    motor: 0
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -166,6 +176,13 @@ export default function App() {
               connected={connected} 
               sysStatus={telemetry.sysStatus}
               onClear={clearHistory}
+              // Persistent Session State
+              tuningHistory={pidHistory}
+              setTuningHistory={setPidHistory}
+              persistentData={pidChartData}
+              setPersistentData={setPidChartData}
+              settings={pidSettings}
+              setSettings={setPidSettings}
             />
           ) : (
             <div className="empty-state">
