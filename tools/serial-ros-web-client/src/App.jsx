@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSerial } from './hooks/useSerial';
-import { useTelemetryHistory } from './hooks/useTelemetryHistory';
 import { useFsmTransitionLog } from './hooks/useFsmTransitionLog';
 import Header from './components/Header';
 import PageSidebar from './components/PageSidebar';
@@ -60,10 +59,9 @@ function FrequencyBar({ frequencies, lastTopicTicks }) {
 export default function App() {
   const { 
     connected, isMaster, connect, disconnect, sendPacket, 
-    telemetry, frequencies, lastTopicTicks, linkActive, log 
+    telemetry, history, clearHistory, frequencies, lastTopicTicks, linkActive, log 
   } = useSerial();
-  const [maxPoints, setMaxPoints] = useState(100);
-  const { history, clear: clearHistory } = useTelemetryHistory(telemetry, frequencies, maxPoints);
+  const [maxPoints, setMaxPoints] = useState(1000);
   const fsmTransitionLog = useFsmTransitionLog(telemetry.sysStatus);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);

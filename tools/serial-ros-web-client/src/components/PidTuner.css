@@ -253,6 +253,31 @@
 .status-pill.warn { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.2); }
 .status-pill.crit { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
 
+.history-table th:first-child, 
+.history-table td:first-child {
+    padding-left: 24px;
+}
+
+.history-table th:last-child, 
+.history-table td:last-child {
+    padding-right: 24px;
+}
+
+.history-table th.action-cell,
+.history-table td.action-cell {
+    text-align: right;
+    width: 80px;
+}
+
+.history-table th:nth-child(3) { /* Parameters */
+    min-width: 200px;
+}
+
+.history-table th:nth-child(4), 
+.history-table th:nth-child(5) { /* Overshoot & Error */
+    min-width: 100px;
+}
+
 .control-panel {
     display: flex;
     flex-direction: column;

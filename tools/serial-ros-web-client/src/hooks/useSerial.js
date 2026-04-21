@@ -143,12 +143,14 @@ export function useSerial() {
     pidDebug: null,
   });
   const [frequencies, setFrequencies] = useState({});
+  const [history, setHistory] = useState([]);
   const [log, setLog] = useState([]);
 
   // High-frequency buffers (REFS) to prevent React OOM
   const telemetryBufferRef = useRef({ ...telemetry });
   const logBufferRef = useRef([]);
   const frequenciesBufferRef = useRef({});
+  const historyRef = useRef([]);
 
   const portRef = useRef(null);
   const readerRef = useRef(null);
@@ -173,7 +175,9 @@ export function useSerial() {
         };
       });
       setFrequencies({ ...frequenciesBufferRef.current });
-    }, 50); // 20Hz UI Refresh (Plenty for humans, saves CPU/Heap)
+      // Keep up to 2000 points (approx 40 seconds at 50Hz)
+      setHistory([...historyRef.current].slice(-2000));
+    }, 50); // 20Hz UI Refresh (Matches Odometry rate)
 
     const logInterval = setInterval(() => {
       if (logBufferRef.current.length > 0) {
@@ -209,6 +213,48 @@ export function useSerial() {
     };
     // Push to buffer, not state
     logBufferRef.current.push(entry);
+  }, []);
+
+  const createPoint = useCallback((now, topicId, parsed) => {
+    const tb = telemetryBufferRef.current;
+    const sysStatus = topicId === TOPIC_IDS.TX.SYS_STATUS ? parsed : tb.sysStatus;
+    const imu = topicId === TOPIC_IDS.TX.IMU ? parsed : tb.imu;
+    const odometry = topicId === TOPIC_IDS.TX.ODOMETRY ? parsed : tb.odometry;
+    const pidDebug = tb.pidDebug; // Updated via odometry usually
+
+    // We only create points for meaningful telemetry updates
+    if (!odometry && !imu && !sysStatus) return null;
+
+    return {
+      timestamp: now,
+      timeLabel: new Date(now).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' }),
+      
+      battery: sysStatus?.v_batt || 0,
+      temp: sysStatus?.temp || 0,
+      
+      vx: odometry?.linear_x || 0,
+      wz: odometry?.angular_z || 0,
+      rps1: odometry?.measuredRps?.[0] || 0,
+      rps2: odometry?.measuredRps?.[1] || 0,
+      rps3: odometry?.measuredRps?.[2] || 0,
+      rps4: odometry?.measuredRps?.[3] || 0,
+      enc1: odometry?.encoders?.[0] || 0,
+      enc2: odometry?.encoders?.[1] || 0,
+      enc3: odometry?.encoders?.[2] || 0,
+      enc4: odometry?.encoders?.[3] || 0,
+      
+      pid_target:   pidDebug?.targetRps   || [0,0,0,0],
+      pid_measured: pidDebug?.measuredRps || [0,0,0,0],
+      pid_pwm:      pidDebug?.pwmOutput   || [0,0,0,0],
+
+      freq_sys: frequenciesBufferRef.current?.['0x81'] || 0,
+      freq_imu: frequenciesBufferRef.current?.['0x82'] || 0,
+      freq_odom: frequenciesBufferRef.current?.['0x83'] || 0,
+      
+      // Raw IMU
+      ax: imu?.accel?.x || 0, ay: imu?.accel?.y || 0, az: imu?.accel?.z || 0,
+      gx: imu?.gyro?.x || 0, gy: imu?.gyro?.y || 0, gz: imu?.gyro?.z || 0,
+    };
   }, []);
 
   const handleFrame = useCallback((topicId, data, isShared = false) => {
@@ -253,6 +299,13 @@ export function useSerial() {
           measuredRps: parsed.measuredRps,
           pwmOutput: parsed.pwmOutput
         };
+        
+        // Capture every Odom packet in history (50Hz master)
+        const p = createPoint(now, topicId, parsed);
+        if (p) {
+          historyRef.current.push(p);
+          if (historyRef.current.length > 2000) historyRef.current.shift();
+        }
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
         telemetryBufferRef.current.appConfig = parsed;
@@ -471,6 +524,13 @@ export function useSerial() {
       pidDebug: null 
     };
     setTelemetry({ ...telemetryBufferRef.current });
+    setHistory([]);
+    historyRef.current = [];
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    historyRef.current = [];
   }, []);
 
   return {
@@ -480,6 +540,8 @@ export function useSerial() {
     disconnect,
     sendPacket,
     telemetry,
+    history,
+    clearHistory,
     frequencies,
     lastTopicTicks: lastTopicTicksRef.current,
     linkActive: (Date.now() - lastTeleTickRef.current) < ((telemetry.appConfig?.sys_vars_period || 1000) + 1000),

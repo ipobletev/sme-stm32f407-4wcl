@@ -5,7 +5,7 @@ import {
 import { 
   Settings2, Play, CircleStop, Save, 
   Gauge, Zap, AlertCircle, Info, TrendingUp, Target,
-  Activity, ShieldCheck, Send, Power, RotateCcw
+  Activity, ShieldCheck, Send, Power, RotateCcw, Download
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
 import './PidTuner.css';
@@ -85,6 +85,8 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
   const [selectedMotor, setSelectedMotor] = useState(0); // 0-3
   const [testRps, setTestRps] = useState(1.0);
   const [testDuration, setTestDuration] = useState(2000);
+  const [testTail, setTestTail] = useState(1000);
+  const [testLead, setTestLead] = useState(500);
   const [testTimer, setTestTimer] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [persistentData, setPersistentData] = useState([]);
@@ -93,6 +95,7 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
   const [isInternalTransitioning, setIsInternalTransitioning] = useState(false);
   const [pendingPidState, setPendingPidState] = useState(null); // null, 0, or 1
   const hasAutoEnabledRef = useRef(false);
+  const captureStartTsRef = useRef(0);
 
   const isTesting = sysStatus?.state === 6; /* STATE_SUPERVISOR_TESTING */
   const canEnterTest = sysStatus?.state === 2 || sysStatus?.state === 3;
@@ -125,6 +128,7 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
     if (!history) return [];
     return history.map(p => ({
       time: p.timeLabel,
+      ts: p.timestamp,
       // Current motor
       target: p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
       measured: p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
@@ -137,10 +141,15 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
     })).slice(-300);
   }, [history, selectedMotor]);
 
-  // Update persistent data only when capturing
   useEffect(() => {
     if (isCapturing && currentTelemetryData.length > 0) {
-      setPersistentData(currentTelemetryData);
+      setPersistentData(prev => {
+        const lastTs = prev.length > 0 ? prev[prev.length - 1].ts : 0;
+        const minTs = Math.max(captureStartTsRef.current, lastTs);
+        const newPoints = currentTelemetryData.filter(p => p.ts > minTs);
+        if (newPoints.length === 0) return prev;
+        return [...prev, ...newPoints];
+      });
     }
   }, [currentTelemetryData, isCapturing]);
 
@@ -235,7 +244,8 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
                 kd: appConfig?.[`motor${activeMotorIdx + 1}_kd`],
                 overshoot: analysis.overshoot,
                 error: analysis.error,
-                status: analysis.status
+                status: analysis.status,
+                data: [...persistentData] // Capture the raw data for export
             };
             
             console.log('[PidTuner] Entry created:', entry);
@@ -250,9 +260,9 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
     stopStep();
     setTestTimer(null);
     setTimeout(() => {
-        console.log('[PidTuner] 1s tail finished. Stopping capture.');
+        console.log(`[PidTuner] ${testTail}ms tail finished. Stopping capture.`);
         setIsCapturing(false);
-    }, 1000);
+    }, Math.max(0, testTail));
   };
 
   const yDomain = useMemo(() => {
@@ -322,9 +332,17 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
     }
     
     // Auto-resume capture
-    console.log('[PidTuner] Starting capture and applying step...');
+    console.log('[PidTuner] Starting capture sequence...');
+    captureStartTsRef.current = Date.now();
+    setPersistentData([]); // Clear previous capture data
     setIsCapturing(true);
 
+    // 1. Pre-test lead time for baseline
+    if (testLead > 0) {
+      await new Promise(r => setTimeout(r, testLead));
+    }
+
+    console.log('[PidTuner] Applying step now...');
     const val = parseFloat(testRps);
     const motors = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
 
@@ -337,10 +355,59 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
     // Clear existing timer if any
     if (testTimer) clearTimeout(testTimer);
 
-    // Auto-stop after duration + small tail to see settling
+    // Auto-stop after duration
     const timer = setTimeout(handleTestCompletion, Math.max(100, testDuration));
     
     setTestTimer(timer);
+  };
+
+  const downloadCsv = (filename, csvContent) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const exportSectionToCsv = (entry) => {
+    if (!entry.data || entry.data.length === 0) return;
+    
+    let csv = `PID Test Session - ${entry.timestamp}\n`;
+    csv += `Motor,${entry.motor}\n`;
+    csv += `KP,${entry.kp}\n`;
+    csv += `KI,${entry.ki}\n`;
+    csv += `KD,${entry.kd}\n`;
+    csv += `Overshoot,${entry.overshoot?.toFixed(2)}%\n`;
+    csv += `Steady State Error,${entry.error?.toFixed(4)}\n\n`;
+    
+    csv += "N,Timestamp,Target,Measured,PWM\n";
+    entry.data.forEach((p, idx) => {
+      csv += `${idx + 1},${p.ts},${p.target},${p.measured},${p.pwm}\n`;
+    });
+
+    const filename = `pid_test_${entry.motor.replace(' ', '_')}_${entry.timestamp.replace(/[: ]/g, '-')}.csv`;
+    downloadCsv(filename, csv);
+  };
+
+  const exportAllSectionsToCsv = () => {
+    if (tuningHistory.length === 0) return;
+    
+    let csv = "Section,N,Timestamp,Motor,KP,KI,KD,Target,Measured,PWM\n";
+    tuningHistory.forEach((entry, idx) => {
+      const sectionName = `Session_${tuningHistory.length - idx}`;
+      entry.data.forEach((p, pIdx) => {
+        csv += `${sectionName},${pIdx + 1},${p.ts},${entry.motor},${entry.kp},${entry.ki},${entry.kd},${p.target},${p.measured},${p.pwm}\n`;
+      });
+    });
+
+    const filename = `pid_tuning_full_history_${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadCsv(filename, csv);
   };
 
   const exitTesting = () => {
@@ -646,9 +713,9 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
                       <Info size={12} className="info-icon-dim" />
                     </TooltipWrapper>
                   </div>
-                   <div className="step-input-row" style={{ marginTop: '8px' }}>
-                     <div className="input-with-label">
-                       <span>Amplitude (RPS)</span>
+                   <div className="step-input-row" style={{ marginTop: '8px', gap: '12px' }}>
+                     <div className="input-with-label" style={{ flex: '1.2' }}>
+                       <span>Setpoint (RPS)</span>
                        <input 
                           type="number" 
                           value={testRps} 
@@ -657,12 +724,30 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
                        />
                      </div>
                      <div className="input-with-label">
-                       <span>Duration (ms)</span>
+                       <span>Stop Before (ms)</span>
+                       <input 
+                          type="number" 
+                          value={testLead} 
+                          placeholder="ms"
+                          onChange={(e) => setTestLead(parseInt(e.target.value) || 0)}
+                       />
+                     </div>
+                     <div className="input-with-label">
+                       <span>Step Duration (ms)</span>
                        <input 
                           type="number" 
                           value={testDuration} 
                           placeholder="ms"
                           onChange={(e) => setTestDuration(parseInt(e.target.value) || 0)}
+                       />
+                     </div>
+                     <div className="input-with-label">
+                       <span>Stop After (ms)</span>
+                       <input 
+                          type="number" 
+                          value={testTail} 
+                          placeholder="ms"
+                          onChange={(e) => setTestTail(parseInt(e.target.value) || 0)}
                        />
                      </div>
                   </div>
@@ -697,13 +782,23 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
       <div className="tuner-card history-card" style={{ marginTop: '24px' }}>
         <div className="tuner-card-header">
           <h3><Activity size={16} color="var(--accent-amber)" /> Tuning Session History</h3>
-          <button 
-            className="btn btn-sm btn-ghost" 
-            onClick={() => setTuningHistory([])}
-            disabled={tuningHistory.length === 0}
-          >
-            CLEAR HISTORY
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              className="btn btn-sm btn-ghost" 
+              onClick={exportAllSectionsToCsv}
+              disabled={tuningHistory.length === 0}
+              title="Export all sessions to a single CSV"
+            >
+              <Download size={14} /> EXPORT ALL
+            </button>
+            <button 
+              className="btn btn-sm btn-ghost" 
+              onClick={() => setTuningHistory([])}
+              disabled={tuningHistory.length === 0}
+            >
+              CLEAR HISTORY
+            </button>
+          </div>
         </div>
         <div className="history-table-wrapper">
           <table className="history-table">
@@ -715,12 +810,13 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
                 <th>OVERSHOOT</th>
                 <th>ERROR</th>
                 <th>STATUS</th>
+                <th className="action-cell">ACTION</th>
               </tr>
             </thead>
             <tbody>
               {tuningHistory.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     No tests recorded in this session. Click 'GO' to start capturing results.
                   </td>
                 </tr>
@@ -742,6 +838,16 @@ export default function PidTuner({ history, appConfig, sendPacket, connected, sy
                       <div className={`status-pill ${entry.status}`}>
                         {entry.status === 'good' ? 'OPTIMAL' : entry.status === 'warn' ? 'TUNING' : 'UNSTABLE'}
                       </div>
+                    </td>
+                    <td className="action-cell">
+                      <button 
+                         className="btn btn-sm btn-ghost" 
+                         onClick={() => exportSectionToCsv(entry)}
+                         title="Download CSV for this session"
+                         style={{ padding: '4px 8px' }}
+                      >
+                        <Download size={14} />
+                      </button>
                     </td>
                   </tr>
                 ))
