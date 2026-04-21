@@ -5,7 +5,8 @@ import {
 import { 
   Settings2, Play, CircleStop, Save, 
   Gauge, Zap, AlertCircle, Info, TrendingUp, Target,
-  Activity, ShieldCheck, Send, Power, RotateCcw, Download, Navigation, Cpu
+  Activity, ShieldCheck, Send, Power, RotateCcw, Download, Navigation, Cpu,
+  ChevronUp, ChevronDown, CheckCircle
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
 import './PidTuner.css';
@@ -207,18 +208,78 @@ export default function PidTuner({
     let suggestion = 'Locked & Loaded';
     let icon = <ShieldCheck size={16} />;
 
-    if (overshoot > 15) {
-      status = 'crit';
-      suggestion = 'High Overshoot - Reduce KP';
-      icon = <AlertCircle size={16} />;
-    } else if (overshoot > 8) {
-      status = 'warn';
-      suggestion = 'Moderate Overshoot - Fine-tune KP/KD';
-      icon = <Info size={16} />;
-    } else if (Math.abs(error) > (target * 0.05)) {
-      status = 'warn';
-      suggestion = 'Steady State Error - Increase KI';
-      icon = <Activity size={16} />;
+    const recommendations = [];
+
+    // Rule 1: Rise Time (KP)
+    if (riseTime === null || (riseTime * 20) > 150) {
+        recommendations.push({ 
+            param: 'KP', 
+            action: 'INCREASE', 
+            trend: 'up',
+            reason: 'Response is sluggish. Increasing KP will improve rise time.' 
+        });
+        status = 'warn';
+        suggestion = 'Slow Response';
+        icon = <TrendingUp size={16} />;
+    }
+
+    // Rule 2: Overshoot (KP/KD)
+    if (overshoot > 12) {
+        recommendations.push({ 
+            param: 'KP', 
+            action: 'DECREASE', 
+            trend: 'down',
+            reason: 'High overshoot detected. Reducing KP will soften the impact.' 
+        });
+        recommendations.push({ 
+            param: 'KD', 
+            action: 'INCREASE', 
+            trend: 'up',
+            reason: 'Increase KD to add damping and reduce the overshoot peak.' 
+        });
+        status = 'crit';
+        suggestion = 'High Overshoot';
+        icon = <AlertCircle size={16} />;
+    } else if (overshoot > 5) {
+        recommendations.push({ 
+            param: 'KD', 
+            action: 'FINE-TUNE', 
+            trend: 'up',
+            reason: 'Slight overshoot. Minor increase in KD could dampen the response.' 
+        });
+    }
+
+    // Rule 3: Steady State Error (KI)
+    if (Math.abs(error) > (target * 0.04)) {
+        recommendations.push({ 
+            param: 'KI', 
+            action: 'INCREASE', 
+            trend: 'up',
+            reason: 'System fails to reach target. Increase KI to eliminate steady-state error.' 
+        });
+        if (status !== 'crit') status = 'warn';
+        suggestion = 'Steady State Error';
+        icon = <Activity size={16} />;
+    }
+
+    // Rule 4: System Stability / Oscillations
+    const noiseLevel = chartData.reduce((acc, p, i) => i > 0 ? acc + Math.abs(p.measured - chartData[i-1].measured) : acc, 0) / chartData.length;
+    if (noiseLevel > 0.5) {
+        recommendations.push({ 
+            param: 'KD', 
+            action: 'DECREASE', 
+            trend: 'down',
+            reason: 'High measurement noise. Reduce KD to prevent jittery effort.' 
+        });
+    }
+
+    if (recommendations.length === 0) {
+        recommendations.push({ 
+            param: 'ALL', 
+            action: 'OPTIMAL', 
+            trend: 'check',
+            reason: 'Parameters are well balanced for this operating point.' 
+        });
     }
 
     return { 
@@ -231,7 +292,8 @@ export default function PidTuner({
         riseTime: riseTime ? `${riseTime * 20}ms` : 'N/A', // assuming 50Hz (20ms/sample)
         settling: Math.abs(error) < (target * 0.02) ? 'Stable' : 'Unstable',
         totalError: rawTotalError,
-        iae: iae
+        iae: iae,
+        recommendations
     };
   }, [chartData]);
 
@@ -267,6 +329,7 @@ export default function PidTuner({
                 error: analysis.error,
                 iae: analysis.iae,
                 status: analysis.status,
+                recommendations: analysis.recommendations,
                 data: [...persistentData] // Capture the raw data for export
             };
             
@@ -668,6 +731,55 @@ export default function PidTuner({
                 <div className={`hud-status-badge-v2 ${analysis.status}`}>
                   {analysis.icon}
                   <span>{analysis.suggestion}</span>
+                </div>
+              </div>
+
+              <div className="advisor-section" style={{ 
+                margin: '16px 0', 
+                padding: '12px', 
+                background: 'rgba(255,255,255,0.02)', 
+                borderRadius: '8px', 
+                border: '1px solid rgba(255,255,255,0.05)' 
+              }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.05em' }}>
+                  EXPERT ADVISOR RECOMMENDATIONS
+                </div>
+                <div className="advisor-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {analysis.recommendations.map((rec, idx) => (
+                    <div key={idx} className="advisor-item" style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '10px',
+                      padding: '8px',
+                      background: 'rgba(255,255,255,0.02)',
+                      borderRadius: '6px'
+                    }}>
+                      <div className={`rec-badge ${rec.trend}`} style={{
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        background: rec.trend === 'up' ? 'rgba(16, 185, 129, 0.1)' : rec.trend === 'down' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                        color: rec.trend === 'up' ? 'var(--accent-emerald)' : rec.trend === 'down' ? 'var(--accent-rose)' : 'var(--accent-cyan)',
+                        border: `1px solid ${rec.trend === 'up' ? 'rgba(16, 185, 129, 0.2)' : rec.trend === 'down' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'}`,
+                        minWidth: '70px',
+                        textAlign: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px'
+                      }}>
+                        {rec.trend === 'up' && <ChevronUp size={10} />}
+                        {rec.trend === 'down' && <ChevronDown size={10} />}
+                        {rec.trend === 'check' && <CheckCircle size={10} />}
+                        {rec.param}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: '700', marginBottom: '2px' }}>{rec.action}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>{rec.reason}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
