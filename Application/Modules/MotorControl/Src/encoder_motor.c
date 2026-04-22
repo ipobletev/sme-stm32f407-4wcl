@@ -41,16 +41,29 @@ void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse)
     if (pulse > AppConfig->motor_pwm_max) pulse = AppConfig->motor_pwm_max;
     if (pulse < -AppConfig->motor_pwm_max) pulse = -AppConfig->motor_pwm_max;
     
-    float output_pulse = pulse;
+    float output_pulse = 0.0f;
+    float abs_pulse = (pulse < 0) ? -pulse : pulse;
+    float deadzone = self->deadzone;
+    float max_pwm = AppConfig->motor_pwm_max;
     
-    /* Apply individual deadband if necessary */
-    if (output_pulse < self->deadzone && output_pulse > -self->deadzone) {
-        output_pulse = 0;
+    /* 
+     * Deadzone Compensation:
+     * We map the requested effort [0, max_pwm] to the physical range [deadzone, max_pwm].
+     * This ensures that even the smallest joystick movement (which produces a small pulse)
+     * will immediately jump to the minimum PWM required to overcome static friction.
+     */
+    if (abs_pulse > 0.001f) {
+        // Linear mapping: deadzone + (pulse_ratio * remaining_range)
+        float compensated = deadzone + (abs_pulse / max_pwm) * (max_pwm - deadzone);
+        output_pulse = (pulse > 0) ? compensated : -compensated;
+    } else {
+        output_pulse = 0.0f;
+        
         /* Only reset incremental accumulator if the target is actually zero 
            to stop the 'whining' noise in stationary state. 
-           If target is NON-ZERO, let the accumulator build up until it jumps out of deadzone. */
+           If target is NON-ZERO (but pulse is 0), let the PID/accumulator build up. */
         if (self->target_speed == 0.0f) {
-            pulse = 0;
+            pulse = 0.0f;
         }
     }
     
@@ -58,7 +71,6 @@ void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse)
     self->current_pulse = pulse;
     
     RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_speed, self->measured_speed, output_pulse);
-
 }
 
 /**

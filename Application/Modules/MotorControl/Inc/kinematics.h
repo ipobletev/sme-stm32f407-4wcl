@@ -13,9 +13,9 @@
  * @param v_wheels Array to store resulting wheel velocities [v1, v2, v3, v4]
  */
 
-void Kinematics_Mecanum(float vx, float vy, float az, float *v_wheels);
-void Kinematics_Differential(float vx, float az, float *v_wheels);
-void Kinematics_Ackermann(float vx, float az, float *v_wheels);
-void Kinematics_Direct(float vx, float az, float *v_wheels);
+void Kinematics_Mecanum(float vx, float vy, float az, float wheelbase, float track_width, float *v_wheels, uint8_t num_wheels);
+void Kinematics_Differential(float vx, float az, float track_width, float *v_wheels, uint8_t num_wheels);
+void Kinematics_Ackermann(float vx, float az, float track_width, float *v_wheels, uint8_t num_wheels);
+void Kinematics_Direct(float vx, float az, float track_width, float *v_wheels, uint8_t num_wheels);
 
 #endif /* __KINEMATICS_H */

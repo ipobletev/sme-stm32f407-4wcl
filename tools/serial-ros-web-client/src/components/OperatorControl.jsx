@@ -111,10 +111,32 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
       knobRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
     }
 
-    // Map to velocities
-    // Forward (linear_x) is negative dy (up), Left (angular_z) is negative dx (left)
-    const lx = (-dy / maxRadius) * limitsRef.current.linear;
-    const az = (-dx / maxRadius) * limitsRef.current.angular;
+    // Joystick Deadzone and Remapping
+    // 5% deadzone to avoid jitter at center
+    const deadzoneRatio = 0.05;
+    const deadzone = deadzoneRatio * maxRadius;
+    
+    let lx = 0, az = 0;
+    
+    if (distance > deadzone) {
+      // Remap distance from [deadzone, maxRadius] to [0, maxRadius]
+      const currentDist = Math.min(distance, maxRadius);
+      const remappedDistance = ((currentDist - deadzone) / (maxRadius - deadzone)) * maxRadius;
+      
+      // Calculate remapped dx/dy
+      const ratio = remappedDistance / currentDist;
+      const rdx = dx * ratio;
+      const rdy = dy * ratio;
+      
+      // Map to velocities
+      // Forward (linear_x) is negative dy (up), Left (angular_z) is negative dx (left)
+      lx = (-rdy / maxRadius) * limitsRef.current.linear;
+      az = (-rdx / maxRadius) * limitsRef.current.angular;
+    } else {
+      // Inside deadzone, velocity is zero
+      lx = 0;
+      az = 0;
+    }
     
     velRef.current = { x: lx, z: az };
   };
@@ -316,22 +338,22 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
           <div className="e-stop-container">
             <button className="btn-estop large" onClick={handleEStop}>
               <Square fill="white" size={18} />
-              EMERGENCY STOP
+              STOP
             </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px', margin: '20px 0' }}>
-            {/* Rotate Right (CW) - INVERTED POSITION */}
+            {/* Rotate Left (CCW) - Standard Position */}
             <button 
               className={`dpad-btn diag ${!isAuto || !connected ? 'disabled' : ''}`}
               style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
-              onMouseDown={(e) => handleArrowPress('rotate-right', e)} 
+              onMouseDown={(e) => handleArrowPress('rotate-left', e)} 
               onMouseUp={handleArrowRelease} 
-              onTouchStart={(e) => handleArrowPress('rotate-right', e)} 
+              onTouchStart={(e) => handleArrowPress('rotate-left', e)} 
               onTouchEnd={handleArrowRelease} 
               onTouchCancel={handleArrowRelease}
-              title="Rotate Clockwise"
+              title="Rotate Counter-Clockwise"
             >
-              <RotateCw size={20} />
+              <RotateCcw size={20} />
             </button>
 
             <div 
@@ -352,18 +374,18 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
               </div>
             </div>
 
-            {/* Rotate Left (CCW) - INVERTED POSITION */}
+            {/* Rotate Right (CW) - Standard Position */}
             <button 
               className={`dpad-btn diag ${!isAuto || !connected ? 'disabled' : ''}`}
               style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
-              onMouseDown={(e) => handleArrowPress('rotate-left', e)} 
+              onMouseDown={(e) => handleArrowPress('rotate-right', e)} 
               onMouseUp={handleArrowRelease} 
-              onTouchStart={(e) => handleArrowPress('rotate-left', e)} 
+              onTouchStart={(e) => handleArrowPress('rotate-right', e)} 
               onTouchEnd={handleArrowRelease} 
               onTouchCancel={handleArrowRelease}
-              title="Rotate Counter-Clockwise"
+              title="Rotate Clockwise"
             >
-              <RotateCcw size={20} />
+              <RotateCw size={20} />
             </button>
           </div>
 

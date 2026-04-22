@@ -39,20 +39,20 @@ The system supports multiple drive configurations. The goal is to calculate the 
 
 ### 3.1 Mecanum (Holonomic)
 Used for 4-wheel Mecanum chassis allowing movement in any direction.
-- $L$: `wheelbase_length` / 2
-- $W$: `shaft_width` / 2
+- $L$: `wheelbase_length` (Full length)
+- $W$: `shaft_width` (Full width)
 
-$$v_{w1} = v_x - v_y - (L+W) \cdot a_z$$
-$$v_{w2} = v_x + v_y - (L+W) \cdot a_z$$
-$$v_{w3} = v_x + v_y + (L+W) \cdot a_z$$
-$$v_{w4} = v_x - v_y + (L+W) \cdot a_z$$
+$$v_{w1} = v_x - v_y - \frac{L+W}{2} \cdot a_z$$
+$$v_{w2} = v_x + v_y - \frac{L+W}{2} \cdot a_z$$
+$$v_{w3} = v_x + v_y + \frac{L+W}{2} \cdot a_z$$
+$$v_{w4} = v_x - v_y + \frac{L+W}{2} \cdot a_z$$
 
 ### 3.2 Differential (4WD Skid-Steer)
 Standard drive where the left and right sides move independently.
-- $d$: `shaft_width` (distance from center to wheel)
+- $d$: `shaft_width` (Distance between left and right wheels)
 
-$$v_{left} = v_x - d \cdot a_z$$
-$$v_{right} = v_x + d \cdot a_z$$
+$$v_{left} = v_x - \frac{d}{2} \cdot a_z$$
+$$v_{right} = v_x + \frac{d}{2} \cdot a_z$$
 
 *Mapping: $v_{w1}, v_{w2}$ receive $v_{left}$ | $v_{w3}, v_{w4}$ receive $v_{right}$*
 
@@ -60,14 +60,15 @@ $$v_{right} = v_x + d \cdot a_z$$
 Simplified model for 4-wheel chassis mimicking a car-like steering response using differential speeds.
 - $d$: `shaft_width`
 
-$$v_{left} = v_x - d \cdot a_z$$
-$$v_{right} = v_x + d \cdot a_z$$
+$$v_{left} = v_x - \frac{d}{2} \cdot a_z$$
+$$v_{right} = v_x + \frac{d}{2} \cdot a_z$$
 
 ### 3.4 Direct (Debug)
-Used for direct control testing. Passes rotation as a simple differential offset.
+Used for testing. Now follows consistent physical scaling.
+- $d$: `shaft_width`
 
-$$v_{left} = v_x - a_z$$
-$$v_{right} = v_x + a_z$$
+$$v_{left} = v_x - \frac{d}{2} \cdot a_z$$
+$$v_{right} = v_x + \frac{d}{2} \cdot a_z$$
 
 ### Linear to Angular Conversion
 Once the wheel linear velocity $v_i$ is calculated, it is converted to target RPS using the wheel diameter:

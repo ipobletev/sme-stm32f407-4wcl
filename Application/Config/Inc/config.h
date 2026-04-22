@@ -14,12 +14,12 @@
 #define DEFAULT_MOTOR_TICKS_PER_CIRCLE          654.0f
 #define DEFAULT_MOTOR_SPEED_LIMIT               1.26f
 #define DEFAULT_ROBOT_MAX_ANGULAR_SPEED         2.50f
-#define DEFAULT_MOTOR_PULSE_DEADZONE            1000.0f
+#define DEFAULT_MOTOR_PULSE_DEADZONE            23000.0f
 #define DEFAULT_MOTOR_PWM_MAX                   65535.0f
 
 /* Default Motor PID Gains */
-#define DEFAULT_MOTOR_KP                        1000.0f
-#define DEFAULT_MOTOR_KI                        100.0f
+#define DEFAULT_MOTOR_KP                        47489.0f
+#define DEFAULT_MOTOR_KI                        100000.0f
 #define DEFAULT_MOTOR_KD                        50.0f
 /* Chassis Parameters */
 #define DEFAULT_ROBOT_WHEEL_DIAMETER            0.08f

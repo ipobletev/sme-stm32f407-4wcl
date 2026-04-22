@@ -27,22 +27,25 @@ void MobState_Moving_Run(void) {
     MobilityMode_t mode = RobotState_GetTargetMobilityMode();
     float velocity_wheels[4] = {0, 0, 0, 0};
     
-    /* 3. Apply Kinematic Model */
+    /* 3. Apply Kinematic Model (Inject dimensions from config) */
+    float wheelbase = AppConfig->wheelbase_length;
+    float track_width = AppConfig->shaft_width;
+
     switch (mode) {
         case MOB_MODE_MECANUM:
-            Kinematics_Mecanum(target_linear_x, 0.0f, target_angular_z, velocity_wheels);
+            Kinematics_Mecanum(target_linear_x, 0.0f, target_angular_z, wheelbase, track_width, velocity_wheels, 4);
             break;
 
         case MOB_MODE_DIFF:
-            Kinematics_Differential(target_linear_x, target_angular_z, velocity_wheels);
+            Kinematics_Differential(target_linear_x, target_angular_z, track_width, velocity_wheels, 4);
             break;
 
         case MOB_MODE_ACKERMANN:
-            Kinematics_Ackermann(target_linear_x, target_angular_z, velocity_wheels);
+            Kinematics_Ackermann(target_linear_x, target_angular_z, track_width, velocity_wheels, 4);
             break;
 
         case MOB_MODE_DIRECT:
-            Kinematics_Direct(target_linear_x, target_angular_z, velocity_wheels);
+            Kinematics_Direct(target_linear_x, target_angular_z, track_width, velocity_wheels, 4);
             break;
 
         default:
@@ -51,11 +54,11 @@ void MobState_Moving_Run(void) {
     }
 
     /* 4. Set targets for individual PID controllers (already in m/s) */
-    /* Note: Right side motors (3 and 4) represent the physical mapping of the hardware.
+    /* Note: Right side motors (1 and 3) represent the physical mapping of the hardware.
        The sign mapping here ensures positive linear_x moves the robot forward. */
-    encoder_motor_set_speed(motors[0], -velocity_wheels[0]);
+    encoder_motor_set_speed(motors[0], velocity_wheels[0]);
     encoder_motor_set_speed(motors[1], velocity_wheels[1]);
-    encoder_motor_set_speed(motors[2], -velocity_wheels[2]); 
+    encoder_motor_set_speed(motors[2], velocity_wheels[2]); 
     encoder_motor_set_speed(motors[3], velocity_wheels[3]); 
 
     /* Run Motors. Run PID loop (if ROBOT_STATE_DEFAULT_PID_ENABLED enabled) for each motor */
