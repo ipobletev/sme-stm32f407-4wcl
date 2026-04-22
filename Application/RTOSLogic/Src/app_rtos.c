@@ -44,7 +44,7 @@ const osal_thread_attr_t controllerTask_attributes = {
 
 const osal_thread_attr_t uartListenerTask_attributes = {
   .name = "UARTListenerTask",
-  .stack_size = 768 * 4,
+  .stack_size = 1024 * 4,
   .priority = OSAL_PRIO_HIGH,
 };
 
@@ -68,7 +68,7 @@ const osal_thread_attr_t serialRosTask_attributes = {
 
 const osal_thread_attr_t telemetryTask_attributes = {
   .name = "TelemetryTask",
-  .stack_size = 512 * 4,
+  .stack_size = 1024 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
 

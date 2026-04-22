@@ -34,6 +34,8 @@
 #include "bsp_battery.h"
 #include "bsp_console.h"
 #include "app_config.h"
+#include "app_rtos.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -198,12 +200,50 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+/* Force linker to include float support for printf (%f) in newlib-nano */
+__asm__(".global _printf_float");
+
+/**
+  * @brief  Retargets the C library printf function to the UART.
+  */
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+  return ch;
+}
+
+/**
+  * @brief  Standard System Call _write override.
+  * Redirects printf/stdout to the non-blocking DMA RTOS queue.
+  */
 int _write(int file, char *ptr, int len)
 {
   if ((file == 1) || (file == 2)) // stdout, stderr
   {
-    UART_DMA_Write(&huart1, (uint8_t *)ptr, (uint16_t)len);
-    return len;
+    /* If RTOS and Queue are ready, use the non-blocking DMA pipeline */
+    if (consoleTxQueueHandle != NULL) {
+      int sent = 0;
+      while (sent < len) {
+        Console_Packet_t packet;
+        int chunk = (len - sent > 256) ? 256 : (len - sent);
+        
+        packet.size = (uint16_t)chunk;
+        memcpy(packet.data, ptr + sent, chunk);
+        
+        /* Non-blocking put in queue (timeout 0) */
+        osal_status_t status = osal_queue_put(consoleTxQueueHandle, &packet, 0);
+        if (status != OSAL_OK) break; // Queue full, stop or drop
+        
+        sent += chunk;
+      }
+      return sent;
+    } else {
+      /* Fallback to blocking UART before RTOS is started */
+      for (int i = 0; i < len; i++) {
+          __io_putchar(*ptr++);
+      }
+      return len;
+    }
   }
   return -1;
 }

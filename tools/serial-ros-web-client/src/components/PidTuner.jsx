@@ -106,6 +106,7 @@ export default function PidTuner({
   const [lastAutoEnable, setLastAutoEnable] = useState(0);
   const [isInternalTransitioning, setIsInternalTransitioning] = useState(false);
   const [pendingPidState, setPendingPidState] = useState(null); // null, 0, or 1
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle', 'saving', 'success'
   const hasAutoEnabledRef = useRef(false);
   const captureStartTsRef = useRef(0);
 
@@ -543,6 +544,23 @@ export default function PidTuner({
     }
   };
 
+  const handleSaveToFlash = () => {
+    if (window.confirm('Are you sure you want to write these settings to PERMANENT Flash memory?')) {
+      setSaveStatus('saving');
+      
+      // Send dedicated SAVE_CONFIG topic (0x0A)
+      sendPacket(buildPacket(TOPIC_IDS.RX.SAVE_CONFIG, []));
+
+      // Simulate a short processing delay for visual feedback
+      setTimeout(() => {
+        setSaveStatus('success');
+        setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2000);
+      }, 700);
+    }
+  };
+
   if (!appConfig) {
     return (
       <div className="pid-tuner-container">
@@ -976,8 +994,29 @@ export default function PidTuner({
                 </div>
               )}
               
-              <button className="btn btn-accent full-width" style={{ marginTop: '12px' }} onClick={() => sendPacket(buildPacket(TOPIC_IDS.RX.SAVE_CONFIG))}>
-                 <Save size={14} /> PERSIST TO FLASH
+              <button 
+                className="btn btn-accent full-width" 
+                style={{ marginTop: '12px' }} 
+                onClick={handleSaveToFlash}
+                data-status={saveStatus}
+                disabled={saveStatus !== 'idle'}
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <RotateCcw size={14} className="icon-spin" />
+                    <span>WRITING...</span>
+                  </>
+                ) : saveStatus === 'success' ? (
+                  <>
+                    <CheckCircle size={14} />
+                    <span>PERSISTENT!</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    <span>PERSIST TO FLASH</span>
+                  </>
+                )}
               </button>
 
               <div className="floating-hint">

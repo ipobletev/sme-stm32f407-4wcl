@@ -193,7 +193,7 @@ static void handle_get_config(void)
  */
 static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 {
-    // LOG_INFO(LOG_TAG, "Actuator Test (PWM): ID=%u Pulse=%d.%01d\r\n", (unsigned int)msg->actuator_id, (int)msg->pulse, abs((int)(msg->pulse * 10) % 10));
+    // LOG_INFO(LOG_TAG, "Actuator Test (PWM): ID=%u Pulse=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
 
     if (msg->actuator_id < 4) {
         /* 0-3: Mobility Motors */
@@ -210,7 +210,7 @@ static void handle_actuator_test(const ActuatorTestMsg_t *msg)
  */
 static void handle_actuator_velocity(const ActuatorTestMsg_t *msg)
 {
-    // LOG_INFO(LOG_TAG, "Actuator Test (VEL): ID=%u m/s=%d.%02d\r\n", (unsigned int)msg->actuator_id, (int)msg->pulse, abs((int)(msg->pulse * 100) % 100));
+    // LOG_INFO(LOG_TAG, "Actuator Test (VEL): ID=%u m/s=%.2f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
 
     if (msg->actuator_id < 4) {
         /* 0-3: Mobility Motors */

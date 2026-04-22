@@ -224,17 +224,17 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
             {saveStatus === 'saving' ? (
               <>
                 <RefreshCw size={14} className="icon-spin" />
-                <span>Writing...</span>
+                <span>WRITING...</span>
               </>
             ) : saveStatus === 'success' ? (
               <>
                 <CheckCircle size={14} />
-                <span>Persistent!</span>
+                <span>PERSISTENT!</span>
               </>
             ) : (
               <>
                 <Save size={14} />
-                <span>Persist to Flash</span>
+                <span>PERSIST TO FLASH</span>
               </>
             )}
           </button>

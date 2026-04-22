@@ -25,7 +25,7 @@ void debug_print(debug_level_t level, const char *tag, const char *fmt, ...) {
         default: return;
     }
 
-    // Header formatting: [COLOR][TIMESTAMP][LEVEL][TAG] 
+    // Header formatting: [TIMESTAMP][LEVEL][TAG] 
     uint32_t ts = osal_get_tick();
     len += snprintf(buffer + len, DEBUG_BUF_SIZE - len, "[%08lu][%s][%s] ", (unsigned long)ts, level_str, tag);
 

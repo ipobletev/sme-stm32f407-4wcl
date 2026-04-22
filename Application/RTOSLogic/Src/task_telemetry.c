@@ -95,17 +95,15 @@ void StartTelemetryTask(void *argument) {
             taskEXIT_CRITICAL();
 
             SerialRos_EnqueueTx(TOPIC_ID_ODOMETRY, &odom_msg, sizeof(OdometryMsg_t));
-
-            int m1_trgt_int = (int)odom_msg.target_speed[0];
-            int m1_spd_int = (int)odom_msg.measured_speed[0];
-            LOG_DEBUG(LOG_TAG, "M1 TRGT: %s%d.%02d, PWM: %d, SPD: %s%d.%02d\r\n", 
-                (odom_msg.target_speed[0] < 0 && m1_trgt_int == 0) ? "-" : "", m1_trgt_int, abs((int)(odom_msg.target_speed[0]*100)%100),
-                (int)odom_msg.pwm_output[0],
-                (odom_msg.measured_speed[0] < 0 && m1_spd_int == 0) ? "-" : "", m1_spd_int, abs((int)(odom_msg.measured_speed[0]*100)%100));
+            
+            LOG_DEBUG(LOG_TAG, "M1 TRG: %.2f, PWM: %d, SPD: %.2f M2 TRG: %.2f, PWM: %d, SPD: %.2f M3 TRG: %.2f, PWM: %d, SPD: %.2f M4 TRG: %.2f, PWM: %d, SPD: %.2f\r\n", 
+                odom_msg.target_speed[0], (int)odom_msg.pwm_output[0], odom_msg.measured_speed[0],
+                odom_msg.target_speed[1], (int)odom_msg.pwm_output[1], odom_msg.measured_speed[1],
+                odom_msg.target_speed[2], (int)odom_msg.pwm_output[2], odom_msg.measured_speed[2],
+                odom_msg.target_speed[3], (int)odom_msg.pwm_output[3], odom_msg.measured_speed[3]);
             
             /* Commented out by default to reduce console noise. Update format if enabling. */
-            // int m2_trgt_int = (int)odom_msg.target_speed[1]; int m2_spd_int = (int)odom_msg.measured_speed[1];
-            // LOG_DEBUG(LOG_TAG, "M2 TRGT: %s%d.%02d, PWM: %d, SPD: %s%d.%02d\r\n", (odom_msg.target_speed[1] < 0 && m2_trgt_int == 0) ? "-" : "", m2_trgt_int, abs((int)(odom_msg.target_speed[1]*100)%100), (int)odom_msg.pwm_output[1], (odom_msg.measured_speed[1] < 0 && m2_spd_int == 0) ? "-" : "", m2_spd_int, abs((int)(odom_msg.measured_speed[1]*100)%100));
+            // LOG_DEBUG(LOG_TAG, "M2 TRGT: %.2f, PWM: %d, SPD: %.2f\r\n", odom_msg.target_speed[1], (int)odom_msg.pwm_output[1], odom_msg.measured_speed[1]);
         }
 
         /* --- 3. SYSTEM CONFIG/APP CONFIG (Low Priority, Async) --- */
@@ -139,38 +137,17 @@ void StartTelemetryTask(void *argument) {
                     (unsigned long)(errs >> 32), (unsigned long)(errs & 0xFFFFFFFF));
 
 
-            /* Manual float formatting since library support is unreliable */
-            float batt_v_val = RobotState_GetBatteryVoltage();
-            float mcu_t_val  = RobotState_GetUCTemperature();
-
             float cmd_lx, cmd_az;
             RobotState_GetTargetVelocity(&cmd_lx, &cmd_az);
 
-            char batt_str[10];
-            char mcu_str[10];
-            char cmd_lx_str[10];
-            char cmd_az_str[10];
-
-            snprintf(batt_str, sizeof(batt_str), "%d.%02d", (int)batt_v_val, (int)(batt_v_val * 100) % 100);
-            snprintf(mcu_str, sizeof(mcu_str), "%d.%d", (int)mcu_t_val, abs((int)(mcu_t_val * 10) % 10));
-
-            int lx_int = (int)cmd_lx;
-            int lx_frac = abs((int)(cmd_lx * 100) % 100);
-            int az_int = (int)cmd_az;
-            int az_frac = abs((int)(cmd_az * 100) % 100);
-            snprintf(cmd_lx_str, sizeof(cmd_lx_str), "%s%d.%02d", (cmd_lx < 0 && lx_int == 0) ? "-" : "", lx_int, lx_frac);
-            snprintf(cmd_az_str, sizeof(cmd_az_str), "%s%d.%02d", (cmd_az < 0 && az_int == 0) ? "-" : "", az_int, az_frac);
-
-            /* Periodically log board health to console */
-
-            /* Report basic status to INFO level */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%s, %s, %s] | Batt: %sV | MCU: %sC | Errors: %s\r\n", 
+            /* Report basic status to INFO level (Native float support) */
+            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%.2f, %.2f, %s] | Batt: %.2fV | MCU: %.1fC | Errors: %s\r\n", 
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
                 FSM_Arm_StateToStr(RobotState_GetArmState()),
-                cmd_lx_str, cmd_az_str, FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
-                batt_str,
-                mcu_str,
+                cmd_lx, cmd_az, FSM_Mobility_ModeToStr(RobotState_GetTargetMobilityMode()),
+                batt_v,
+                mcu_t,
                 err_str);
 
             /* Report detailed diagnostics only to DEBUG level */
@@ -194,43 +171,22 @@ void StartTelemetryTask(void *argument) {
                 AppConfig->debug_level, AppConfig->telemetry_period_ms, AppConfig->sys_vars_period_ms, 
                 AppConfig->imu_publish_period_ms, AppConfig->odom_publish_period_ms, AppConfig->pid_enabled);
 
-            LOG_DEBUG(LOG_TAG, "Cfg-Mot: [M1:%d | M2:%d | M3:%d | M4:%d] | Ticks:%d.%01d | Spd:%d.%02d | PWM:%d\r\n", 
+            LOG_DEBUG(LOG_TAG, "Cfg-Mot: [M1:%d | M2:%d | M3:%d | M4:%d] | Ticks:%.1f | Spd:%.2f | PWM:%d\r\n", 
                 (int)AppConfig->motor1_invert, (int)AppConfig->motor2_invert, (int)AppConfig->motor3_invert, (int)AppConfig->motor4_invert, 
-                (int)AppConfig->motor_ticks_per_circle, abs((int)(AppConfig->motor_ticks_per_circle*10)%10),
-                (int)AppConfig->motor_speed_limit, abs((int)(AppConfig->motor_speed_limit*100)%100),
+                AppConfig->motor_ticks_per_circle,
+                AppConfig->motor_speed_limit,
                 (int)AppConfig->motor_pwm_max);
 
-            LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%d.%03dm | W:%d.%03dm | L:%d.%03dm]\r\n", 
-                (int)AppConfig->wheel_diameter, abs((int)(AppConfig->wheel_diameter * 1000.0f) % 1000),
-                (int)AppConfig->shaft_width, abs((int)(AppConfig->shaft_width * 1000.0f) % 1000),
-                (int)AppConfig->wheelbase_length, abs((int)(AppConfig->wheelbase_length * 1000.0f) % 1000));
+            LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%.3fm | W:%.3fm | L:%.3fm]\r\n", 
+                AppConfig->wheel_diameter,
+                AppConfig->shaft_width,
+                AppConfig->wheelbase_length);
             
-            // Prepare PID strings (Avoid %f as it may not be supported in some printf versions)
-            char m1_pid[40], m2_pid[40], m3_pid[40], m4_pid[40];
-            
-            // Convert floats to strings manually as some printf implementations don't support %f
-            snprintf(m1_pid, sizeof(m1_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
-                (int)AppConfig->motor1_kp, abs((int)(AppConfig->motor1_kp*100)%100),
-                (int)AppConfig->motor1_ki, abs((int)(AppConfig->motor1_ki*100)%100),
-                (int)AppConfig->motor1_kd, abs((int)(AppConfig->motor1_kd*100)%100),
-                (int)AppConfig->motor1_deadzone, abs((int)(AppConfig->motor1_deadzone * 10) % 10));
-            snprintf(m2_pid, sizeof(m2_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
-                (int)AppConfig->motor2_kp, abs((int)(AppConfig->motor2_kp*100)%100),
-                (int)AppConfig->motor2_ki, abs((int)(AppConfig->motor2_ki*100)%100),
-                (int)AppConfig->motor2_kd, abs((int)(AppConfig->motor2_kd*100)%100),
-                (int)AppConfig->motor2_deadzone, abs((int)(AppConfig->motor2_deadzone * 10) % 10));
-            snprintf(m3_pid, sizeof(m3_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
-                (int)AppConfig->motor3_kp, abs((int)(AppConfig->motor3_kp*100)%100),
-                (int)AppConfig->motor3_ki, abs((int)(AppConfig->motor3_ki*100)%100),
-                (int)AppConfig->motor3_kd, abs((int)(AppConfig->motor3_kd*100)%100),
-                (int)AppConfig->motor3_deadzone, abs((int)(AppConfig->motor3_deadzone * 10) % 10));
-            snprintf(m4_pid, sizeof(m4_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
-                (int)AppConfig->motor4_kp, abs((int)(AppConfig->motor4_kp*100)%100),
-                (int)AppConfig->motor4_ki, abs((int)(AppConfig->motor4_ki*100)%100),
-                (int)AppConfig->motor4_kd, abs((int)(AppConfig->motor4_kd*100)%100),
-                (int)AppConfig->motor4_deadzone, abs((int)(AppConfig->motor4_deadzone * 10) % 10));
-
-            LOG_DEBUG(LOG_TAG, "Cfg-PID: [M1:%s | M2:%s | M3:%s | M4:%s]\r\n", m1_pid, m2_pid, m3_pid, m4_pid);
+            LOG_DEBUG(LOG_TAG, "Cfg-PID: [M1:%.2f,%.2f,%.2f,%.1f | M2:%.2f,%.2f,%.2f,%.1f | M3:%.2f,%.2f,%.2f,%.1f | M4:%.2f,%.2f,%.2f,%.1f]\r\n", 
+                AppConfig->motor1_kp, AppConfig->motor1_ki, AppConfig->motor1_kd, AppConfig->motor1_deadzone,
+                AppConfig->motor2_kp, AppConfig->motor2_ki, AppConfig->motor2_kd, AppConfig->motor2_deadzone,
+                AppConfig->motor3_kp, AppConfig->motor3_ki, AppConfig->motor3_kd, AppConfig->motor3_deadzone,
+                AppConfig->motor4_kp, AppConfig->motor4_ki, AppConfig->motor4_kd, AppConfig->motor4_deadzone);
         }
 
         cycle_counter++;
