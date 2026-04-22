@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Plug, Unplug, AlertTriangle, Menu, ShieldCheck, Share2, Anchor, Cpu } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
@@ -11,6 +12,7 @@ export default function Header({
   sidebarCollapsed, 
   setSidebarCollapsed 
 }) {
+  const [baudRate, setBaudRate] = useState(230400);
   
   const handleEmergencyStop = () => {
     if (!connected || !sendPacket) return;
@@ -68,6 +70,25 @@ export default function Header({
           </div>
         )}
 
+        {/* Baud Rate Selector */}
+        {!connected && (
+          <div className="baud-selector">
+            <Cpu size={14} />
+            <select 
+              value={baudRate} 
+              onChange={(e) => setBaudRate(Number(e.target.value))}
+              className="select-transparent"
+            >
+              <option value={9600}>9600 bps</option>
+              <option value={57600}>57600 bps</option>
+              <option value={115200}>115200 bps</option>
+              <option value={230400}>230400 bps</option>
+              <option value={460800}>460800 bps</option>
+              <option value={921600}>921600 bps</option>
+            </select>
+          </div>
+        )}
+
         {/* Action Button */}
         {connected ? (
           isMaster ? (
@@ -76,13 +97,13 @@ export default function Header({
               Disconnect
             </button>
           ) : (
-            <button className="btn btn-primary" onClick={onConnect}>
+            <button className="btn btn-primary" onClick={() => onConnect(baudRate)}>
               <ShieldCheck size={14} />
               Take Control
             </button>
           )
         ) : (
-          <button className="btn btn-primary" onClick={onConnect}>
+          <button className="btn btn-primary" onClick={() => onConnect(baudRate)}>
             <Plug size={14} />
             Connect
           </button>

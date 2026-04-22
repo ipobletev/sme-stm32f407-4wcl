@@ -123,7 +123,7 @@ export default function App() {
               </div>
             </>
           ) : activeTab === 'graphs' ? (
-            <div className="graphs-view">
+            <div className="graphs-view full-width-view">
               <GraphsPanel 
                 history={history} 
                 onClear={clearHistory} 
@@ -134,7 +134,7 @@ export default function App() {
             </div>
 
           ) : activeTab === 'fsm' ? (
-            <div className="fsm-view">
+            <div className="fsm-view full-width-view">
               <SystemStatusMap
                 sysStatus={telemetry.sysStatus}
                 sendPacket={sendPacket}
@@ -142,7 +142,7 @@ export default function App() {
               />
             </div>
           ) : activeTab === 'fsm-log' ? (
-            <div className="fsm-log-view">
+            <div className="fsm-log-view full-width-view">
               <FsmTransitionLogPanel
                 rows={fsmTransitionLog.rows}
                 onClear={fsmTransitionLog.clear}
@@ -151,7 +151,7 @@ export default function App() {
               />
             </div>
           ) : activeTab === 'actuator-tool' ? (
-            <div className="diagnostics-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+            <div className="diagnostics-view full-width-view" style={{ margin: '0 auto', width: '100%' }}>
               <ActuatorControl 
                 sendPacket={sendPacket} 
                 connected={connected} 
@@ -166,7 +166,7 @@ export default function App() {
               sysStatus={telemetry.sysStatus} 
             />
           ) : activeTab === 'settings' ? (
-            <div className="settings-view" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
+            <div className="settings-view full-width-view" style={{ margin: '0 auto', width: '100%' }}>
               <ConfigPanel 
                 appConfig={telemetry.appConfig} 
                 sendPacket={sendPacket} 

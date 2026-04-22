@@ -83,7 +83,7 @@ const GainSlider = ({ label, value, min, max, step, onSend }) => {
 /**
  * PID Optimizer & Visual Tuner Component (Redesigned)
  */
-export default function PidTuner({ 
+const PidTuner = React.memo(function PidTuner({ 
   history, appConfig, sendPacket, connected, sysStatus, onClear,
   tuningHistory, setTuningHistory, 
   persistentData, setPersistentData,
@@ -154,43 +154,50 @@ export default function PidTuner({
 
   // Mapping history to chart-ready format
   const currentTelemetryData = useMemo(() => {
-    if (!history) return [];
-    const baseTs = captureStartTsRef.current || (history.length > 0 ? history[0].timestamp : Date.now());
-    return history.map(p => {
-      const target = p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
-      const measured = p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
-      const relativeTs = ((p.timestamp - baseTs) / 1000).toFixed(3);
-      return {
-        time: p.timeLabel,
-        relativeTime: `T + ${relativeTs}s`,
-        ts: p.timestamp,
-        target,
-        measured,
-        error: target - measured,
-        pwm: p.pid_pwm?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
-        // Individual traces for 'ALL' mode
-        t1: p.pid_target?.[0], m1: p.pid_measured?.[0], e1: (p.pid_target?.[0] || 0) - (p.pid_measured?.[0] || 0),
-        t2: p.pid_target?.[1], m2: p.pid_measured?.[1], e2: (p.pid_target?.[1] || 0) - (p.pid_measured?.[1] || 0),
-        t3: p.pid_target?.[2], m3: p.pid_measured?.[2], e3: (p.pid_target?.[2] || 0) - (p.pid_measured?.[2] || 0),
-        t4: p.pid_target?.[3], m4: p.pid_measured?.[3], e4: (p.pid_target?.[3] || 0) - (p.pid_measured?.[3] || 0),
-      };
-    }).slice(-300);
-  }, [history, selectedMotor]);
+    // CRITICAL for Memory: Only map data if we are actually capturing.
+    // Mapping 2000 points 20 times/sec while "idle" is a major source of GC churn and OOM.
+    if (!isCapturing || !history || history.length === 0) return [];
+    
+    const baseTs = captureStartTsRef.current || history[0].timestamp;
+    
+    // Optimization: Only process the points since capture started
+    const lastTsInPersistent = persistentData.length > 0 ? persistentData[persistentData.length - 1].ts : 0;
+    const minTs = Math.max(captureStartTsRef.current, lastTsInPersistent);
+    
+    // Instead of mapping the WHOLE history, we only map NEW points
+    return history
+      .filter(p => p.ts > minTs)
+      .map(p => {
+        const target = p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
+        const measured = p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
+        const relativeTs = ((p.timestamp - baseTs) / 1000).toFixed(3);
+        return {
+          time: p.timeLabel,
+          relativeTime: `T + ${relativeTs}s`,
+          ts: p.timestamp,
+          target,
+          measured,
+          error: target - measured,
+          pwm: p.pid_pwm?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
+          // Individual traces for 'ALL' mode
+          t1: p.pid_target?.[0], m1: p.pid_measured?.[0], e1: (p.pid_target?.[0] || 0) - (p.pid_measured?.[0] || 0),
+          t2: p.pid_target?.[1], m2: p.pid_measured?.[1], e2: (p.pid_target?.[1] || 0) - (p.pid_measured?.[1] || 0),
+          t3: p.pid_target?.[2], m3: p.pid_measured?.[2], e3: (p.pid_target?.[2] || 0) - (p.pid_measured?.[2] || 0),
+          t4: p.pid_target?.[3], m4: p.pid_measured?.[3], e4: (p.pid_target?.[3] || 0) - (p.pid_measured?.[3] || 0),
+        };
+      });
+  }, [history, selectedMotor, isCapturing, persistentData.length]);
 
   useEffect(() => {
     if (isCapturing && currentTelemetryData.length > 0) {
       setPersistentData(prev => {
-        const lastTs = prev.length > 0 ? prev[prev.length - 1].ts : 0;
-        const minTs = Math.max(captureStartTsRef.current, lastTs);
-        const newPoints = currentTelemetryData.filter(p => p.ts > minTs);
-        if (newPoints.length === 0) return prev;
-        
+        // Capped refresh rate: just append the new mapped points
+        const combined = [...prev, ...currentTelemetryData];
         // Cap persistent data to 1000 points (~20s at 50Hz) to prevent OOM
-        const combined = [...prev, ...newPoints];
         return combined.length > 1000 ? combined.slice(-1000) : combined;
       });
     }
-  }, [currentTelemetryData, isCapturing]);
+  }, [currentTelemetryData, isCapturing, setPersistentData]);
 
   // The chart displays persistent data (frozen if not capturing)
   const chartData = persistentData;
@@ -1111,4 +1118,6 @@ export default function PidTuner({
         </div>
       </div>
     );
-}
+});
+
+export default PidTuner;

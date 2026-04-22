@@ -168,16 +168,25 @@ export function useSerial() {
   useEffect(() => {
     const teleInterval = setInterval(() => {
       setTelemetry(prev => {
-        // Ensure pidDebug is included in the state update from buffer
+        // Only update if the buffer has actually changed (basic reference check)
+        // Note: telemetryBufferRef.current content is updated in handleFrame
         return { 
           ...telemetryBufferRef.current,
           pidDebug: telemetryBufferRef.current.pidDebug ? { ...telemetryBufferRef.current.pidDebug } : null
         };
       });
+      
       setFrequencies({ ...frequenciesBufferRef.current });
-      // Keep up to 2000 points (approx 40 seconds at 50Hz)
-      setHistory([...historyRef.current].slice(-2000));
-    }, 50); // 20Hz UI Refresh (Matches Odometry rate)
+      
+      // Keep up to 2000 points (approx 100 seconds at 20Hz average)
+      // Throttling the state update of history significantly reduces React reconciliation churn
+      setHistory(prev => {
+        if (historyRef.current.length === prev.length && historyRef.current[historyRef.current.length-1] === prev[prev.length-1]) {
+            return prev; // Avoid re-render if no new points
+        }
+        return [...historyRef.current].slice(-2000);
+      });
+    }, 100); // 10Hz UI Refresh (Balanced for smoothness and performance)
 
     const logInterval = setInterval(() => {
       if (logBufferRef.current.length > 0) {
@@ -458,7 +467,7 @@ export function useSerial() {
     }
   }, [connected, sendPacket]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (baudRate = 230400) => {
     if (connected) return;
     try {
       const port = await navigator.serial.requestPort();
@@ -466,7 +475,7 @@ export function useSerial() {
       // If the port is already open, we might have lost state but keep the lock
       // We check if we can open it; if it fails with 'already open', we try to use it if it's ours
       try {
-        await port.open({ baudRate: 230400 });
+        await port.open({ baudRate });
       } catch (err) {
         if (err.name === 'InvalidStateError') {
           console.warn('Port already open, attempting to use current state');

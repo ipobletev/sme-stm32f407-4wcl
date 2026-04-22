@@ -308,6 +308,48 @@ body::before {
   color: var(--text-muted);
 }
 
+.baud-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  height: 38px;
+}
+
+.baud-selector:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+}
+
+.baud-selector svg {
+  color: var(--accent-indigo);
+  opacity: 0.8;
+}
+
+.select-transparent {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  padding-right: 4px;
+  font-family: var(--font-mono);
+}
+
+.select-transparent option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 .session-indicator.master {
   background: rgba(99, 102, 241, 0.15);
   border-color: rgba(99, 102, 241, 0.3);
@@ -477,6 +519,10 @@ body::before {
   gap: 16px;
   padding: 16px 24px 24px;
   box-sizing: border-box;
+}
+
+.full-width-view {
+  grid-column: 1 / -1;
 }
 
 .frequency-bar {
@@ -1923,10 +1969,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* ===== OPERATOR CONTROL PANEL ===== */
 .operator-control-panel {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
   padding-bottom: 40px;

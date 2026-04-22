@@ -1,4 +1,5 @@
 .pid-tuner-container {
+    grid-column: 1 / -1;
     padding: 24px;
     display: flex;
     flex-direction: column;
