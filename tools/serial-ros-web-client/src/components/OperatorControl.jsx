@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Gamepad2, Zap, ShieldAlert, Sliders, Play, Square, AlertCircle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight, RotateCcw } from 'lucide-react';
+import { Gamepad2, Zap, ShieldAlert, Sliders, Play, Square, AlertCircle, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight, RotateCcw, RotateCw } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 import { getSupervisorStateName, getSupervisorStateClass } from '../utils/fsmLabels';
 
 export default function OperatorControl({ sendPacket, connected, sysStatus, appConfig }) {
   const systemMaxSpeed = appConfig?.motor_speed_limit || 2.0;
+  const systemMaxAngular = appConfig?.motor_angular_speed_limit || 3.14;
 
   const [maxLinear, setMaxLinear] = useState(Math.min(0.5, systemMaxSpeed)); // m/s
-  const [maxAngular, setMaxAngular] = useState(1.5); // rad/s
+  const [maxAngular, setMaxAngular] = useState(Math.min(1.5, systemMaxAngular)); // rad/s
   const [isDriving, setIsDriving] = useState(false);
   const [activeControlType, setActiveControlType] = useState(null); // 'joystick' or 'dpad'
   const [displayVel, setDisplayVel] = useState({ x: 0, z: 0 });
@@ -24,7 +25,10 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
     if (maxLinear > systemMaxSpeed) {
       setMaxLinear(systemMaxSpeed);
     }
-  }, [systemMaxSpeed, maxLinear]);
+    if (maxAngular > systemMaxAngular) {
+      setMaxAngular(systemMaxAngular);
+    }
+  }, [systemMaxSpeed, systemMaxAngular, maxLinear, maxAngular]);
 
   // Sync limits to ref for the control loop
   useEffect(() => {
@@ -152,6 +156,8 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
       case 'down': lx = -lin; break;
       case 'left': az = ang; break;
       case 'right': az = -ang; break;
+      case 'rotate-left': az = ang; break;
+      case 'rotate-right': az = -ang; break;
       case 'up-left': lx = diagLin; az = diagAng; break;
       case 'up-right': lx = diagLin; az = -diagAng; break;
       case 'down-left': lx = -diagLin; az = diagAng; break;
@@ -270,10 +276,15 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
             <div className="limit-group">
               <div className="limit-label">
                 <span>Max Angular Speed</span>
-                <span className="limit-value">{maxAngular.toFixed(2)} rad/s</span>
+                <span className="limit-value">
+                  {maxAngular.toFixed(2)} rad/s
+                  <div style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 'normal', marginTop: '2px' }}>
+                    System Limit: {systemMaxAngular.toFixed(2)} rad/s
+                  </div>
+                </span>
               </div>
               <input 
-                type="range" min="0.5" max="5.0" step="0.1" 
+                type="range" min="0.5" max={systemMaxAngular} step="0.1" 
                 value={maxAngular} onChange={(e) => setMaxAngular(parseFloat(e.target.value))} 
               />
             </div>
@@ -308,21 +319,52 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
               EMERGENCY STOP
             </button>
           </div>
-          <div 
-            className={`joystick-container ${!isAuto || !connected ? 'disabled' : ''}`}
-            ref={joystickRef}
-            onMouseDown={handlePointerDown}
-            onTouchStart={handlePointerDown}
-          >
-            <div className="joystick-base">
-              <div className="joystick-guide-x"></div>
-              <div className="joystick-guide-y"></div>
-              <div className="joystick-center-dot"></div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px', margin: '20px 0' }}>
+            {/* Rotate Right (CW) - INVERTED POSITION */}
+            <button 
+              className={`dpad-btn diag ${!isAuto || !connected ? 'disabled' : ''}`}
+              style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+              onMouseDown={(e) => handleArrowPress('rotate-right', e)} 
+              onMouseUp={handleArrowRelease} 
+              onTouchStart={(e) => handleArrowPress('rotate-right', e)} 
+              onTouchEnd={handleArrowRelease} 
+              onTouchCancel={handleArrowRelease}
+              title="Rotate Clockwise"
+            >
+              <RotateCw size={20} />
+            </button>
+
+            <div 
+              className={`joystick-container ${!isAuto || !connected ? 'disabled' : ''}`}
+              ref={joystickRef}
+              onMouseDown={handlePointerDown}
+              onTouchStart={handlePointerDown}
+              style={{ margin: 0 }}
+            >
+              <div className="joystick-base">
+                <div className="joystick-guide-x"></div>
+                <div className="joystick-guide-y"></div>
+                <div className="joystick-center-dot"></div>
+              </div>
+              <div className={`joystick-knob ${isDriving ? 'active' : ''}`} ref={knobRef}>
+                <div className="knob-inner"></div>
+                {isDriving && <div className="knob-glow"></div>}
+              </div>
             </div>
-            <div className={`joystick-knob ${isDriving ? 'active' : ''}`} ref={knobRef}>
-              <div className="knob-inner"></div>
-              {isDriving && <div className="knob-glow"></div>}
-            </div>
+
+            {/* Rotate Left (CCW) - INVERTED POSITION */}
+            <button 
+              className={`dpad-btn diag ${!isAuto || !connected ? 'disabled' : ''}`}
+              style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+              onMouseDown={(e) => handleArrowPress('rotate-left', e)} 
+              onMouseUp={handleArrowRelease} 
+              onTouchStart={(e) => handleArrowPress('rotate-left', e)} 
+              onTouchEnd={handleArrowRelease} 
+              onTouchCancel={handleArrowRelease}
+              title="Rotate Counter-Clockwise"
+            >
+              <RotateCcw size={20} />
+            </button>
           </div>
 
           <div className={`dpad-container ${!isAuto || !connected ? 'disabled' : ''}`}>

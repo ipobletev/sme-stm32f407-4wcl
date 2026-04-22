@@ -334,6 +334,15 @@ void RobotState_ResetArmCommands(void) {
 }
 
 void RobotState_SetTargetVelocity(float linear_x, float angular_z) {
+    /* Apply safety clamping from config */
+    float max_linear = AppConfig->motor_speed_limit;
+    float max_angular = AppConfig->motor_angular_speed_limit;
+
+    if (linear_x > max_linear) linear_x = max_linear;
+    if (linear_x < -max_linear) linear_x = -max_linear;
+    if (angular_z > max_angular) angular_z = max_angular;
+    if (angular_z < -max_angular) angular_z = -max_angular;
+
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         RobotState_4wcl.Commands.target_linear_x = linear_x;
         RobotState_4wcl.Commands.target_angular_z = angular_z;

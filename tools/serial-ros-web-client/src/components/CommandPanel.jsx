@@ -142,22 +142,38 @@ const CommandPanel = memo(function CommandPanel({ sendPacket, connected, sysStat
           </div>
           <div className="slider-group">
             <div className="slider-label">
-              <span>Angular Z</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Angular Z
+                <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 'normal' }}>
+                  (Max: {(appConfig?.motor_angular_speed_limit || 3.14).toFixed(2)} rad/s)
+                </span>
+              </span>
               <input 
                 type="number" 
                 className="value-input" 
                 value={angularZ} 
                 step={0.01}
-                min={-3.14}
-                max={3.14}
+                min={-(appConfig?.motor_angular_speed_limit || 3.14)}
+                max={(appConfig?.motor_angular_speed_limit || 3.14)}
                 onChange={e => setAngularZ(Number(e.target.value))}
                 disabled={disabled}
               />
             </div>
-            <input type="range" min={-3.14} max={3.14} step={0.01} value={angularZ}
+            <input 
+              type="range" 
+              min={-(appConfig?.motor_angular_speed_limit || 3.14)} 
+              max={(appConfig?.motor_angular_speed_limit || 3.14)} 
+              step={0.01} 
+              value={angularZ}
               onChange={e => setAngularZ(Number(e.target.value))}
               disabled={disabled}
-              onDoubleClick={() => setAngularZ(0)} />
+              onDoubleClick={() => setAngularZ(0)} 
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', marginTop: '2px', opacity: 0.5 }}>
+              <span>-{ (appConfig?.motor_angular_speed_limit || 3.14).toFixed(1) }</span>
+              <span>0</span>
+              <span>+{ (appConfig?.motor_angular_speed_limit || 3.14).toFixed(1) }</span>
+            </div>
           </div>
           <div className="btn-group">
             <button className="btn btn-primary btn-sm" style={{ flex: 2 }} onClick={sendCmdVel} disabled={disabled}>

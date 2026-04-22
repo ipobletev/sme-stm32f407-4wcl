@@ -25,6 +25,7 @@ const PARAM_GROUPS = [
       { id: 0x10, key: 'pid_enabled', label: 'PID Enabled by default', type: 'boolean' },
       { id: 0x11, key: 'motor_ticks', label: 'Motor Ticks/Rev', type: 'number', min: 1 },
       { id: 0x12, key: 'motor_speed_limit', label: 'Max Speed (m/s)', type: 'number', step: 0.01, min: 0.1 },
+      { id: 0x15, key: 'motor_angular_speed_limit', label: 'Max Angular (rad/s)', type: 'number', step: 0.01, min: 0.1 },
       { id: 0x14, key: 'motor_pwm_max', label: 'PWM Max', type: 'number', min: 1000, max: 65535, step: 1 },
     ]
   },
