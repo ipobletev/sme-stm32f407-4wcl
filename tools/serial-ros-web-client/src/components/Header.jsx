@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Plug, Unplug, AlertTriangle, Menu, ShieldCheck, Share2, Anchor, Cpu } from 'lucide-react';
+import { 
+  Plug, Unplug, AlertTriangle, Menu, ShieldCheck, 
+  Share2, Anchor, Cpu, RotateCcw, Coffee, 
+  Gamepad2, Play, Pause, Target 
+} from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 export default function Header({ 
   connected, 
   isMaster,
   linkActive,
+  sysStatus,
   onConnect, 
   onDisconnect, 
   sendPacket, 
@@ -13,6 +18,20 @@ export default function Header({
   setSidebarCollapsed 
 }) {
   const [baudRate, setBaudRate] = useState(230400);
+
+  const STATE_MAP = {
+    0: { label: 'INIT', color: 'var(--accent-amber)', icon: RotateCcw },
+    1: { label: 'IDLE', color: 'var(--text-muted)', icon: Coffee },
+    2: { label: 'MANUAL', color: 'var(--accent-cyan)', icon: Gamepad2 },
+    3: { label: 'AUTO', color: 'var(--accent-emerald)', icon: Play },
+    4: { label: 'PAUSED', color: 'var(--accent-amber)', icon: Pause },
+    5: { label: 'FAULT', color: 'var(--accent-rose)', icon: AlertTriangle },
+    6: { label: 'TESTING', color: 'var(--accent-cyan)', icon: Target },
+  };
+
+  const currentState = sysStatus?.state ?? 1;
+  const stateInfo = STATE_MAP[currentState] || STATE_MAP[1];
+  const StateIcon = stateInfo.icon;
   
   const handleEmergencyStop = () => {
     if (!connected || !sendPacket) return;
@@ -46,6 +65,14 @@ export default function Header({
       </div>
 
       <div className="header-actions">
+        {/* System State Badge */}
+        {connected && (
+          <div className="system-state-badge" style={{ '--state-color': stateInfo.color }}>
+            <StateIcon size={14} className="state-icon" />
+            <span className="state-label">SYS: {stateInfo.label}</span>
+          </div>
+        )}
+
         {/* Connection Mode Indicator */}
         {connected && (
           <div className={`session-indicator ${isMaster ? 'master' : 'follower'}`}>

@@ -292,7 +292,30 @@ body::before {
   gap: 16px;
 }
 
-/* Session & Connection Indicators */
+.system-state-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--state-color);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--state-color), transparent 80%);
+  transition: all 0.3s ease;
+}
+
+.system-state-badge .state-icon {
+  color: var(--state-color);
+  filter: drop-shadow(0 0 5px var(--state-color));
+}
+
+.system-state-badge .state-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.05em;
+}
+
 .session-indicator {
   display: flex;
   align-items: center;

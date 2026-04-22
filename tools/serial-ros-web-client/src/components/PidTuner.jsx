@@ -166,7 +166,7 @@ const PidTuner = React.memo(function PidTuner({
     
     // Instead of mapping the WHOLE history, we only map NEW points
     return history
-      .filter(p => p.ts > minTs)
+      .filter(p => p.timestamp > minTs)
       .map(p => {
         const target = p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
         const measured = p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;

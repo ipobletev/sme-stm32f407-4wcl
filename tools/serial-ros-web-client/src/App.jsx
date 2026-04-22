@@ -68,7 +68,7 @@ export default function App() {
   const [pidHistory, setPidHistory] = useState([]);
   const [pidChartData, setPidChartData] = useState([]);
   const [pidSettings, setPidSettings] = useState({
-    rps: 1.0,
+    speed: 1.0,
     lead: 500,
     duration: 2000,
     tail: 1000,
@@ -93,6 +93,7 @@ export default function App() {
           connected={connected} 
           isMaster={isMaster}
           linkActive={linkActive}
+          sysStatus={telemetry.sysStatus}
           onConnect={connect} 
           onDisconnect={disconnect} 
           sendPacket={sendPacket}
