@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { Cpu, Gauge, RotateCcw } from 'lucide-react';
 import ImuVisualizer from './ImuVisualizer';
 import {
@@ -30,7 +31,7 @@ function fmt(v, d = 2) {
   return rad * (180 / Math.PI);
 }
 
-export default function TelemetryPanel({ telemetry, frequencies }) {
+const TelemetryPanel = memo(function TelemetryPanel({ telemetry, frequencies }) {
   const { sysStatus, imu, odometry } = telemetry;
 
   const batPct = sysStatus ? getBatteryPercent(sysStatus.v_batt) : 0;
@@ -197,4 +198,6 @@ export default function TelemetryPanel({ telemetry, frequencies }) {
 
     </div>
   );
-}
+});
+
+export default TelemetryPanel;

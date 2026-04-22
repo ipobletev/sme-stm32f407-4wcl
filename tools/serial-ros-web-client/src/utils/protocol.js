@@ -18,6 +18,8 @@ export function calculateCRC16(data) {
   return crc;
 }
 
+export const MOTOR_ID_ALL = 0xFF;
+
 export const TOPIC_IDS = {
   RX: {
     HEARTBEAT: 0x00,

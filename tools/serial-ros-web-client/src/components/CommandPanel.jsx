@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Send, Joystick, Cog, Shield, Navigation, StopCircle } from 'lucide-react';
 import { buildPacket, Encoders, TOPIC_IDS } from '../utils/protocol';
 import SystemEventsControl from './SystemEventsControl';
 
-export default function CommandPanel({ sendPacket, connected, sysStatus }) {
+const CommandPanel = memo(function CommandPanel({ sendPacket, connected, sysStatus }) {
   const [linearX, setLinearX] = useState(0);
   const [angularZ, setAngularZ] = useState(0);
   const [j1, setJ1] = useState(0);
@@ -193,4 +193,6 @@ export default function CommandPanel({ sendPacket, connected, sysStatus }) {
       </div>
     </>
   );
-}
+});
+
+export default CommandPanel;

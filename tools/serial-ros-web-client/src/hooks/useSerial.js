@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { calculateCRC16, parsePayload, TOPIC_IDS, buildPacket } from '../utils/protocol';
 
 const SYNC1 = 0xAA;
@@ -163,29 +163,46 @@ export function useSerial() {
   const lastTeleTickRef = useRef(0);
   const lastTopicTicksRef = useRef({});
   const lastHeartbeatRef = useRef(0);
+  
+  // Track "dirty" state to avoid redundant re-renders
+  const isTelemetryDirtyRef = useRef(false);
+  const isHistoryDirtyRef = useRef(false);
+  const isFrequenciesDirtyRef = useRef(false);
 
   // Periodic flushing of buffers to state (Capped refresh rate)
   useEffect(() => {
     const teleInterval = setInterval(() => {
-      setTelemetry(prev => {
-        // Only update if the buffer has actually changed (basic reference check)
-        // Note: telemetryBufferRef.current content is updated in handleFrame
-        return { 
-          ...telemetryBufferRef.current,
-          pidDebug: telemetryBufferRef.current.pidDebug ? { ...telemetryBufferRef.current.pidDebug } : null
-        };
-      });
+      // 1. Telemetry Dirty Check
+      if (isTelemetryDirtyRef.current) {
+        setTelemetry(prev => {
+          isTelemetryDirtyRef.current = false;
+          return { 
+            ...telemetryBufferRef.current,
+            pidDebug: telemetryBufferRef.current.pidDebug ? { ...telemetryBufferRef.current.pidDebug } : null
+          };
+        });
+      }
       
-      setFrequencies({ ...frequenciesBufferRef.current });
+      // 2. Frequencies Dirty Check
+      if (isFrequenciesDirtyRef.current) {
+        setFrequencies({ ...frequenciesBufferRef.current });
+        isFrequenciesDirtyRef.current = false;
+      }
       
-      // Keep up to 2000 points (approx 100 seconds at 20Hz average)
+      // 3. History Dirty Check & Resize
       // Throttling the state update of history significantly reduces React reconciliation churn
-      setHistory(prev => {
-        if (historyRef.current.length === prev.length && historyRef.current[historyRef.current.length-1] === prev[prev.length-1]) {
-            return prev; // Avoid re-render if no new points
-        }
-        return [...historyRef.current].slice(-2000);
-      });
+      if (isHistoryDirtyRef.current) {
+          setHistory(prev => {
+            isHistoryDirtyRef.current = false;
+            // Only update if the buffer has actually changed (basic existence/count check)
+            if (historyRef.current.length === prev.length && 
+                historyRef.current.length > 0 && 
+                historyRef.current[historyRef.current.length-1].timestamp === prev[prev.length-1]?.timestamp) {
+                return prev; 
+            }
+            return [...historyRef.current].slice(-2000);
+          });
+      }
     }, 100); // 10Hz UI Refresh (Balanced for smoothness and performance)
 
     const logInterval = setInterval(() => {
@@ -222,6 +239,11 @@ export function useSerial() {
     };
     // Push to buffer, not state
     logBufferRef.current.push(entry);
+    
+    // Prevent unbounded growth in background tabs
+    if (logBufferRef.current.length > 500) {
+      logBufferRef.current.shift();
+    }
   }, []);
 
   const createPoint = useCallback((now, topicId, parsed) => {
@@ -271,6 +293,8 @@ export function useSerial() {
     const now = Date.now();
     lastTeleTickRef.current = now;
     lastTopicTicksRef.current[`0x${topicId.toString(16).padStart(2, '0')}`] = now;
+    isTelemetryDirtyRef.current = true;
+    isFrequenciesDirtyRef.current = true;
     
     const parsed = parsePayload(topicId, data);
     if (!parsed) return;
@@ -314,6 +338,7 @@ export function useSerial() {
         if (p) {
           historyRef.current.push(p);
           if (historyRef.current.length > 2000) historyRef.current.shift();
+          isHistoryDirtyRef.current = true;
         }
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
@@ -372,6 +397,7 @@ export function useSerial() {
             break;
           case MSG_TYPES.FREQ_UPDATE:
             frequenciesBufferRef.current = rates;
+            isFrequenciesDirtyRef.current = true;
             break;
         }
       } catch (e) {}
@@ -412,6 +438,7 @@ export function useSerial() {
           break;
         case MSG_TYPES.FREQ_UPDATE:
           frequenciesBufferRef.current = rates;
+          isFrequenciesDirtyRef.current = true;
           break;
       }
     };
@@ -457,6 +484,7 @@ export function useSerial() {
           wsRef.current.send(JSON.stringify(msg));
         }
         frequenciesBufferRef.current = rates;
+        isFrequenciesDirtyRef.current = true;
       };
 
       return () => {
@@ -542,7 +570,7 @@ export function useSerial() {
     historyRef.current = [];
   }, []);
 
-  return {
+  return useMemo(() => ({
     connected: connected || sharedConnected || networkConnected,
     isMaster: connected,
     connect,
@@ -555,6 +583,10 @@ export function useSerial() {
     lastTopicTicks: lastTopicTicksRef.current,
     linkActive: (Date.now() - lastTeleTickRef.current) < ((telemetry.appConfig?.sys_vars_period || 1000) + 1000),
     log,
-  };
+  }), [
+    connected, sharedConnected, networkConnected, 
+    connect, disconnect, sendPacket, 
+    telemetry, history, clearHistory, frequencies, log
+  ]);
 
 }

@@ -193,13 +193,14 @@ static void handle_get_config(void)
  */
 static void handle_actuator_test(const ActuatorTestMsg_t *msg)
 {
-    // LOG_INFO(LOG_TAG, "Actuator Test (PWM): ID=%u Pulse=%.1f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
-
-    if (msg->actuator_id < 4) {
-        /* 0-3: Mobility Motors */
+    if (msg->actuator_id == 0xFF) {
+        /* Broadcast to all 4 motors */
+        for (uint8_t i = 0; i < 4; i++) {
+            RobotState_SetMotorTestCommand(i, msg->pulse, 0);
+        }
+    } else if (msg->actuator_id < 4) {
+        /* Single motor control */
         RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 0); /* 0 = PWM */
-    } else {
-        /* 10+: Arm Servos (Optional / Not implemented yet) */
     }
 }
 
@@ -210,10 +211,13 @@ static void handle_actuator_test(const ActuatorTestMsg_t *msg)
  */
 static void handle_actuator_velocity(const ActuatorTestMsg_t *msg)
 {
-    // LOG_INFO(LOG_TAG, "Actuator Test (VEL): ID=%u m/s=%.2f\r\n", (unsigned int)msg->actuator_id, msg->pulse);
-
-    if (msg->actuator_id < 4) {
-        /* 0-3: Mobility Motors */
+    if (msg->actuator_id == 0xFF) {
+        /* Broadcast to all 4 motors */
+        for (uint8_t i = 0; i < 4; i++) {
+            RobotState_SetMotorTestCommand(i, msg->pulse, 1);
+        }
+    } else if (msg->actuator_id < 4) {
+        /* Single motor control */
         RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 1); /* 1 = Velocity */
     }
 }

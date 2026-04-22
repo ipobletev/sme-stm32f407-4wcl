@@ -12,7 +12,7 @@
 /* Motor Parameters */
 #define DEFAULT_ROBOT_STATE_PID_ENABLED         0
 #define DEFAULT_MOTOR_TICKS_PER_CIRCLE          654.0f
-#define DEFAULT_MOTOR_SPEED_LIMIT               1.38f
+#define DEFAULT_MOTOR_SPEED_LIMIT               1.26f
 #define DEFAULT_MOTOR_PULSE_DEADZONE            1000.0f
 #define DEFAULT_MOTOR_PWM_MAX                   65535.0f
 

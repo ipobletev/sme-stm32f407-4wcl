@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { 
   Plug, Unplug, AlertTriangle, Menu, ShieldCheck, 
   Share2, Anchor, Cpu, RotateCcw, Coffee, 
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
-export default function Header({ 
+const Header = memo(function Header({ 
   connected, 
   isMaster,
   linkActive,
@@ -138,4 +138,6 @@ export default function Header({
       </div>
     </header>
   );
-}
+});
+
+export default Header;

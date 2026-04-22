@@ -1,6 +1,7 @@
 #include "States/mob_state_handlers.h"
 #include "mobility_fsm_internal.h"
 #include "debug_module.h"
+#include <math.h>
 
 void MobState_Break_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering BREAK State (Active Braking). Commanding 0.0 m/s.\r\n");

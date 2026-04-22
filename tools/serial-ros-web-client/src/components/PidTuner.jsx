@@ -8,7 +8,7 @@ import {
   Activity, ShieldCheck, Send, Power, RotateCcw, Download, Navigation, Cpu,
   ChevronUp, ChevronDown, CheckCircle
 } from 'lucide-react';
-import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
+import { TOPIC_IDS, Encoders, buildPacket, MOTOR_ID_ALL, SYS_EVENTS } from '../utils/protocol';
 import SystemEventsControl from './SystemEventsControl';
 import './PidTuner.css';
 
@@ -180,10 +180,10 @@ const PidTuner = React.memo(function PidTuner({
           error: target - measured,
           pwm: p.pid_pwm?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0,
           // Individual traces for 'ALL' mode
-          t1: p.pid_target?.[0], m1: p.pid_measured?.[0], e1: (p.pid_target?.[0] || 0) - (p.pid_measured?.[0] || 0),
-          t2: p.pid_target?.[1], m2: p.pid_measured?.[1], e2: (p.pid_target?.[1] || 0) - (p.pid_measured?.[1] || 0),
-          t3: p.pid_target?.[2], m3: p.pid_measured?.[2], e3: (p.pid_target?.[2] || 0) - (p.pid_measured?.[2] || 0),
-          t4: p.pid_target?.[3], m4: p.pid_measured?.[3], e4: (p.pid_target?.[3] || 0) - (p.pid_measured?.[3] || 0),
+          t1: p.pid_target?.[0], m1: p.pid_measured?.[0], e1: (p.pid_target?.[0] || 0) - (p.pid_measured?.[0] || 0), p1: p.pid_pwm?.[0] || 0,
+          t2: p.pid_target?.[1], m2: p.pid_measured?.[1], e2: (p.pid_target?.[1] || 0) - (p.pid_measured?.[1] || 0), p2: p.pid_pwm?.[1] || 0,
+          t3: p.pid_target?.[2], m3: p.pid_measured?.[2], e3: (p.pid_target?.[2] || 0) - (p.pid_measured?.[2] || 0), p3: p.pid_pwm?.[2] || 0,
+          t4: p.pid_target?.[3], m4: p.pid_measured?.[3], e4: (p.pid_target?.[3] || 0) - (p.pid_measured?.[3] || 0), p4: p.pid_pwm?.[3] || 0,
         };
       });
   }, [history, selectedMotor, isCapturing, persistentData.length]);
@@ -417,8 +417,10 @@ const PidTuner = React.memo(function PidTuner({
         const id = map[key];
         if (id) {
             sendPacket(buildPacket(TOPIC_IDS.RX.SET_CONFIG, Encoders.setConfig(id, parseFloat(v))));
-            // Tiny delay to avoid flooding the UART queue too fast if multiple motors are updated
-            if (motorsToUpdate.length > 1) await new Promise(r => setTimeout(r, 20));
+            // Synchronization: use 5ms instead of 20ms for faster bulk updates
+            if (motorsToUpdate.length > 1) {
+              await new Promise(r => setTimeout(r, 5));
+            }
         }
     }
   };
@@ -430,11 +432,11 @@ const PidTuner = React.memo(function PidTuner({
       setTestTimer(null);
     }
     
-    // Stop all motors
-    const motors = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
-    for (const mIdx of motors) {
-      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(mIdx, 0)));
-      if (motors.length > 1) await new Promise(r => setTimeout(r, 15));
+    // Stop motors
+    if (selectedMotor === 'all') {
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(MOTOR_ID_ALL, 0)));
+    } else {
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(selectedMotor, 0)));
     }
 
     if (stopCapture) {
@@ -469,12 +471,12 @@ const PidTuner = React.memo(function PidTuner({
 
     console.log('[PidTuner] Applying step now...');
     const val = parseFloat(testSpeed);
-    const motors = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
-
-    // Start step for each selected motor
-    for (const mIdx of motors) {
-      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(mIdx, val)));
-      if (motors.length > 1) await new Promise(r => setTimeout(r, 15));
+    // Start step for selected motor(s)
+    if (selectedMotor === 'all') {
+      // BROADCAST: Send one packet for all motors to ensure perfect synchronization
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(MOTOR_ID_ALL, val)));
+    } else {
+      sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(selectedMotor, val)));
     }
 
     // Clear existing timer if any
@@ -507,6 +509,7 @@ const PidTuner = React.memo(function PidTuner({
   const exportSectionToCsv = (entry) => {
     if (!entry.data || entry.data.length === 0) return;
     
+    const isAll = entry.motor === 'ALL';
     let csv = `PID Test Session - ${entry.timestamp}\n`;
     csv += `Motor,${entry.motor}\n`;
     csv += `KP,${entry.kp}\n`;
@@ -516,10 +519,20 @@ const PidTuner = React.memo(function PidTuner({
     csv += `Steady State Error,${entry.error?.toFixed(4)}\n`;
     csv += `Total Error (IAE),${((entry.data.reduce((acc, p) => acc + Math.abs(p.target - p.measured), 0)) * 0.02).toFixed(4)}\n\n`;
     
-    csv += "N,Timestamp,Target,Measured,Error,PWM\n";
-    entry.data.forEach((p, idx) => {
-      csv += `${idx + 1},${p.ts},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm}\n`;
-    });
+    if (isAll) {
+      csv += "N,Timestamp,T1,M1,E1,P1,T2,M2,E2,P2,T3,M3,E3,P3,T4,M4,E4,P4\n";
+      entry.data.forEach((p, idx) => {
+        csv += `${idx + 1},${p.ts},${p.t1},${p.m1},${p.e1?.toFixed(4)},${p.p1},`;
+        csv += `${p.t2},${p.m2},${p.e2?.toFixed(4)},${p.p2},`;
+        csv += `${p.t3},${p.m3},${p.e3?.toFixed(4)},${p.p3},`;
+        csv += `${p.t4},${p.m4},${p.e4?.toFixed(4)},${p.p4}\n`;
+      });
+    } else {
+      csv += "N,Timestamp,Target,Measured,Error,PWM\n";
+      entry.data.forEach((p, idx) => {
+        csv += `${idx + 1},${p.ts},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm}\n`;
+      });
+    }
 
     const filename = `pid_test_${entry.motor.replace(' ', '_')}_${entry.timestamp.replace(/[: ]/g, '-')}.csv`;
     downloadCsv(filename, csv);
@@ -528,11 +541,16 @@ const PidTuner = React.memo(function PidTuner({
   const exportAllSectionsToCsv = () => {
     if (tuningHistory.length === 0) return;
     
-    let csv = "Section,N,Timestamp,Motor,KP,KI,KD,Target,Measured,Error,PWM\n";
+    // For batch export, we use the widest format to ensure no data is lost
+    let csv = "Section,N,Timestamp,Motor,KP,KI,KD,Target,Measured,Error,PWM,T1,M1,E1,P1,T2,M2,E2,P2,T3,M3,E3,P3,T4,M4,E4,P4\n";
     tuningHistory.forEach((entry, idx) => {
       const sectionName = `Session_${tuningHistory.length - idx}`;
       entry.data.forEach((p, pIdx) => {
-        csv += `${sectionName},${pIdx + 1},${p.ts},${entry.motor},${entry.kp},${entry.ki},${entry.kd},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm}\n`;
+        csv += `${sectionName},${pIdx + 1},${p.ts},${entry.motor},${entry.kp},${entry.ki},${entry.kd},${p.target},${p.measured},${p.error?.toFixed(4) || 0},${p.pwm},`;
+        csv += `${p.t1 || ''},${p.m1 || ''},${p.e1?.toFixed(4) || ''},${p.p1 || ''},`;
+        csv += `${p.t2 || ''},${p.m2 || ''},${p.e2?.toFixed(4) || ''},${p.p2 || ''},`;
+        csv += `${p.t3 || ''},${p.m3 || ''},${p.e3?.toFixed(4) || ''},${p.p3 || ''},`;
+        csv += `${p.t4 || ''},${p.m4 || ''},${p.e4?.toFixed(4) || ''},${p.p4 || ''}\n`;
       });
     });
 
