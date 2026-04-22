@@ -20,7 +20,7 @@ void MobState_Moving_Run(void) {
 
     /* 2. State Transition Check: If targets return to zero, transition back to IDLE */
     if (target_linear_x == 0.0f && target_angular_z == 0.0f) {
-        FSM_Mobility_ProcessEvent(EVENT_MOB_IDLE);
+        FSM_Mobility_ProcessEvent(EVENT_MOB_BREAK);
         return;
     }
 

@@ -117,8 +117,11 @@ void StartSerialRosTask(void *argument) {
             if (was_connected && !is_connected) {
                 /* Disconnection Pulse Detected */
                 LOG_WARNING(LOG_TAG, "Client Disconnected.\r\n");
-                if (RobotState_GetSystemState() == STATE_SUPERVISOR_AUTO) {
-                    Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_INTERNAL_SUPERVISOR);
+                SystemState_t curr_sup = RobotState_GetSystemState();
+                if (curr_sup == STATE_SUPERVISOR_AUTO || curr_sup == STATE_SUPERVISOR_TESTING) {
+                    /* Emergency Stop: Raise error flag to trigger FAULT state in supervisor */
+                    RobotState_SetErrorFlag(ERR_COMMS_LOST);
+                    LOG_ERROR(LOG_TAG, "Emergency Stop: Comms Lost in Critical Mode!\r\n");
                 }
             } else if (!was_connected && is_connected) {
                 LOG_INFO(LOG_TAG, "Client Connected.\r\n");

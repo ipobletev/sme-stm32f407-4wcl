@@ -46,6 +46,7 @@
 
 #define ERR_SUPERVISOR_FAULT                (1ULL << 44)  /* Robotic arm task watchdog stall */
 #define ERR_INVALID_SUPERVISOR_STATE        (1ULL << 45)  /* Robotic arm task watchdog stall */
+#define ERR_COMMS_LOST                      (1ULL << 46)  /* Remote client communication lost in critical mode */
 
 /* 5. Critical / Fatal Errors (Bits 48-63) */
 #define ERR_SYS_PANIC    (1ULL << 63)  /* Unrecoverable system panic */
