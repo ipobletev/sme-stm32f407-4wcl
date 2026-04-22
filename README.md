@@ -1,5 +1,8 @@
 # SME-STM32F407-4WCL Control Board
 
+> [!NOTE]
+> This project is currently based on the **Hiwonder V1.2 Ros Control** board. The long-term goal is to design a custom hardware version of this control board.
+
 Professional firmware for a 4-wheel drive control board equipped with a robotic arm, built on STM32F407. This project implements a hierarchical control architecture with a central Supervisor and specialized subsystem slaves.
 
 ## 🚀 System Architecture
