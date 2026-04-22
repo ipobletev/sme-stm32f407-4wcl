@@ -73,13 +73,13 @@ typedef struct {
         int32_t enc_2;
         int32_t enc_3;
         int32_t enc_4;
-        float measured_rps_1;
-        float measured_rps_2;
-        float measured_rps_3;
-        float measured_rps_4;
+        float measured_speed_1;
+        float measured_speed_2;
+        float measured_speed_3;
+        float measured_speed_4;
         
         /* PID Debug */
-        float target_rps_1, target_rps_2, target_rps_3, target_rps_4;
+        float target_speed_1, target_speed_2, target_speed_3, target_speed_4;
         float pwm_output_1, pwm_output_2, pwm_output_3, pwm_output_4;
 
         /* Arm Feedback */
@@ -168,7 +168,7 @@ void RobotState_ResetTestCommands(void);
 /* Mobility Feedback Setters */
 void RobotState_SetEncoderCounts(int32_t enc1, int32_t enc2, int32_t enc3, int32_t enc4);
 void RobotState_SetMeasuredVelocity(float linear_x, float angular_z);
-void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4);
+void RobotState_SetMeasuredSpeed(float s1, float s2, float s3, float s4);
 void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float measured, float pwm);
 
 /* IMU Setters */

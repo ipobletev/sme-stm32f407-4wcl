@@ -15,10 +15,11 @@ export default function ErrorLogPanel({ sysStatus }) {
     if (!sysStatus) return;
     const flags = sysStatus.errors;
     if (flags === null || flags === undefined) return;
-    const bigFlags = typeof flags === 'bigint' ? flags : BigInt(flags || 0);
-    if (bigFlags === prevFlags.current) return;
-    prevFlags.current = bigFlags;
-
+    const bitmask = flags.toString();
+    if (bitmask === prevFlags.current) return;
+    prevFlags.current = bitmask;
+    
+    const bigFlags = BigInt(bitmask);
     const activeErrors = parseErrorFlags(bigFlags);
     const entry = {
       ts: Date.now(),
@@ -35,9 +36,8 @@ export default function ErrorLogPanel({ sysStatus }) {
         {sysStatus && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--accent-rose)' }}>
             {(() => {
-              const bigFlags = typeof sysStatus.errors === 'bigint'
-                ? sysStatus.errors
-                : BigInt(sysStatus?.errors || 0);
+              const bitmask = sysStatus?.errors || '0';
+              const bigFlags = BigInt(bitmask);
               return '0x' + bigFlags.toString(16).toUpperCase().padStart(16, '0');
             })()}
           </span>

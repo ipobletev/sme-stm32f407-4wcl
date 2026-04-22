@@ -126,11 +126,11 @@ export function parsePayload(topicId, data) {
             view.getInt32(16, true),
             view.getInt32(20, true)
           ],
-          targetRps: [
+          targetSpeed: [
             view.getFloat32(24, true), view.getFloat32(28, true),
             view.getFloat32(32, true), view.getFloat32(36, true)
           ],
-          measuredRps: [
+          measuredSpeed: [
             view.getFloat32(40, true), view.getFloat32(44, true),
             view.getFloat32(48, true), view.getFloat32(52, true)
           ],
@@ -143,7 +143,7 @@ export function parsePayload(topicId, data) {
       
       case TOPIC_IDS.TX.PID_DEBUG: // 0x85
         return {
-          targetRps: [
+          targetSpeed: [
             view.getFloat32(0, true), view.getFloat32(4, true),
             view.getFloat32(8, true), view.getFloat32(12, true)
           ],
@@ -163,7 +163,7 @@ export function parsePayload(topicId, data) {
           odom_period: readUint32(view, 20),
           pid_enabled: readUint32(view, 24),
           motor_ticks: readFloat32(view, 28),
-          motor_rps_limit: readFloat32(view, 32),
+          motor_speed_limit: readFloat32(view, 32),
           motor_pwm_max: readFloat32(view, 36),
           wheel_diameter: readFloat32(view, 40),
           shaft_width: readFloat32(view, 44),
@@ -225,11 +225,11 @@ export const Encoders = {
     return new Uint8Array(buf);
   },
 
-  actuatorVel: (id, rps) => {
+  actuatorVel: (id, speed) => {
     const buf = new ArrayBuffer(5);
     const view = new DataView(buf);
     view.setUint8(0, id);
-    view.setFloat32(1, rps, true);
+    view.setFloat32(1, speed, true);
     return new Uint8Array(buf);
   },
 

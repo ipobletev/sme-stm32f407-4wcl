@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const MAX_ROWS = 500;
 
 function normErrors(v) {
-  if (v === null || v === undefined) return 0n;
-  return typeof v === 'bigint' ? v : BigInt(v);
+  if (v === null || v === undefined) return '0';
+  return v.toString();
 }
 
 /**

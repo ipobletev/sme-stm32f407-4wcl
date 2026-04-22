@@ -134,7 +134,10 @@ The Mobility FSM (`mobility_fsm.c`) ensures the motors are in a safe state:
 
 ## 8. Control Flow
 
-The following diagram illustrates the interaction between the different system tasks and modules during a standard movement cycle.
+The motor control system operates through two distinct but interconnected layers: the internal FIRMWARE loop (feedback and control) and the END-TO-END command path (from the external user interface to the hardware).
+
+### 8.1 Internal Firmware Loop
+The following diagram illustrates the interaction between the different system tasks and modules during a standard movement cycle within the MCU.
 
 ```mermaid
 sequenceDiagram
@@ -165,5 +168,61 @@ sequenceDiagram
     EM->>EM: Apply Deadzone Compensation
     EM->>HW: Set Comparison Register (PWM Output)
     deactivate EM
+    end
+```
+
+### 8.2 End-to-End Command Flow
+This flow describes the path of a velocity command (e.g., from the PID Tuner's "GO" button or the Manual Dashboard) until it results in physical motor movement.
+
+#### Step-by-Step Path
+1.  **Client Layer (Web App)**:
+    - User action triggers a UI handler like `runStep()` or `handleSendParam()`.
+    - The command is serialized using `Encoders.actuatorVel()` or `Encoders.cmdVel()`.
+    - `buildPacket()` wraps the payload into a frame with CRC16.
+    - `sendPacket()` writes the bytes to the Serial Port via the **Web Serial API**.
+2.  **Transport Layer**: The bytes travel over USB/UART to the STM32's `USARTx` peripheral.
+3.  **Communication Layer (SerialRos)**: 
+    - The `SerialRos` task retrieves bytes and calls `SerialRos_ProcessPacket()`.
+    - Protocol dispatchers like `handle_actuator_velocity()` or `handle_cmd_vel()` parse the payload.
+    - Values are saved using `RobotState_SetMotorTestCommand()` or `RobotState_SetTargetVelocity()`.
+4.  **Application Layer (FSM)**:
+    - `MobilityTask_Update()` executes the active state runner (e.g., `MobState_Testing_Run()` or `MobState_Moving_Run()`).
+    - The runner fetches targets from `RobotState_GetMotorTestCommand()`.
+5.  **Control Layer (PID)**:
+    - `MobState_X_Run()` calls `encoder_motor_set_speed()` to update the motor target.
+    - The control loop calls `encoder_motor_control()` at 50Hz.
+    - The PID algorithm is executed in `pid_compute()`.
+6.  **Actuation Layer**:
+    - The module calls `encoder_motor_apply_pulse()`.
+    - Finally, `BSP_Motor_Hardware_SetPulse()` updates the `TIMx->CCRy` registers.
+
+```mermaid
+sequenceDiagram
+    participant UI as Web Dashboard (runStep/sendPacket)
+    participant WS as Browser (Web Serial)
+    participant SR as MCU (SerialRos_ProcessPacket)
+    participant RS as RobotState (Thread-safe RAM)
+    participant MT as Mobility Task (MobState_Testing/Moving_Run)
+    participant PID as PID Loop (encoder_motor_control)
+    participant HW as PWM Timers (TIMx->CCR)
+
+    UI->>UI: Encoders.actuatorVel() & buildPacket()
+    UI->>WS: port.write(binary_data)
+    WS-->>SR: Physical UART Transmission
+    
+    rect rgb(30, 30, 30)
+    Note over SR: Packet Parsing
+    SR->>SR: handle_actuator_velocity()
+    SR->>RS: RobotState_SetMotorTestCommand()
+    end
+
+    loop Every 20ms
+        MT->>RS: RobotState_GetMotorTestCommand()
+        RS-->>MT: Return Target RPS
+        MT->>MT: encoder_motor_set_speed(target)
+        MT->>PID: encoder_motor_control()
+        PID->>PID: pid_compute()
+        PID->>HW: encoder_motor_apply_pulse()
+        Note right of HW: Motors move
     end
 ```

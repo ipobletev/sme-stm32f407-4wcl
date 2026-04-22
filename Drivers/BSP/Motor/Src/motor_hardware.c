@@ -32,10 +32,10 @@ static void BSP_motor4_set_pulse(EncoderMotorObjectTypeDef *self, int speed);
 #define MOTOR4_BI_CHANNEL TIM_CHANNEL_1 /* htim10 */
 #define MOTOR4_FI_CHANNEL TIM_CHANNEL_1 /* htim11 */
 
-void BSP_Motor_Hardware_SetParam(EncoderMotorObjectTypeDef *motor, int32_t tpc, float rps_limit, float kp, float ki, float kd)
+void BSP_Motor_Hardware_SetParam(EncoderMotorObjectTypeDef *motor, int32_t tpc, float speed_limit, float kp, float ki, float kd)
 {
     motor->ticks_per_circle = tpc;
-    motor->rps_limit = rps_limit;
+    motor->speed_limit = speed_limit;
     motor->pid_controller.kp = kp;
     motor->pid_controller.ki = ki;
     motor->pid_controller.kd = kd;
@@ -45,16 +45,16 @@ void BSP_Motor_Hardware_SetType(EncoderMotorObjectTypeDef *motor, MotorTypeEnum 
 {
     switch(type) {
         case MOTOR_TYPE_JGB520:
-            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB520_TICKS_PER_CIRCLE, MOTOR_JGB520_RPS_LIMIT, MOTOR_JGB520_PID_KP, MOTOR_JGB520_PID_KI, MOTOR_JGB520_PID_KD);
+            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB520_TICKS_PER_CIRCLE, MOTOR_JGB520_SPEED_LIMIT, MOTOR_JGB520_PID_KP, MOTOR_JGB520_PID_KI, MOTOR_JGB520_PID_KD);
             break;
         case MOTOR_TYPE_JGB37:
-            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB37_TICKS_PER_CIRCLE, MOTOR_JGB37_RPS_LIMIT, MOTOR_JGB37_PID_KP, MOTOR_JGB37_PID_KI, MOTOR_JGB37_PID_KD);
+            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB37_TICKS_PER_CIRCLE, MOTOR_JGB37_SPEED_LIMIT, MOTOR_JGB37_PID_KP, MOTOR_JGB37_PID_KI, MOTOR_JGB37_PID_KD);
             break;
         case MOTOR_TYPE_JGA27:
-            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGA27_TICKS_PER_CIRCLE, MOTOR_JGA27_RPS_LIMIT, MOTOR_JGA27_PID_KP, MOTOR_JGA27_PID_KI, MOTOR_JGA27_PID_KD);
+            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGA27_TICKS_PER_CIRCLE, MOTOR_JGA27_SPEED_LIMIT, MOTOR_JGA27_PID_KP, MOTOR_JGA27_PID_KI, MOTOR_JGA27_PID_KD);
             break;
         case MOTOR_TYPE_JGB528:
-            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB528_TICKS_PER_CIRCLE, MOTOR_JGB528_RPS_LIMIT, MOTOR_JGB528_PID_KP, MOTOR_JGB528_PID_KI, MOTOR_JGB528_PID_KD);
+            BSP_Motor_Hardware_SetParam(motor, MOTOR_JGB528_TICKS_PER_CIRCLE, MOTOR_JGB528_SPEED_LIMIT, MOTOR_JGB528_PID_KP, MOTOR_JGB528_PID_KI, MOTOR_JGB528_PID_KD);
             break;
         default:
             break;

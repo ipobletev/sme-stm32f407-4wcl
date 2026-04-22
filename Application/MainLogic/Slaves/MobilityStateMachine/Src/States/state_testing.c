@@ -23,7 +23,7 @@ void MobState_Testing_Run(void) {
             encoder_motor_apply_pulse(motors[i], val);
             
             /* Sync motor object state to prevent jumps when returning to PID */
-            motors[i]->target_rps = 0;
+            motors[i]->target_speed = 0;
             motors[i]->pid_controller.set_point = 0;
             motors[i]->current_pulse = val;
         }

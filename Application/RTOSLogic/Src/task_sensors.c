@@ -118,21 +118,19 @@ void StartSensorsTask(void *argument) {
             (int32_t)motors[2]->counter, (int32_t)motors[3]->counter
         );
 
-        RobotState_SetMeasuredRPS(
-            motors[0]->rps, motors[1]->rps,
-            motors[2]->rps, motors[3]->rps
+        RobotState_SetMeasuredSpeed(
+            motors[0]->measured_speed, motors[1]->measured_speed,
+            motors[2]->measured_speed, motors[3]->measured_speed
         );
 
         /* Calculate Forward Kinematics (Mecanum assumption) */
         /* Note: Right side motors (2 and 3) are usually controlled with inverted polarity elsewhere, 
            but we use their raw RPS here. We must flip signs based on mapping if needed. */
-        float v1 = motors[0]->rps;
-        float v2 = motors[1]->rps;
-        float v3 = -motors[2]->rps; /* Restore sign mapping for kinematics */
-        float v4 = -motors[3]->rps; /* Restore sign mapping for kinematics */
+        float v1 = motors[0]->measured_speed;
+        float v2 = motors[1]->measured_speed;
+        float v3 = -motors[2]->measured_speed; /* Restore sign mapping for kinematics */
+        float v4 = -motors[3]->measured_speed; /* Restore sign mapping for kinematics */
 
-        float r_pi_d = M_PI * AppConfig->wheel_diameter;
-        v1 *= r_pi_d; v2 *= r_pi_d; v3 *= r_pi_d; v4 *= r_pi_d;
 
         float l_plus_w = AppConfig->wheelbase_length + AppConfig->shaft_width;
         float vx = (v1 + v2 + v3 + v4) / 4.0f;

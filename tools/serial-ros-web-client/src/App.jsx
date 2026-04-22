@@ -152,7 +152,12 @@ export default function App() {
             </div>
           ) : activeTab === 'actuator-tool' ? (
             <div className="diagnostics-view" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-              <ActuatorControl sendPacket={sendPacket} connected={connected} sysStatus={telemetry.sysStatus} />
+              <ActuatorControl 
+                sendPacket={sendPacket} 
+                connected={connected} 
+                sysStatus={telemetry.sysStatus} 
+                appConfig={telemetry.appConfig} 
+              />
             </div>
           ) : activeTab === 'operator-control' ? (
             <OperatorControl 

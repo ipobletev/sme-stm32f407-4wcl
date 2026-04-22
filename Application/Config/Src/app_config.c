@@ -6,7 +6,7 @@
 #include "debug_module.h"
 #include "mobility_fsm.h"
 
-#define CONFIG_MAGIC_NUMBER     0xABCD1235
+#define CONFIG_MAGIC_NUMBER     0xABCD1234
 #define LOG_TAG                 "APP_CONFIG"
 #define MAX_CONFIG_CALLBACKS    8
 
@@ -58,7 +58,7 @@ void AppConfig_ResetToDefaults(void) {
     /* Motor Control */
     g_current_config.pid_enabled            = DEFAULT_ROBOT_STATE_PID_ENABLED;
     g_current_config.motor_ticks_per_circle = DEFAULT_MOTOR_TICKS_PER_CIRCLE;
-    g_current_config.motor_rps_limit        = DEFAULT_MOTOR_RPS_LIMIT;
+    g_current_config.motor_speed_limit        = DEFAULT_MOTOR_SPEED_LIMIT;
     g_current_config.motor_pwm_max          = DEFAULT_MOTOR_PWM_MAX;
     
     /* Physics */
@@ -160,16 +160,12 @@ bool AppConfig_UpdateParam(uint8_t id, float value) {
             if (value < 1.0f) value = 1.0f;
             g_current_config.motor_ticks_per_circle = value; 
             break;
-        case CONF_MOTOR_RPS_LIMIT:  
-            if (value < 0.1f) value = 0.1f;
-            g_current_config.motor_rps_limit = value; 
+        case CONF_MOTOR_SPEED_LIMIT:  
+            g_current_config.motor_speed_limit = value; 
             break;
         case CONF_MOTOR_PWM_MAX:    
-            if (value < 1000.0f) value = 1000.0f;
-            if (value > 65535.0f) value = 65535.0f;
             g_current_config.motor_pwm_max = value; 
             break;
-
         /* Chassis */
         case CONF_WHEEL_DIAMETER:   
             if (value < 0.01f) value = 0.01f;

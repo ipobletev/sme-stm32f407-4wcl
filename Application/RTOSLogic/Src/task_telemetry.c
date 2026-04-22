@@ -78,15 +78,15 @@ void StartTelemetryTask(void *argument) {
             odom_msg.enc_4     = RobotState_4wcl.Telemetry.enc_4;
 
             /* PID Feedback (Velocity & Effort) */
-            odom_msg.target_rps[0]   = RobotState_4wcl.Telemetry.target_rps_1;
-            odom_msg.target_rps[1]   = RobotState_4wcl.Telemetry.target_rps_2;
-            odom_msg.target_rps[2]   = RobotState_4wcl.Telemetry.target_rps_3;
-            odom_msg.target_rps[3]   = RobotState_4wcl.Telemetry.target_rps_4;
+            odom_msg.target_speed[0]   = RobotState_4wcl.Telemetry.target_speed_1;
+            odom_msg.target_speed[1]   = RobotState_4wcl.Telemetry.target_speed_2;
+            odom_msg.target_speed[2]   = RobotState_4wcl.Telemetry.target_speed_3;
+            odom_msg.target_speed[3]   = RobotState_4wcl.Telemetry.target_speed_4;
             
-            odom_msg.measured_rps[0] = RobotState_4wcl.Telemetry.measured_rps_1;
-            odom_msg.measured_rps[1] = RobotState_4wcl.Telemetry.measured_rps_2;
-            odom_msg.measured_rps[2] = RobotState_4wcl.Telemetry.measured_rps_3;
-            odom_msg.measured_rps[3] = RobotState_4wcl.Telemetry.measured_rps_4;
+            odom_msg.measured_speed[0] = RobotState_4wcl.Telemetry.measured_speed_1;
+            odom_msg.measured_speed[1] = RobotState_4wcl.Telemetry.measured_speed_2;
+            odom_msg.measured_speed[2] = RobotState_4wcl.Telemetry.measured_speed_3;
+            odom_msg.measured_speed[3] = RobotState_4wcl.Telemetry.measured_speed_4;
             
             odom_msg.pwm_output[0]   = RobotState_4wcl.Telemetry.pwm_output_1;
             odom_msg.pwm_output[1]   = RobotState_4wcl.Telemetry.pwm_output_2;
@@ -96,10 +96,16 @@ void StartTelemetryTask(void *argument) {
 
             SerialRos_EnqueueTx(TOPIC_ID_ODOMETRY, &odom_msg, sizeof(OdometryMsg_t));
 
-            LOG_DEBUG(LOG_TAG, "M1 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[0], (int)odom_msg.pwm_output[0], (int)odom_msg.measured_rps[0]);
-            LOG_DEBUG(LOG_TAG, "M2 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[1], (int)odom_msg.pwm_output[1], (int)odom_msg.measured_rps[1]);
-            LOG_DEBUG(LOG_TAG, "M3 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[2], (int)odom_msg.pwm_output[2], (int)odom_msg.measured_rps[2]);
-            LOG_DEBUG(LOG_TAG, "M4 TRGT: %d, PWM: %d, RPS: %d\r\n", (int)odom_msg.target_rps[3], (int)odom_msg.pwm_output[3], (int)odom_msg.measured_rps[3]);
+            int m1_trgt_int = (int)odom_msg.target_speed[0];
+            int m1_spd_int = (int)odom_msg.measured_speed[0];
+            LOG_DEBUG(LOG_TAG, "M1 TRGT: %s%d.%02d, PWM: %d, SPD: %s%d.%02d\r\n", 
+                (odom_msg.target_speed[0] < 0 && m1_trgt_int == 0) ? "-" : "", m1_trgt_int, abs((int)(odom_msg.target_speed[0]*100)%100),
+                (int)odom_msg.pwm_output[0],
+                (odom_msg.measured_speed[0] < 0 && m1_spd_int == 0) ? "-" : "", m1_spd_int, abs((int)(odom_msg.measured_speed[0]*100)%100));
+            
+            /* Commented out by default to reduce console noise. Update format if enabling. */
+            // int m2_trgt_int = (int)odom_msg.target_speed[1]; int m2_spd_int = (int)odom_msg.measured_speed[1];
+            // LOG_DEBUG(LOG_TAG, "M2 TRGT: %s%d.%02d, PWM: %d, SPD: %s%d.%02d\r\n", (odom_msg.target_speed[1] < 0 && m2_trgt_int == 0) ? "-" : "", m2_trgt_int, abs((int)(odom_msg.target_speed[1]*100)%100), (int)odom_msg.pwm_output[1], (odom_msg.measured_speed[1] < 0 && m2_spd_int == 0) ? "-" : "", m2_spd_int, abs((int)(odom_msg.measured_speed[1]*100)%100));
         }
 
         /* --- 3. SYSTEM CONFIG/APP CONFIG (Low Priority, Async) --- */
@@ -188,37 +194,41 @@ void StartTelemetryTask(void *argument) {
                 AppConfig->debug_level, AppConfig->telemetry_period_ms, AppConfig->sys_vars_period_ms, 
                 AppConfig->imu_publish_period_ms, AppConfig->odom_publish_period_ms, AppConfig->pid_enabled);
 
-            LOG_DEBUG(LOG_TAG, "Cfg-Mot: [M1:%d | M2:%d | M3:%d | M4:%d] | Ticks:%d | RPS:%d | PWM:%d\r\n", 
-                AppConfig->motor1_invert, AppConfig->motor2_invert, AppConfig->motor3_invert, AppConfig->motor4_invert,
-                (int)AppConfig->motor_ticks_per_circle, (int)AppConfig->motor_rps_limit, (int)AppConfig->motor_pwm_max);
+            LOG_DEBUG(LOG_TAG, "Cfg-Mot: [M1:%d | M2:%d | M3:%d | M4:%d] | Ticks:%d.%01d | Spd:%d.%02d | PWM:%d\r\n", 
+                (int)AppConfig->motor1_invert, (int)AppConfig->motor2_invert, (int)AppConfig->motor3_invert, (int)AppConfig->motor4_invert, 
+                (int)AppConfig->motor_ticks_per_circle, abs((int)(AppConfig->motor_ticks_per_circle*10)%10),
+                (int)AppConfig->motor_speed_limit, abs((int)(AppConfig->motor_speed_limit*100)%100),
+                (int)AppConfig->motor_pwm_max);
 
-            LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%dmm | W:%dmm | L:%dmm]\r\n", 
-                (int)(AppConfig->wheel_diameter * 1000.0f), (int)(AppConfig->shaft_width * 1000.0f), (int)(AppConfig->wheelbase_length * 1000.0f));
+            LOG_DEBUG(LOG_TAG, "Cfg-Phys: [D:%d.%03dm | W:%d.%03dm | L:%d.%03dm]\r\n", 
+                (int)AppConfig->wheel_diameter, abs((int)(AppConfig->wheel_diameter * 1000.0f) % 1000),
+                (int)AppConfig->shaft_width, abs((int)(AppConfig->shaft_width * 1000.0f) % 1000),
+                (int)AppConfig->wheelbase_length, abs((int)(AppConfig->wheelbase_length * 1000.0f) % 1000));
             
             // Prepare PID strings (Avoid %f as it may not be supported in some printf versions)
             char m1_pid[40], m2_pid[40], m3_pid[40], m4_pid[40];
             
             // Convert floats to strings manually as some printf implementations don't support %f
-            snprintf(m1_pid, sizeof(m1_pid), "%d.%02d,%d.%02d,%d.%02d,%d", 
+            snprintf(m1_pid, sizeof(m1_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
                 (int)AppConfig->motor1_kp, abs((int)(AppConfig->motor1_kp*100)%100),
                 (int)AppConfig->motor1_ki, abs((int)(AppConfig->motor1_ki*100)%100),
                 (int)AppConfig->motor1_kd, abs((int)(AppConfig->motor1_kd*100)%100),
-                (int)AppConfig->motor1_deadzone);
-            snprintf(m2_pid, sizeof(m2_pid), "%d.%02d,%d.%02d,%d.%02d,%d", 
+                (int)AppConfig->motor1_deadzone, abs((int)(AppConfig->motor1_deadzone * 10) % 10));
+            snprintf(m2_pid, sizeof(m2_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
                 (int)AppConfig->motor2_kp, abs((int)(AppConfig->motor2_kp*100)%100),
                 (int)AppConfig->motor2_ki, abs((int)(AppConfig->motor2_ki*100)%100),
                 (int)AppConfig->motor2_kd, abs((int)(AppConfig->motor2_kd*100)%100),
-                (int)AppConfig->motor2_deadzone);
-            snprintf(m3_pid, sizeof(m3_pid), "%d.%02d,%d.%02d,%d.%02d,%d", 
+                (int)AppConfig->motor2_deadzone, abs((int)(AppConfig->motor2_deadzone * 10) % 10));
+            snprintf(m3_pid, sizeof(m3_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
                 (int)AppConfig->motor3_kp, abs((int)(AppConfig->motor3_kp*100)%100),
                 (int)AppConfig->motor3_ki, abs((int)(AppConfig->motor3_ki*100)%100),
                 (int)AppConfig->motor3_kd, abs((int)(AppConfig->motor3_kd*100)%100),
-                (int)AppConfig->motor3_deadzone);
-            snprintf(m4_pid, sizeof(m4_pid), "%d.%02d,%d.%02d,%d.%02d,%d", 
+                (int)AppConfig->motor3_deadzone, abs((int)(AppConfig->motor3_deadzone * 10) % 10));
+            snprintf(m4_pid, sizeof(m4_pid), "%d.%02d,%d.%02d,%d.%02d,%d.%01d", 
                 (int)AppConfig->motor4_kp, abs((int)(AppConfig->motor4_kp*100)%100),
                 (int)AppConfig->motor4_ki, abs((int)(AppConfig->motor4_ki*100)%100),
                 (int)AppConfig->motor4_kd, abs((int)(AppConfig->motor4_kd*100)%100),
-                (int)AppConfig->motor4_deadzone);
+                (int)AppConfig->motor4_deadzone, abs((int)(AppConfig->motor4_deadzone * 10) % 10));
 
             LOG_DEBUG(LOG_TAG, "Cfg-PID: [M1:%s | M2:%s | M3:%s | M4:%s]\r\n", m1_pid, m2_pid, m3_pid, m4_pid);
         }

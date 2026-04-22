@@ -90,7 +90,7 @@ const MotorSlider = ({ id, label, disabled, onSend, value, setValue, config }) =
   );
 };
 
-export default function ActuatorControl({ sendPacket, connected, sysStatus }) {
+export default function ActuatorControl({ sendPacket, connected, sysStatus, appConfig }) {
   const [testMode, setTestMode] = useState('PWM'); /* 'PWM' or 'VEL' */
   const [m1, setM1] = useState(0);
   const [m2, setM2] = useState(0);
@@ -120,7 +120,7 @@ export default function ActuatorControl({ sendPacket, connected, sysStatus }) {
       const payload = Encoders.actuatorTest(id, value);
       sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_PWM, Array.from(payload)));
     } else {
-      console.log(`[Diagnostic] Sending Actuator Velocity: ID=${id} RPS=${value}`);
+      console.log(`[Diagnostic] Sending Actuator Velocity: ID=${id} m/s=${value}`);
       const payload = Encoders.actuatorVel(id, value);
       sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Array.from(payload)));
     }
@@ -165,15 +165,15 @@ export default function ActuatorControl({ sendPacket, connected, sysStatus }) {
   };
 
   const sliderConfig = testMode === 'PWM' ? {
-    min: -65535,
-    max: 65535,
+    min: -(appConfig?.motor_pwm_max || 65535),
+    max: (appConfig?.motor_pwm_max || 65535),
     step: 500,
     unit: 'Pulse'
   } : {
-    min: -2.0,
-    max: 2.0,
+    min: -(appConfig?.motor_speed_limit || 2.0),
+    max: (appConfig?.motor_speed_limit || 2.0),
     step: 0.1,
-    unit: 'RPS'
+    unit: 'm/s'
   };
 
   const motorLabels = ['Front Left', 'Back Left', 'Front Right', 'Back Right'];
@@ -247,7 +247,7 @@ export default function ActuatorControl({ sendPacket, connected, sysStatus }) {
                 }}>
                   <strong>CRITICAL WARNING:</strong> This tool sends raw commands directly to motors.
                   <br/><br/>
-                  • Mode: {testMode} ({testMode === 'PWM' ? 'Raw Pulse' : 'Target RPS'}).
+                  • Mode: {testMode} ({testMode === 'PWM' ? 'Raw Pulse' : 'Target m/s'}).
                   <br/>
                   • Click **Send** icon to dispatch command.
                 </div>

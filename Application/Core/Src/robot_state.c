@@ -459,18 +459,18 @@ void RobotState_SetMeasuredVelocity(float linear_x, float angular_z) {
     }
 }
 
-void RobotState_SetMeasuredRPS(float rps1, float rps2, float rps3, float rps4) {
+void RobotState_SetMeasuredSpeed(float s1, float s2, float s3, float s4) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        RobotState_4wcl.Telemetry.measured_rps_1 = rps1;
-        RobotState_4wcl.Telemetry.measured_rps_2 = rps2;
-        RobotState_4wcl.Telemetry.measured_rps_3 = rps3;
-        RobotState_4wcl.Telemetry.measured_rps_4 = rps4;
+        RobotState_4wcl.Telemetry.measured_speed_1 = s1;
+        RobotState_4wcl.Telemetry.measured_speed_2 = s2;
+        RobotState_4wcl.Telemetry.measured_speed_3 = s3;
+        RobotState_4wcl.Telemetry.measured_speed_4 = s4;
     } else {
         taskENTER_CRITICAL();
-        RobotState_4wcl.Telemetry.measured_rps_1 = rps1;
-        RobotState_4wcl.Telemetry.measured_rps_2 = rps2;
-        RobotState_4wcl.Telemetry.measured_rps_3 = rps3;
-        RobotState_4wcl.Telemetry.measured_rps_4 = rps4;
+        RobotState_4wcl.Telemetry.measured_speed_1 = s1;
+        RobotState_4wcl.Telemetry.measured_speed_2 = s2;
+        RobotState_4wcl.Telemetry.measured_speed_3 = s3;
+        RobotState_4wcl.Telemetry.measured_speed_4 = s4;
         taskEXIT_CRITICAL();
     }
 }
@@ -480,18 +480,18 @@ void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float meas
     
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
         switch(motor_id) {
-            case 1: RobotState_4wcl.Telemetry.target_rps_1 = target; RobotState_4wcl.Telemetry.measured_rps_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
-            case 2: RobotState_4wcl.Telemetry.target_rps_2 = target; RobotState_4wcl.Telemetry.measured_rps_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
-            case 3: RobotState_4wcl.Telemetry.target_rps_3 = target; RobotState_4wcl.Telemetry.measured_rps_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
-            case 4: RobotState_4wcl.Telemetry.target_rps_4 = target; RobotState_4wcl.Telemetry.measured_rps_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
+            case 1: RobotState_4wcl.Telemetry.target_speed_1 = target; RobotState_4wcl.Telemetry.measured_speed_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
+            case 2: RobotState_4wcl.Telemetry.target_speed_2 = target; RobotState_4wcl.Telemetry.measured_speed_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
+            case 3: RobotState_4wcl.Telemetry.target_speed_3 = target; RobotState_4wcl.Telemetry.measured_speed_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
+            case 4: RobotState_4wcl.Telemetry.target_speed_4 = target; RobotState_4wcl.Telemetry.measured_speed_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
         }
     } else {
         taskENTER_CRITICAL();
         switch(motor_id) {
-            case 1: RobotState_4wcl.Telemetry.target_rps_1 = target; RobotState_4wcl.Telemetry.measured_rps_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
-            case 2: RobotState_4wcl.Telemetry.target_rps_2 = target; RobotState_4wcl.Telemetry.measured_rps_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
-            case 3: RobotState_4wcl.Telemetry.target_rps_3 = target; RobotState_4wcl.Telemetry.measured_rps_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
-            case 4: RobotState_4wcl.Telemetry.target_rps_4 = target; RobotState_4wcl.Telemetry.measured_rps_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
+            case 1: RobotState_4wcl.Telemetry.target_speed_1 = target; RobotState_4wcl.Telemetry.measured_speed_1 = measured; RobotState_4wcl.Telemetry.pwm_output_1 = pwm; break;
+            case 2: RobotState_4wcl.Telemetry.target_speed_2 = target; RobotState_4wcl.Telemetry.measured_speed_2 = measured; RobotState_4wcl.Telemetry.pwm_output_2 = pwm; break;
+            case 3: RobotState_4wcl.Telemetry.target_speed_3 = target; RobotState_4wcl.Telemetry.measured_speed_3 = measured; RobotState_4wcl.Telemetry.pwm_output_3 = pwm; break;
+            case 4: RobotState_4wcl.Telemetry.target_speed_4 = target; RobotState_4wcl.Telemetry.measured_speed_4 = measured; RobotState_4wcl.Telemetry.pwm_output_4 = pwm; break;
         }
         taskEXIT_CRITICAL();
     }

@@ -9,6 +9,7 @@ import {
   ChevronUp, ChevronDown, CheckCircle
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket, SYS_EVENTS } from '../utils/protocol';
+import SystemEventsControl from './SystemEventsControl';
 import './PidTuner.css';
 
 const TooltipWrapper = ({ children, content }) => (
@@ -88,13 +89,13 @@ export default function PidTuner({
   persistentData, setPersistentData,
   settings, setSettings
 }) {
-  const { rps: testRps, lead: testLead, duration: testDuration, tail: testTail, motor: selectedMotor } = settings;
+  const { speed: testSpeed, lead: testLead, duration: testDuration, tail: testTail, motor: selectedMotor } = settings;
   
   const updateSetting = (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const setTestRps = (v) => updateSetting('rps', v);
+  const setTestSpeed = (v) => updateSetting('speed', v);
   const setTestLead = (v) => updateSetting('lead', v);
   const setTestDuration = (v) => updateSetting('duration', v);
   const setTestTail = (v) => updateSetting('tail', v);
@@ -111,6 +112,22 @@ export default function PidTuner({
   const isTesting = sysStatus?.state === 6; /* STATE_SUPERVISOR_TESTING */
   const canEnterTest = sysStatus?.state === 2 || sysStatus?.state === 3;
   const disabled = !connected;
+
+  // Reactive cleanup: if we leave TESTING state (e.g. from external STOP), 
+  // ensure PidTuner internal capture and timers are cleared.
+  useEffect(() => {
+    if (!isTesting) {
+      if (isCapturing) {
+        console.log('[PidTuner] System left TESTING state. Stopping capture.');
+        setIsCapturing(false);
+      }
+      if (testTimer) {
+        console.log('[PidTuner] System left TESTING state. Clearing test timer.');
+        clearTimeout(testTimer);
+        setTestTimer(null);
+      }
+    }
+  }, [isTesting, isCapturing, testTimer]);
 
   useEffect(() => {
     if (appConfig) {
@@ -137,11 +154,14 @@ export default function PidTuner({
   // Mapping history to chart-ready format
   const currentTelemetryData = useMemo(() => {
     if (!history) return [];
+    const baseTs = captureStartTsRef.current || (history.length > 0 ? history[0].timestamp : Date.now());
     return history.map(p => {
       const target = p.pid_target?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
       const measured = p.pid_measured?.[selectedMotor === 'all' ? 0 : selectedMotor] || 0;
+      const relativeTs = ((p.timestamp - baseTs) / 1000).toFixed(3);
       return {
         time: p.timeLabel,
+        relativeTime: `T + ${relativeTs}s`,
         ts: p.timestamp,
         target,
         measured,
@@ -163,7 +183,10 @@ export default function PidTuner({
         const minTs = Math.max(captureStartTsRef.current, lastTs);
         const newPoints = currentTelemetryData.filter(p => p.ts > minTs);
         if (newPoints.length === 0) return prev;
-        return [...prev, ...newPoints];
+        
+        // Cap persistent data to 1000 points (~20s at 50Hz) to prevent OOM
+        const combined = [...prev, ...newPoints];
+        return combined.length > 1000 ? combined.slice(-1000) : combined;
       });
     }
   }, [currentTelemetryData, isCapturing]);
@@ -206,7 +229,7 @@ export default function PidTuner({
 
     let status = 'good';
     let suggestion = 'Locked & Loaded';
-    let icon = <ShieldCheck size={16} />;
+    let iconType = 'shield';
 
     const recommendations = [];
 
@@ -220,7 +243,7 @@ export default function PidTuner({
         });
         status = 'warn';
         suggestion = 'Slow Response';
-        icon = <TrendingUp size={16} />;
+        iconType = 'trending';
     }
 
     // Rule 2: Overshoot (KP/KD)
@@ -239,7 +262,7 @@ export default function PidTuner({
         });
         status = 'crit';
         suggestion = 'High Overshoot';
-        icon = <AlertCircle size={16} />;
+        iconType = 'alert';
     } else if (overshoot > 5) {
         recommendations.push({ 
             param: 'KD', 
@@ -259,7 +282,7 @@ export default function PidTuner({
         });
         if (status !== 'crit') status = 'warn';
         suggestion = 'Steady State Error';
-        icon = <Activity size={16} />;
+        iconType = 'activity';
     }
 
     // Rule 4: System Stability / Oscillations
@@ -287,7 +310,7 @@ export default function PidTuner({
         error, 
         status, 
         suggestion, 
-        icon,
+        iconType,
         peak: maxVal,
         riseTime: riseTime ? `${riseTime * 20}ms` : 'N/A', // assuming 50Hz (20ms/sample)
         settling: Math.abs(error) < (target * 0.02) ? 'Stable' : 'Unstable',
@@ -351,9 +374,18 @@ export default function PidTuner({
   };
 
   const yDomain = useMemo(() => {
-    const limit = appConfig?.motor_rps_limit || 5.0;
+    const limit = appConfig?.motor_speed_limit || 5.0;
     return [-limit, limit];
-  }, [appConfig?.motor_rps_limit]);
+  }, [appConfig?.motor_speed_limit]);
+
+  // Handle auto-clamping of test speed when limit changes
+  useEffect(() => {
+    const limit = appConfig?.motor_speed_limit || 5.0;
+    if (testSpeed > limit) {
+        console.log(`[PidTuner] Clamping test speed (${testSpeed}) to safety limit (${limit})`);
+        setTestSpeed(limit);
+    }
+  }, [appConfig?.motor_speed_limit, testSpeed]);
 
   const handleSendParam = async (p, v, forcedMotorIdx = null) => {
     // If forcedMotorIdx is provided, we only update that motor.
@@ -383,13 +415,8 @@ export default function PidTuner({
     }
   };
 
-  const startTesting = () => {
-    if (disabled || !canEnterTest) return;
-    const payload = Encoders.sysEvent(0x07); /* SYS_EVENT_TEST */
-    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Array.from(payload)));
-  };
 
-  const stopStep = async () => {
+  const stopStep = async (stopCapture = false) => {
     if (testTimer) {
       clearTimeout(testTimer);
       setTestTimer(null);
@@ -400,6 +427,11 @@ export default function PidTuner({
     for (const mIdx of motors) {
       sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(mIdx, 0)));
       if (motors.length > 1) await new Promise(r => setTimeout(r, 15));
+    }
+
+    if (stopCapture) {
+      console.log('[PidTuner] Manual stop requested. Terminating capture.');
+      setIsCapturing(false);
     }
   };
 
@@ -428,7 +460,7 @@ export default function PidTuner({
     }
 
     console.log('[PidTuner] Applying step now...');
-    const val = parseFloat(testRps);
+    const val = parseFloat(testSpeed);
     const motors = selectedMotor === 'all' ? [0, 1, 2, 3] : [selectedMotor];
 
     // Start step for each selected motor
@@ -448,14 +480,6 @@ export default function PidTuner({
 
   const handleStartAutonomous = () => {
     sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Array.from(Encoders.autonomous(true))));
-  };
-
-  const handleReset = () => {
-    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Array.from(Encoders.sysEvent(SYS_EVENTS.RESET))));
-  };
-
-  const handleStartSystem = () => {
-    sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Array.from(Encoders.sysEvent(SYS_EVENTS.START))));
   };
 
   const downloadCsv = (filename, csvContent) => {
@@ -509,25 +533,14 @@ export default function PidTuner({
   };
 
   const exitTesting = () => {
-    console.log('[PidTuner] Exiting test mode and stopping capture...');
-    
-    // 1. Immediate UI stop
-    setIsCapturing(false);
-
-    // 2. Clear any active test timers
-    if (testTimer) {
-        clearTimeout(testTimer);
-        setTestTimer(null);
-    }
-
-    // 3. Send general STOP event to transition FSM out of testing
+    console.log('[PidTuner] Manual exit test mode requested...');
+    // We only send the event; the reactive useEffect above handles the cleanup
     sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, [SYS_EVENTS.STOP]));
 
-    // 4. Force zero velocities as a safety backup
-    sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(0, 0)));
-    sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(1, 0)));
-    sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(2, 0)));
-    sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(3, 0)));
+    // Backup safety stop for all motors
+    for (let i = 0; i < 4; i++) {
+        sendPacket(buildPacket(TOPIC_IDS.RX.ACTUATOR_VEL, Encoders.actuatorVel(i, 0)));
+    }
   };
 
   if (!appConfig) {
@@ -582,7 +595,7 @@ export default function PidTuner({
            <ShieldCheck size={14} />
            <div className="limit-info">
              <span className="limit-label">SAFETY LIMIT</span>
-             <span className="limit-value">{appConfig.motor_rps_limit?.toFixed(1) || '--'} <small>RPS</small></span>
+             <span className="limit-value">{appConfig.motor_speed_limit?.toFixed(2) || '--'} <small>m/s</small></span>
            </div>
         </div>
 
@@ -654,14 +667,18 @@ export default function PidTuner({
 
           <div className="chart-container-box">
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={chartData}>
-                <XAxis dataKey="time" hide />
+              <LineChart 
+                data={chartData} 
+                syncId="pidTuningSync"
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              >
+                <XAxis dataKey="ts" hide />
                 <YAxis 
                   domain={yDomain} 
                   stroke="#444" 
                   fontSize={11} 
                   tickFormatter={(v) => v.toFixed(1)}
-                  label={{ value: 'Velocity (RPS)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 10 }}
+                  label={{ value: 'Velocity (m/s)', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 10 }}
                 />
                 <YAxis 
                   yAxisId="pwm"
@@ -673,23 +690,33 @@ export default function PidTuner({
                   label={{ value: 'Effort (Raw PWM)', angle: 90, position: 'insideRight', fill: 'var(--accent-rose)', fontSize: 10, opacity: 0.8 }}
                 />
                 <Tooltip 
+                   trigger="axis"
                    contentStyle={{ background: 'rgba(10,14,23,0.9)', border: '1px solid #333', borderRadius: '8px', fontSize: '12px' }}
+                   cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                   labelFormatter={(ts) => {
+                     const p = chartData.find(d => d.ts === ts);
+                     return p ? p.relativeTime : '—';
+                   }}
+                   formatter={(value, name) => {
+                     if (name === 'Raw PWM') return [Math.round(value), name];
+                     return [value.toFixed(4), name];
+                   }}
                 />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '11px', paddingBottom: '10px' }} />
                 
                 {selectedMotor === 'all' ? (
                   <>
-                    <Line type="monotone" dataKey="m1" name="M1" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="m2" name="M2" stroke="var(--accent-emerald)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="m3" name="M3" stroke="var(--accent-amber)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="m4" name="M4" stroke="var(--accent-rose)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line type="stepAfter" dataKey="t1" name="Target" stroke="#fff" strokeWidth={1} strokeDasharray="5 5" dot={false} opacity={0.3} isAnimationActive={false} />
+                    <Line type="linear" dataKey="m1" name="M1" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-cyan)' }} />
+                    <Line type="linear" dataKey="m2" name="M2" stroke="var(--accent-emerald)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-emerald)' }} />
+                    <Line type="linear" dataKey="m3" name="M3" stroke="var(--accent-amber)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-amber)' }} />
+                    <Line type="linear" dataKey="m4" name="M4" stroke="var(--accent-rose)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-rose)' }} />
+                    <Line type="stepAfter" dataKey="t1" name="Target" stroke="#fff" strokeWidth={1} strokeDasharray="5 5" dot={false} opacity={0.3} isAnimationActive={false} activeDot={false} />
                   </>
                 ) : (
                   <>
-                    <Line type="stepAfter" dataKey="target" name="Setpoint" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="measured" name="Measured" stroke="var(--accent-emerald)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-                    <Line yAxisId="pwm" type="monotone" dataKey="pwm" name="Raw PWM" stroke="var(--accent-rose)" strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
+                    <Line type="stepAfter" dataKey="target" name="Setpoint" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-cyan)' }} />
+                    <Line type="linear" dataKey="measured" name="Measured" stroke="var(--accent-emerald)" strokeWidth={2.5} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-emerald)' }} />
+                    <Line yAxisId="pwm" type="linear" dataKey="pwm" name="Raw PWM" stroke="var(--accent-rose)" strokeWidth={1} strokeDasharray="4 4" dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--accent-rose)' }} />
                   </>
                 )}
               </LineChart>
@@ -697,28 +724,39 @@ export default function PidTuner({
 
             <div style={{ padding: '8px 0', borderTop: '1px dashed rgba(255,255,255,0.05)', marginTop: '8px' }}>
                <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={chartData}>
+                <LineChart 
+                  data={chartData} 
+                  syncId="pidTuningSync"
+                  margin={{ top: 5, right: 75, left: 10, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
-                  <XAxis dataKey="time" hide />
+                  <XAxis dataKey="ts" hide />
                   <YAxis 
-                    stroke="#444" 
-                    fontSize={11} 
-                    tickFormatter={(v) => v.toFixed(2)}
-                    label={{ value: 'Error', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 10 }}
+                     stroke="#444" 
+                     fontSize={11} 
+                     tickFormatter={(v) => v.toFixed(2)}
+                     label={{ value: 'Error', angle: -90, position: 'insideLeft', fill: '#666', fontSize: 10 }}
                   />
                   <Tooltip 
+                     trigger="axis"
                      contentStyle={{ background: 'rgba(10,14,23,0.9)', border: '1px solid #333', borderRadius: '8px', fontSize: '12px' }}
+                     cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                     labelFormatter={(ts) => {
+                       const p = chartData.find(d => d.ts === ts);
+                       return p ? p.relativeTime : '—';
+                     }}
+                     formatter={(value, name) => [value.toFixed(4), name]}
                   />
-                  {selectedMotor === 'all' ? (
-                    <>
-                      <Line type="monotone" dataKey="e1" name="E1" stroke="var(--accent-cyan)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                      <Line type="monotone" dataKey="e2" name="E2" stroke="var(--accent-emerald)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                      <Line type="monotone" dataKey="e3" name="E3" stroke="var(--accent-amber)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                      <Line type="monotone" dataKey="e4" name="E4" stroke="var(--accent-rose)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                    </>
-                  ) : (
-                    <Line type="monotone" dataKey="error" name="Tracking Error" stroke="var(--accent-rose)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                  )}
+                    {selectedMotor === 'all' ? (
+                      <>
+                        <Line type="linear" dataKey="e1" name="E1" stroke="var(--accent-cyan)" strokeWidth={1.5} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--accent-cyan)' }} />
+                        <Line type="linear" dataKey="e2" name="E2" stroke="var(--accent-emerald)" strokeWidth={1.5} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--accent-emerald)' }} />
+                        <Line type="linear" dataKey="e3" name="E3" stroke="var(--accent-amber)" strokeWidth={1.5} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--accent-amber)' }} />
+                        <Line type="linear" dataKey="e4" name="E4" stroke="var(--accent-rose)" strokeWidth={1.5} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--accent-rose)' }} />
+                      </>
+                    ) : (
+                      <Line type="linear" dataKey="error" name="Tracking Error" stroke="var(--accent-rose)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent-rose)' }} />
+                    )}
                   <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -729,7 +767,10 @@ export default function PidTuner({
             <div className="analysis-board">
               <div className="status-hud-v2">
                 <div className={`hud-status-badge-v2 ${analysis.status}`}>
-                  {analysis.icon}
+                  {analysis.iconType === 'shield' && <ShieldCheck size={16} />}
+                  {analysis.iconType === 'trending' && <TrendingUp size={16} />}
+                  {analysis.iconType === 'alert' && <AlertCircle size={16} />}
+                  {analysis.iconType === 'activity' && <Activity size={16} />}
                   <span>{analysis.suggestion}</span>
                 </div>
               </div>
@@ -815,7 +856,7 @@ export default function PidTuner({
                   <tr>
                     <td>Peak Measured</td>
                     <td className="value-cell">{analysis.peak?.toFixed(2)}</td>
-                    <td>RPS</td>
+                    <td>m/s</td>
                   </tr>
                 </tbody>
               </table>
@@ -825,48 +866,7 @@ export default function PidTuner({
 
         {/* Controls Panel */}
         <div className="tuner-controls-column">
-          {/* New System Actions Card */}
-          <div className="tuner-card system-card" style={{ marginBottom: '16px' }}>
-            <div className="tuner-card-header">
-              <h3><Cpu size={16} color="var(--accent-emerald)" /> System Quick Actions</h3>
-            </div>
-            <div className="card-body" style={{ padding: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <button 
-                  className="btn btn-primary" 
-                  style={{ gap: '8px' }}
-                  onClick={handleStartSystem}
-                  disabled={disabled}
-                >
-                  <Play size={14} /> START
-                </button>
-                <button 
-                  className="btn btn-ghost" 
-                  style={{ gap: '8px', color: 'var(--accent-indigo)', background: 'rgba(255, 255, 255, 0.03)' }}
-                  onClick={handleStartAutonomous}
-                  disabled={disabled}
-                >
-                  <Navigation size={14} /> AUTONOMO
-                </button>
-                <button 
-                  className="btn btn-ghost" 
-                  style={{ gap: '8px', color: 'var(--accent-rose)', background: 'rgba(255, 255, 255, 0.03)' }}
-                  onClick={handleReset}
-                  disabled={disabled}
-                >
-                  <RotateCcw size={14} /> RESET
-                </button>
-                <button 
-                  className={`btn ${isTesting ? 'btn-ghost' : (canEnterTest ? 'btn-primary' : 'btn-disabled')}`}
-                  style={{ gap: '8px', color: isTesting ? 'var(--accent-rose)' : 'inherit', borderColor: isTesting ? 'var(--accent-rose)' : 'inherit' }}
-                  onClick={isTesting ? exitTesting : startTesting}
-                  disabled={disabled || (!isTesting && !canEnterTest)}
-                >
-                  <Power size={14} /> {isTesting ? 'TEST ON' : 'TEST OFF'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <SystemEventsControl sendPacket={sendPacket} connected={connected} />
 
           <div className="tuner-card">
             <div className="tuner-card-header">
@@ -919,19 +919,19 @@ export default function PidTuner({
               ) : (
                 <div className="step-test-section">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="section-subtitle">STEP RESPONSE TEST (RPS)</span>
+                    <span className="section-subtitle">STEP RESPONSE TEST (m/s)</span>
                     <TooltipWrapper content="Applies a sudden velocity change to analyze controller performance (Overshoot, Settling Time).">
                       <Info size={12} className="info-icon-dim" />
                     </TooltipWrapper>
                   </div>
                    <div className="step-input-row" style={{ marginTop: '8px', gap: '12px' }}>
                      <div className="input-with-label" style={{ flex: '1.2' }}>
-                       <span>Setpoint (RPS)</span>
+                       <span>Setpoint (m/s)</span>
                        <input 
                           type="number" 
-                          value={testRps} 
-                          placeholder="RPS"
-                          onChange={(e) => setTestRps(parseFloat(e.target.value))}
+                          value={testSpeed} 
+                          placeholder="m/s"
+                          onChange={(e) => setTestSpeed(parseFloat(e.target.value))}
                        />
                      </div>
                      <div className="input-with-label">
@@ -971,7 +971,7 @@ export default function PidTuner({
                      >
                        <Play size={14}/> {!(pendingPidState !== null ? pendingPidState : appConfig?.pid_enabled) ? 'ENABLE PID FIRST' : (testTimer ? 'RESTART' : 'GO')}
                      </button>
-                     <button className="btn btn-ghost" onClick={stopStep}><CircleStop size={14}/>STOP</button>
+                     <button className="btn btn-ghost" onClick={() => stopStep(true)}><CircleStop size={14}/>STOP</button>
                   </div>
                 </div>
               )}

@@ -301,7 +301,7 @@ export default function GraphsPanel({ history, onClear, maxPoints, setMaxPoints,
                   <LineChart data={history}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                     <XAxis 
-                      dataKey="timeLabel" 
+                      dataKey="timestamp" 
                       stroke="rgba(255,255,255,0.3)" 
                       fontSize={10}
                       tick={{ fill: 'rgba(255,255,255,0.5)' }}
@@ -314,24 +314,31 @@ export default function GraphsPanel({ history, onClear, maxPoints, setMaxPoints,
                       tick={{ fill: 'rgba(255,255,255,0.5)' }}
                     />
                     <Tooltip 
+                      trigger="axis"
                       contentStyle={{ 
                         backgroundColor: 'rgba(15, 23, 42, 0.9)', 
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '8px',
                         fontSize: '12px'
                       }} 
+                      cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      labelFormatter={(ts) => {
+                        const p = history.find(d => d.timestamp === ts);
+                        return p ? p.timeLabel : '—';
+                      }}
                     />
                     <Legend />
                     {dataKeys.map(dk => (
                       <Line 
                         key={dk.key}
-                        type="monotone" 
+                        type="linear" 
                         dataKey={dk.key} 
                         name={dk.name}
                         stroke={dk.color} 
                         strokeWidth={2}
                         dot={false}
                         isAnimationActive={false}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: dk.color }}
                       />
                     ))}
                     {/* Render reference lines after data lines to ensure they are on top */}

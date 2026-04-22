@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2, Send } from 'lucide-react';
+import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2, Send, CheckCircle } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 const PARAM_GROUPS = [
@@ -24,7 +24,7 @@ const PARAM_GROUPS = [
     params: [
       { id: 0x10, key: 'pid_enabled', label: 'PID Enabled by default', type: 'boolean' },
       { id: 0x11, key: 'motor_ticks', label: 'Motor Ticks/Rev', type: 'number', min: 1 },
-      { id: 0x12, key: 'motor_rps_limit', label: 'Max Speed (RPS)', type: 'number', step: 0.1, min: 0.1 },
+      { id: 0x12, key: 'motor_speed_limit', label: 'Max Speed (m/s)', type: 'number', step: 0.01, min: 0.1 },
       { id: 0x14, key: 'motor_pwm_max', label: 'PWM Max', type: 'number', min: 1000, max: 65535, step: 1 },
     ]
   },
@@ -92,6 +92,7 @@ const PARAM_GROUPS = [
 export default function ConfigPanel({ appConfig, sendPacket, connected }) {
   const [localConfig, setLocalConfig] = useState(null);
   const [pendingChanges, setPendingChanges] = useState({});
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle', 'saving', 'success'
 
   useEffect(() => {
     if (appConfig) {
@@ -120,9 +121,19 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
 
   const handleSaveToFlash = () => {
     if (window.confirm('Are you sure you want to write these settings to PERMANENT Flash memory?')) {
+      setSaveStatus('saving');
+      
       // Send dedicated SAVE_CONFIG topic (0x0A)
       sendPacket(buildPacket(TOPIC_IDS.RX.SAVE_CONFIG, []));
       setPendingChanges({});
+
+      // Simulate a short processing delay for visual "premium" feedback
+      setTimeout(() => {
+        setSaveStatus('success');
+        setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2000);
+      }, 700);
     }
   };
 
@@ -207,9 +218,25 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
             className="btn btn-accent btn-with-icon" 
             onClick={handleSaveToFlash}
             data-pending={Object.keys(pendingChanges).length > 0 ? 'true' : 'false'}
+            data-status={saveStatus}
+            disabled={saveStatus !== 'idle'}
           >
-            <Save size={14} />
-            Save to Flash
+            {saveStatus === 'saving' ? (
+              <>
+                <RefreshCw size={14} className="icon-spin" />
+                <span>Writing...</span>
+              </>
+            ) : saveStatus === 'success' ? (
+              <>
+                <CheckCircle size={14} />
+                <span>Persistent!</span>
+              </>
+            ) : (
+              <>
+                <Save size={14} />
+                <span>Persist to Flash</span>
+              </>
+            )}
           </button>
         </div>
       </div>

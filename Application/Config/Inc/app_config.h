@@ -22,7 +22,7 @@ typedef struct {
     /* Motor Parameters */
     uint32_t pid_enabled;
     float    motor_ticks_per_circle;
-    float    motor_rps_limit;
+    float    motor_speed_limit;
     float    motor_pwm_max;
     
     /* Chassis Parameters */
@@ -65,7 +65,7 @@ typedef enum {
     /* Motor (0x10-0x1F) */
     CONF_PID_ENABLED            = 0x10,
     CONF_MOTOR_TICKS            = 0x11,
-    CONF_MOTOR_RPS_LIMIT        = 0x12,
+    CONF_MOTOR_SPEED_LIMIT       = 0x12,
     CONF_MOTOR_PWM_MAX          = 0x14,
 
     /* Chassis (0x20-0x2F) */

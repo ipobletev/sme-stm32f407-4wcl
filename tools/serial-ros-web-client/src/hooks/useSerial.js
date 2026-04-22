@@ -234,17 +234,17 @@ export function useSerial() {
       
       vx: odometry?.linear_x || 0,
       wz: odometry?.angular_z || 0,
-      rps1: odometry?.measuredRps?.[0] || 0,
-      rps2: odometry?.measuredRps?.[1] || 0,
-      rps3: odometry?.measuredRps?.[2] || 0,
-      rps4: odometry?.measuredRps?.[3] || 0,
+      speed1: odometry?.measuredSpeed?.[0] || 0,
+      speed2: odometry?.measuredSpeed?.[1] || 0,
+      speed3: odometry?.measuredSpeed?.[2] || 0,
+      speed4: odometry?.measuredSpeed?.[3] || 0,
       enc1: odometry?.encoders?.[0] || 0,
       enc2: odometry?.encoders?.[1] || 0,
       enc3: odometry?.encoders?.[2] || 0,
       enc4: odometry?.encoders?.[3] || 0,
       
-      pid_target:   pidDebug?.targetRps   || [0,0,0,0],
-      pid_measured: pidDebug?.measuredRps || [0,0,0,0],
+      pid_target:   pidDebug?.targetSpeed   || [0,0,0,0],
+      pid_measured: pidDebug?.measuredSpeed || [0,0,0,0],
       pid_pwm:      pidDebug?.pwmOutput   || [0,0,0,0],
 
       freq_sys: frequenciesBufferRef.current?.['0x81'] || 0,
@@ -295,8 +295,8 @@ export function useSerial() {
         telemetryBufferRef.current.odometry = parsed;
         // The Odometry topic now includes full PID debug data
         telemetryBufferRef.current.pidDebug = {
-          targetRps: parsed.targetRps,
-          measuredRps: parsed.measuredRps,
+          targetSpeed: parsed.targetSpeed,
+          measuredSpeed: parsed.measuredSpeed,
           pwmOutput: parsed.pwmOutput
         };
         

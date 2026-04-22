@@ -11,8 +11,8 @@
 #define DEFAULT_ODOM_PUBLISH_PERIOD_MS          100
 /* Motor Parameters */
 #define DEFAULT_ROBOT_STATE_PID_ENABLED         0
-#define DEFAULT_MOTOR_TICKS_PER_CIRCLE          3960.0f
-#define DEFAULT_MOTOR_RPS_LIMIT                 1.0f
+#define DEFAULT_MOTOR_TICKS_PER_CIRCLE          654.0f
+#define DEFAULT_MOTOR_SPEED_LIMIT               1.38f
 #define DEFAULT_MOTOR_PULSE_DEADZONE            1000.0f
 #define DEFAULT_MOTOR_PWM_MAX                   65535.0f
 
@@ -24,7 +24,7 @@
 #define DEFAULT_ROBOT_WHEEL_DIAMETER            0.08f
 #define DEFAULT_ROBOT_SHAFT_WIDTH               0.170f
 #define DEFAULT_ROBOT_WHEELBASE_LENGTH          0.150f
-#define DEFAULT_ROBOT_MOBILITY_MODE             3 // MOB_MODE_MECANUM
+#define DEFAULT_ROBOT_MOBILITY_MODE             0
 /* Motor Directions */
 #define DEFAULT_MOTOR1_INVERT                   1
 #define DEFAULT_MOTOR2_INVERT                   1

@@ -16,15 +16,15 @@ struct EncoderMotorObject {
     int64_t overflow_num;   /**< @brief Count of timer overflows */
     
     float tps;              /**< @brief Ticks Per Second */
-    float rps;              /**< @brief Revolutions Per Second (Measured) */
-    float target_rps;       /**< @brief Target velocity in RPS */
+    float measured_speed;   /**< @brief Measured velocity in m/s */
+    float target_speed;     /**< @brief Target velocity in m/s */
     
     float current_pulse;    /**< @brief Current PWM output (-65535 to 65535) */
     PID_ControllerTypeDef pid_controller; /**< @brief Velocity PID controller */
 
     /* Physical parameters */
     int32_t ticks_per_circle; /**< @brief Ticks per output shaft revolution */
-    float rps_limit;          /**< @brief Max safe RPS */
+    float speed_limit;        /**< @brief Max safe speed (m/s) */
     float deadzone;           /**< @brief PWM deadzone threshold */
 
     /** Hardware Interface **/
@@ -37,7 +37,7 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t new_c
 void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period);
 void encoder_motor_pid_control(EncoderMotorObjectTypeDef *self, float period);
 void encoder_motor_open_loop_control(EncoderMotorObjectTypeDef *self);
-void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps);
+void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float speed_ms);
 void encoder_motor_brake(EncoderMotorObjectTypeDef *self);
 void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse);
 void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self);

@@ -15,7 +15,7 @@ bool BSP_Motor_Hardware_Init(EncoderMotorObjectTypeDef *motors[4]);
 /**
  * @brief Set specific motor parameters
  */
-void BSP_Motor_Hardware_SetParam(EncoderMotorObjectTypeDef *motor, int32_t tpc, float rps_limit, float kp, float ki, float kd);
+void BSP_Motor_Hardware_SetParam(EncoderMotorObjectTypeDef *motor, int32_t tpc, float speed_limit, float kp, float ki, float kd);
 
 /**
  * @brief Set motor parameters based on pre-defined type

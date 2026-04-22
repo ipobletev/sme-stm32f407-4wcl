@@ -2832,6 +2832,32 @@ input[type="range"]::-webkit-slider-thumb:hover {
   50% { transform: scale(1.02); box-shadow: 0 4px 25px rgba(245, 158, 11, 0.6); }
 }
 
+.btn-accent[data-status="saving"] {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.btn-accent[data-status="success"] {
+  background: linear-gradient(135deg, #10b981, #34d399) !important;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.6) !important;
+  animation: success-pulse 0.6s ease;
+}
+
+@keyframes success-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .config-footer {
   margin-top: 20px;
   padding: 15px;

@@ -21,6 +21,8 @@ typedef struct {
 } PID_ControllerTypeDef;
 
 void pid_controller_update(PID_ControllerTypeDef *self, float actual, float time_delta);
+void pid_controller_reset(PID_ControllerTypeDef *self);
 void pid_controller_init(PID_ControllerTypeDef *self, float kp, float ki, float kd);
+void pid_controller_set_gains(PID_ControllerTypeDef *self, float kp, float ki, float kd);
 
 #endif /* _PID_H */

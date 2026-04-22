@@ -16,7 +16,7 @@
 #define TOPIC_ID_ARM_GOAL       0x04    /* Rx: Robotic arm joint targets */
 #define TOPIC_ID_SYS_EVENT      0x05    /* Rx: Logic events (START, RESET, STOP, etc) */
 #define TOPIC_ID_ACTUATOR_PWM   0x06    /* Rx: Raw actuator PWM control (ID + Pulse) */
-#define TOPIC_ID_ACTUATOR_VEL   0x07    /* Rx: Raw actuator Velocity control (ID + RPS) */
+#define TOPIC_ID_ACTUATOR_VEL   0x07    /* Rx: Raw actuator Velocity control (ID + m/s) */
 #define TOPIC_ID_SET_CONFIG     0x08    /* Rx: Set single parameter */
 #define TOPIC_ID_GET_CONFIG     0x09    /* Rx: Request full config dump */
 #define TOPIC_ID_SAVE_CONFIG    0x0A    /* Rx: Save all current config to Flash */
@@ -129,8 +129,8 @@ typedef struct {
     int32_t enc_4;
 
     /* PID Feedback (Velocity & Effort) */
-    float target_rps[4];
-    float measured_rps[4];
+    float target_speed[4];
+    float measured_speed[4];
     float pwm_output[4];
 } OdometryMsg_t;
 

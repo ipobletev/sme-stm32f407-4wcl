@@ -5,6 +5,11 @@
 #include "motor_param.h"
 #include "robot_state.h"
 #include <stdbool.h>
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 /**
  * @brief Update motor velocity measurement
@@ -21,9 +26,10 @@ void encoder_update(EncoderMotorObjectTypeDef *self, float period, int64_t count
     /* Low-pass filter for speed measurement (90% new, 10% old as per reference) */
     float measure_tps = (float)delta_count / period;
     self->tps = measure_tps * 0.9f + self->tps * 0.1f;
-    
-    /* Convert to RPS */
-    self->rps = self->tps / (float)self->ticks_per_circle;
+    // LOG_INFO("DEBUG", "Motor %d TPS: %d\r\n", self->motor_id, (int)self->tps);
+    /* Convert to m/s: speed = (TPS / TPC) * PI * Wheel_Diameter */
+    float rps = self->tps / (float)self->ticks_per_circle;
+    self->measured_speed = rps * (M_PI * AppConfig->wheel_diameter);
 }
 
 /**
@@ -40,13 +46,18 @@ void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse)
     /* Apply individual deadband if necessary */
     if (output_pulse < self->deadzone && output_pulse > -self->deadzone) {
         output_pulse = 0;
-        pulse = 0; /* Reset incremental accumulator to stop the whine */
+        /* Only reset incremental accumulator if the target is actually zero 
+           to stop the 'whining' noise in stationary state. 
+           If target is NON-ZERO, let the accumulator build up until it jumps out of deadzone. */
+        if (self->target_speed == 0.0f) {
+            pulse = 0;
+        }
     }
     
     self->set_pulse(self, (int)output_pulse);
     self->current_pulse = pulse;
     
-    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_rps, self->rps, output_pulse);
+    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_speed, self->measured_speed, output_pulse);
 
 }
 
@@ -55,21 +66,33 @@ void encoder_motor_apply_pulse(EncoderMotorObjectTypeDef *self, float pulse)
  */
 void encoder_motor_pid_control(EncoderMotorObjectTypeDef *self, float period)
 {
-    /* If target is 0, we must stop driving the motor.
-       Incremental PID will freeze at its last PWM output if error reaches 0. */
-    if (self->target_rps == 0.0f) {
-        encoder_motor_brake(self);
-        return;
+    /* 
+     * Active Braking logic:
+     * If target is 0, we don't call brake() immediately. Instead, we let the PID 
+     * run to provide counter-torque (active braking) as long as the motor is still moving.
+     * We only engage the electronic brake once the speed is below a small threshold.
+     */
+    if (self->target_speed == 0.0f) {
+        if (fabs(self->measured_speed) < 0.02f) {
+            encoder_motor_brake(self);
+            return;
+        }
     }
 
+
     /* Update incremental PID */
-    pid_controller_update(&self->pid_controller, self->rps, period);
+    pid_controller_update(&self->pid_controller, self->measured_speed, period);
     
-    /* Calculate new PWM pulse (current + increment) */
+    /* 
+     * Calculate new PWM pulse (current + increment).
+     * current_pulse acts as the integrator/accumulator of the incremental PID.
+     * It also carries the Feed-Forward baseline injected in encoder_motor_set_speed.
+     */
     float pulse = self->current_pulse + self->pid_controller.output;
     
     encoder_motor_apply_pulse(self, pulse);
 }
+
 
 /**
  * @brief Motor control using Open Loop (Linear RPS-to-PWM mapping)
@@ -77,7 +100,7 @@ void encoder_motor_pid_control(EncoderMotorObjectTypeDef *self, float period)
 void encoder_motor_open_loop_control(EncoderMotorObjectTypeDef *self)
 {
     /* Simple linear mapping for debugging/testing */
-    float pulse = (self->target_rps / self->rps_limit) * AppConfig->motor_pwm_max;
+    float pulse = (self->target_speed / self->speed_limit) * AppConfig->motor_pwm_max;
     
     encoder_motor_apply_pulse(self, pulse);
 }
@@ -99,28 +122,55 @@ void encoder_motor_control(EncoderMotorObjectTypeDef *self, float period)
 /**
  * @brief Set target velocity
  */
-void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float rps)
+void encoder_motor_set_speed(EncoderMotorObjectTypeDef *self, float speed_ms)
 {
+    float old_target = self->target_speed;
+
     /* Clamp target speed */
-    if (rps > self->rps_limit) rps = self->rps_limit;
-    if (rps < -self->rps_limit) rps = -self->rps_limit;
+    if (speed_ms > self->speed_limit) speed_ms = self->speed_limit;
+    if (speed_ms < -self->speed_limit) speed_ms = -self->speed_limit;
     
-    self->target_rps = rps;
-    self->pid_controller.set_point = rps;
+    /* If starting from stopped state, clear PID history to ensure clean jump */
+    if (self->target_speed == 0.0f && speed_ms != 0.0f) {
+        pid_controller_reset(&self->pid_controller);
+    }
+
+    /* 
+     * Feed-Forward Injection:
+     * We give the PID accumulator a 'head start' based on the theoretical PWM 
+     * needed for the new target speed. This significantly improves response time
+     * and prevents the PWM from dropping too low when Kp is the only active term.
+     */
+    if (RobotState_PIDIsEnabled() && speed_ms != old_target) {
+        float ff_gain = AppConfig->motor_pwm_max / self->speed_limit;
+        // We use a 90% FF factor to allow the PID to always have some control room
+        float delta_ff = (speed_ms - old_target) * ff_gain * 0.90f;
+        self->current_pulse += delta_ff;
+        
+        /* Clamp current_pulse to prevent initial jump from exceeding PWM limits before PID check */
+        if (self->current_pulse > AppConfig->motor_pwm_max) self->current_pulse = AppConfig->motor_pwm_max;
+        if (self->current_pulse < -AppConfig->motor_pwm_max) self->current_pulse = -AppConfig->motor_pwm_max;
+    }
+    
+    self->target_speed = speed_ms;
+    self->pid_controller.set_point = speed_ms;
 }
+
 
 /**
  * @brief Immediate hard stop (Brake)
  */
 void encoder_motor_brake(EncoderMotorObjectTypeDef *self)
 {
-    self->target_rps = 0;
+    self->target_speed = 0;
     self->pid_controller.set_point = 0;
     self->current_pulse = 0;
+    pid_controller_reset(&self->pid_controller);
+    
     if (self->set_pulse) {
         self->set_pulse(self, 0);
     }
-    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_rps, self->rps, 0.0f);
+    RobotState_SetMeasuredMotorDebug(self->motor_id, self->target_speed, self->measured_speed, 0.0f);
 }
 
 /**
@@ -131,20 +181,20 @@ void encoder_motor_object_init(EncoderMotorObjectTypeDef *self)
     self->counter = 0;
     self->overflow_num = 0;
     self->tps = 0; 
-    self->rps = 0;
-    self->target_rps = 0;
+    self->measured_speed = 0;
+    self->target_speed = 0;
     self->current_pulse = 0;
     self->motor_id = 0; /* Default, should be set during configure */
     self->ticks_overflow = 0; 
     self->ticks_per_circle = AppConfig->motor_ticks_per_circle; /* Default for common motors */
-    self->rps_limit = AppConfig->motor_rps_limit;
+    self->speed_limit = AppConfig->motor_speed_limit;
     self->deadzone = 0;
     pid_controller_init(&self->pid_controller, 0, 0, 0);
 }
 
 void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self) {
     self->ticks_per_circle = AppConfig->motor_ticks_per_circle;
-    self->rps_limit = AppConfig->motor_rps_limit;
+    self->speed_limit = AppConfig->motor_speed_limit;
     
     /* Update per-motor PID gains */
     float kp = DEFAULT_MOTOR_KP, ki = DEFAULT_MOTOR_KI, kd = DEFAULT_MOTOR_KD, deadzone = 0;
@@ -157,7 +207,7 @@ void encoder_motor_refresh_config(EncoderMotorObjectTypeDef *self) {
     }
     
     self->deadzone = deadzone;
-    pid_controller_init(&self->pid_controller, kp, ki, kd);
+    pid_controller_set_gains(&self->pid_controller, kp, ki, kd);
 }
 
 

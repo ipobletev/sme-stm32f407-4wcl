@@ -78,7 +78,7 @@
 
 .tuner-main-grid {
     display: grid;
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 400px;
     gap: 24px;
     align-items: start;
 }
@@ -294,7 +294,7 @@
     padding: 16px 12px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px 20px;
+    gap: 12px 16px;
 }
 
 .motor-group-tag {
@@ -317,11 +317,11 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .gain-label {
-    width: 35px;
+    width: 28px;
     font-size: 0.7rem;
     font-weight: 800;
     color: var(--text-muted);
@@ -331,11 +331,11 @@
 .gain-value-input-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .gain-num-input {
-    width: 60px;
+    width: 76px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
     border-radius: 6px;
