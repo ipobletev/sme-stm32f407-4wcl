@@ -47,7 +47,7 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
               </div>
               <div className="error-items-container">
                 {activeErrors.map((err, idx) => (
-                  <div key={idx} className={`sidebar-error-item severity-${err.severity}`}>
+                  <div key={idx} className={`sidebar-error-item severity-${err.severity}`} title={err.description}>
                     <AlertTriangle size={14} className="error-icon" />
                     <span className="error-msg">{err.label}</span>
                   </div>
@@ -59,9 +59,11 @@ export default function PageSidebar({ collapsed, activeTab, onTabChange, sysStat
       )}
 
       <div className="sidebar-footer">
-        <div className="footer-status">
-          <div className="status-dot online"></div>
-          {!collapsed && <span className="status-text">System Online</span>}
+        <div className={`status-pill ${collapsed ? 'collapsed' : ''}`}>
+          <div className="status-indicator">
+            <div className="status-dot pulse-emerald"></div>
+            {!collapsed && <span className="status-text">System Online</span>}
+          </div>
         </div>
       </div>
     </aside>

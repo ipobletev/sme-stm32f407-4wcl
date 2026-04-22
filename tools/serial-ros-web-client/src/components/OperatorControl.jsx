@@ -3,8 +3,10 @@ import { Gamepad2, Zap, ShieldAlert, Sliders, Play, Square, AlertCircle, Chevron
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 import { getSupervisorStateName, getSupervisorStateClass } from '../utils/fsmLabels';
 
-export default function OperatorControl({ sendPacket, connected, sysStatus }) {
-  const [maxLinear, setMaxLinear] = useState(0.5); // m/s
+export default function OperatorControl({ sendPacket, connected, sysStatus, appConfig }) {
+  const systemMaxSpeed = appConfig?.motor_speed_limit || 2.0;
+
+  const [maxLinear, setMaxLinear] = useState(Math.min(0.5, systemMaxSpeed)); // m/s
   const [maxAngular, setMaxAngular] = useState(1.5); // rad/s
   const [isDriving, setIsDriving] = useState(false);
   const [activeControlType, setActiveControlType] = useState(null); // 'joystick' or 'dpad'
@@ -17,7 +19,14 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
   const lastUpdateTimeRef = useRef(0);
   const wasDrivingRef = useRef(false);
 
-  // Sync limits to ref
+  // Sync user selected maxLinear with system global maxSpeed if it decreases
+  useEffect(() => {
+    if (maxLinear > systemMaxSpeed) {
+      setMaxLinear(systemMaxSpeed);
+    }
+  }, [systemMaxSpeed, maxLinear]);
+
+  // Sync limits to ref for the control loop
   useEffect(() => {
     limitsRef.current = { linear: maxLinear, angular: maxAngular };
   }, [maxLinear, maxAngular]);
@@ -241,11 +250,20 @@ export default function OperatorControl({ sendPacket, connected, sysStatus }) {
             <div className="limit-group">
               <div className="limit-label">
                 <span>Max Linear Speed</span>
-                <span className="limit-value">{maxLinear.toFixed(2)} m/s</span>
+                <span className="limit-value">
+                  {maxLinear.toFixed(2)} m/s
+                  <div style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 'normal', marginTop: '2px' }}>
+                    System Limit: {systemMaxSpeed.toFixed(2)} m/s
+                  </div>
+                </span>
               </div>
               <input 
-                type="range" min="0.1" max="2.0" step="0.1" 
-                value={maxLinear} onChange={(e) => setMaxLinear(parseFloat(e.target.value))} 
+                type="range" 
+                min="0.1" 
+                max={systemMaxSpeed} 
+                step="0.01" 
+                value={maxLinear} 
+                onChange={(e) => setMaxLinear(parseFloat(e.target.value))} 
               />
             </div>
             

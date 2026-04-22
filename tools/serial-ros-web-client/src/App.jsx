@@ -113,7 +113,7 @@ export default function App() {
               {/* Right sidebar: scrollable control panel */}
               <div className="sidebar">
                 <div className="sidebar-scroll">
-                  <CommandPanel sendPacket={sendPacket} connected={connected} sysStatus={telemetry.sysStatus} />
+                  <CommandPanel sendPacket={sendPacket} connected={connected} sysStatus={telemetry.sysStatus} appConfig={telemetry.appConfig} />
                 </div>
               </div>
 
@@ -165,6 +165,7 @@ export default function App() {
               sendPacket={sendPacket} 
               connected={connected} 
               sysStatus={telemetry.sysStatus} 
+              appConfig={telemetry.appConfig}
             />
           ) : activeTab === 'settings' ? (
             <div className="settings-view full-width-view" style={{ margin: '0 auto', width: '100%' }}>

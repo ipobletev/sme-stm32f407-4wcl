@@ -3,7 +3,7 @@ import { Send, Joystick, Cog, Shield, Navigation, StopCircle } from 'lucide-reac
 import { buildPacket, Encoders, TOPIC_IDS } from '../utils/protocol';
 import SystemEventsControl from './SystemEventsControl';
 
-const CommandPanel = memo(function CommandPanel({ sendPacket, connected, sysStatus }) {
+const CommandPanel = memo(function CommandPanel({ sendPacket, connected, sysStatus, appConfig }) {
   const [linearX, setLinearX] = useState(0);
   const [angularZ, setAngularZ] = useState(0);
   const [j1, setJ1] = useState(0);
@@ -107,22 +107,38 @@ const CommandPanel = memo(function CommandPanel({ sendPacket, connected, sysStat
         <div className="card-body">
           <div className="slider-group">
             <div className="slider-label">
-              <span>Linear X</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Linear X 
+                <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 'normal' }}>
+                  (Max: {(appConfig?.motor_speed_limit || 2.0).toFixed(2)} m/s)
+                </span>
+              </span>
               <input 
                 type="number" 
                 className="value-input" 
                 value={linearX} 
                 step={0.01}
-                min={-2}
-                max={2}
+                min={-(appConfig?.motor_speed_limit || 2.0)}
+                max={(appConfig?.motor_speed_limit || 2.0)}
                 onChange={e => setLinearX(Number(e.target.value))}
                 disabled={disabled}
               />
             </div>
-            <input type="range" min={-2} max={2} step={0.01} value={linearX}
+            <input 
+              type="range" 
+              min={-(appConfig?.motor_speed_limit || 2.0)} 
+              max={(appConfig?.motor_speed_limit || 2.0)} 
+              step={0.01} 
+              value={linearX}
               onChange={e => setLinearX(Number(e.target.value))}
               disabled={disabled}
-              onDoubleClick={() => setLinearX(0)} />
+              onDoubleClick={() => setLinearX(0)} 
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', marginTop: '2px', opacity: 0.5 }}>
+              <span>-{ (appConfig?.motor_speed_limit || 2.0).toFixed(1) }</span>
+              <span>0</span>
+              <span>+{ (appConfig?.motor_speed_limit || 2.0).toFixed(1) }</span>
+            </div>
           </div>
           <div className="slider-group">
             <div className="slider-label">

@@ -23,8 +23,9 @@ export default function ErrorLogPanel({ sysStatus }) {
     const activeErrors = parseErrorFlags(bigFlags);
     const entry = {
       ts: Date.now(),
+      bigFlags: bigFlags,
       flags: '0x' + bigFlags.toString(16).toUpperCase().padStart(16, '0'),
-      errors: activeErrors,
+      errors: activeErrors.map(e => e.label), // Keep this for simple count/check
     };
     setHistory(prev => [entry, ...prev].slice(0, 50));
   }, [sysStatus?.errors]);
@@ -59,8 +60,10 @@ export default function ErrorLogPanel({ sysStatus }) {
                 <div className="error-tags">
                   {entry.errors.length === 0
                     ? <span className="error-tag" style={{ color: 'var(--accent-emerald)', borderColor: 'rgba(52,211,153,0.25)', background: 'rgba(52,211,153,0.08)' }}>OK</span>
-                    : entry.errors.map(e => (
-                        <span className="error-tag" key={e}>{e}</span>
+                    : getActiveErrors(entry.bigFlags || 0n).map(e => (
+                        <span className="error-tag" key={e.id} title={e.description}>
+                          {e.label}
+                        </span>
                       ))
                   }
                 </div>

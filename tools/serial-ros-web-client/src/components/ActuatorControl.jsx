@@ -86,6 +86,11 @@ const MotorSlider = ({ id, label, disabled, onSend, value, setValue, config }) =
         className="custom-range"
         style={{ width: '100%' }}
       />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', marginTop: '2px', opacity: 0.4, fontFamily: 'monospace' }}>
+        <span>{config.min}</span>
+        <span>0</span>
+        <span>{config.max}</span>
+      </div>
     </div>
   );
 };
@@ -167,12 +172,12 @@ export default function ActuatorControl({ sendPacket, connected, sysStatus, appC
   const sliderConfig = testMode === 'PWM' ? {
     min: -(appConfig?.motor_pwm_max || 65535),
     max: (appConfig?.motor_pwm_max || 65535),
-    step: 500,
+    step: 100,
     unit: 'Pulse'
   } : {
     min: -(appConfig?.motor_speed_limit || 2.0),
     max: (appConfig?.motor_speed_limit || 2.0),
-    step: 0.1,
+    step: 0.05,
     unit: 'm/s'
   };
 
