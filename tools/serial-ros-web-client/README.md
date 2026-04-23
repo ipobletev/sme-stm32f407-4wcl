@@ -26,6 +26,17 @@ npm run dev
 npm run relay
 ```
 
+## 🧩 Dashboard Features
+
+The dashboard provides a suite of advanced tools for robot development and operation:
+
+- **📊 Dashboard Overview**: Real-time telemetry monitoring, IMU orientation visualization, and critical system health alerts.
+- **🎮 Operator Console**: Professional teleoperation suite featuring a 2D joystick (with deadzone), D-Pad controls, and real-time velocity limit scaling.
+- **📉 PID Optimizer**: High-frequency motor control analysis tool. Features step-response capture, transient behavior charts, and an "Expert Advisor" for automated gain recommendations.
+- **⚙️ Device Configuration**: Real-time synchronization of firmware parameters. Adjust PID gains, kinematic dimensions, and motor polarities without recompiling.
+- **🗺️ FSM Map (State Logic)**: Live visualization of the hierarchical Finite State Machine. Monitor the Supervisor and Subsystem states in real-time.
+- **📂 Real-time Logs**: Integrated system event feed and raw packet logs to simplify protocol debugging.
+
 ## 📱 Mobile & Network Access
 
 The dashboard is fully responsive and can be accessed from any device on your local network (LAN).
@@ -49,9 +60,9 @@ The dashboard is fully responsive and can be accessed from any device on your lo
 *   **Vite Proxy**: Automatically routes `/ws-robot` requests from the frontend to the local Node.js relay.
 
 ## 🛠️ Tech Stack
+- **Development Engine**: **Vite 5** — Powers the lightning-fast Hot Module Replacement (HMR) essential for iterative UI development and real-time data binding.
 - **Framework**: React 19
-- **Bundler**: Vite 5
 - **3D Visualization**: React Three Fiber + Three.js (for IMU orientation)
-- **Styling**: Vanilla CSS (Custom design system)
+- **Styling**: Vanilla CSS (Custom premium design system)
 - **Icons**: Lucide React
 - **Communications**: Web Serial API + WebSockets

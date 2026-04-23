@@ -28,6 +28,15 @@ Docs/
 └── state_machine.md  # Detailed FSM Transition & Safety Spec
 ```
 
+## 🖥️ Ecosystem Integration (The Dashboard)
+
+Web application that allows you to monitor and control the control board, motors and robotic arm. **[SerialROS Dashboard](tools/serial-ros-web-client/README.md)**. The dashboard is a tool for the development workflow:
+
+- **On-the-fly Calibration**: Adjust critical parameters like wheel diameter, shaft width, and PID gains in real-time without needing to reflash the STM32.
+- **Advanced PID Tuning**: Utilize the high-frequency telemetry link to perform step-response tests and visualize motor performance.
+- **Universal Access**: Any mobile device on the same network can access the dashboard, providing a portable operator console and diagnostic screen.
+- **Visual Verification**: Monitor the internal logic of the Supervisor and Slave FSMs to ensure the robot is operating within safe constraints.
+
 ## 🛡️ Safety & Supervision
 
 The system implements a dual safety mechanism:
