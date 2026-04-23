@@ -1,8 +1,12 @@
 #include "States/state_handlers.h"
 #include "debug_module.h"
+#include "io_buzzer.h"
+#include "bsp_buzzer.h"
 #include "mobility_fsm.h"
 #include "arm_fsm.h"
 #include "robot_state.h"
+#include "osal.h"
+#include "main.h"
 
 void State_Fault_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering STATE_FAULT (EMERGENCY STOP)\r\n");
@@ -16,10 +20,13 @@ void State_Fault_OnEnter(void) {
     if (arm_state != STATE_ARM_FAULT && arm_state != STATE_ARM_ABORT) {
         FSM_Arm_ProcessEvent(EVENT_ARM_ABORT);
     }
+    
+    /* Start intermittent buzzer: 2kHz, 1000ms period */
+    io_buzzer(2000, 1000);
 }
 
 void State_Fault_Run(void) {
-    /* Logic */
+    /* Buzzer is handled by io_buzzer module timer */
 }
 
 void State_Fault_OnExit(void) {
@@ -30,4 +37,7 @@ void State_Fault_OnExit(void) {
 
     FSM_Mobility_ProcessEvent(EVENT_MOB_INIT);
     FSM_Arm_ProcessEvent(EVENT_ARM_INIT);
+
+    /* Ensure buzzer is OFF */
+    io_buzzer_stop();
 }

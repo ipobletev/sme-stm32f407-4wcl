@@ -1,5 +1,6 @@
 #include "osal.h"
 #include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* --- System --- */
 uint32_t osal_get_tick(void) {
@@ -81,6 +82,11 @@ osal_timer_h osal_timer_create(void (*func)(void *), osal_timer_type_t type, voi
 }
 
 osal_status_t osal_timer_start(osal_timer_h timer, uint32_t period_ms) {
-    osStatus_t status = osTimerStart((osTimerId_t)timer, period_ms);
+    osStatus_t status = osTimerStart((osTimerId_t)timer, pdMS_TO_TICKS(period_ms));
+    return (status == osOK) ? OSAL_OK : OSAL_ERROR;
+}
+
+osal_status_t osal_timer_stop(osal_timer_h timer) {
+    osStatus_t status = osTimerStop((osTimerId_t)timer);
     return (status == osOK) ? OSAL_OK : OSAL_ERROR;
 }

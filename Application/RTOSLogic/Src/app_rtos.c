@@ -1,5 +1,6 @@
 #include "app_rtos.h"
 #include "app_config.h"
+#include "io_buzzer.h"
 #include "debug_module.h"
 #include "robot_state.h"
 #include "serial_ros_protocol.h"
@@ -132,6 +133,9 @@ void App_RTOS_Init(void) {
     if (heartbeatTimerHandle != NULL) {
         osal_timer_start(heartbeatTimerHandle, 1000);
     }
+
+    /* 4. Initialize IO Modules */
+    io_buzzer_init();
 }
 
 

@@ -40,6 +40,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Application/Modules/MotorControl/Inc
     Application/Modules/SerialRos/Inc
     Application/Modules/ConsoleDebug/Inc
+    Application/Modules/Buzzer/Inc
     Application/Config/Inc
 )
 

@@ -30,7 +30,7 @@ Docs/
 
 ## 🖥️ Ecosystem Integration (The Dashboard)
 
-Web application that allows you to monitor and control the control board, motors and robotic arm. **[SerialROS Dashboard](tools/serial-ros-web-client/README.md)**. The dashboard is a tool for the development workflow:
+Web application (Vibe coding) that allows you to monitor and control the control board, motors and robotic arm. **[SerialROS Dashboard](tools/serial-ros-web-client/README.md)**. The dashboard is a tool for the development workflow:
 
 - **On-the-fly Calibration**: Adjust critical parameters like wheel diameter, shaft width, and PID gains in real-time without needing to reflash the STM32.
 - **Advanced PID Tuning**: Utilize the high-frequency telemetry link to perform step-response tests and visualize motor performance.

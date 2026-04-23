@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void BSP_Buzzer_SetState(bool state);
-void BSP_Buzzer_Beep(uint32_t delay_ms);
+void BSP_Buzzer_Init(void);
+void BSP_Buzzer_On(void);
+void BSP_Buzzer_Off(void);
+void BSP_Buzzer_Toggle(void);
 
 #endif /* __BSP_BUZZER_H */

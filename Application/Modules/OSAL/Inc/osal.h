@@ -67,5 +67,6 @@ typedef enum {
 
 osal_timer_h osal_timer_create(void (*func)(void *), osal_timer_type_t type, void *arg);
 osal_status_t osal_timer_start(osal_timer_h timer, uint32_t period_ms);
+osal_status_t osal_timer_stop(osal_timer_h timer);
 
 #endif /* __OSAL_H */

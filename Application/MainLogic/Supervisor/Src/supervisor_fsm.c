@@ -213,8 +213,10 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     }
 }
 
+#include "bsp_buzzer.h"
+
 /**
- * @brief Periodic logic for the supervisor. Called by RTOS Task.
+ * @brief periodic logic for the supervisor. Called by RTOS Task.
  */
 void Supervisor_ProcessLogic(void) {
     /* Feed Supervisor heartbeat to let subsystems know we are alive */
