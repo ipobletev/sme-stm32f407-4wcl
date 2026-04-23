@@ -134,7 +134,7 @@ void App_RTOS_Init(void) {
         osal_timer_start(heartbeatTimerHandle, 1000);
     }
 
-    /* 4. Initialize IO Modules */
+    /* 4. Initialize Buzzer Timer */
     io_buzzer_init();
 }
 

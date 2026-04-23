@@ -45,5 +45,13 @@ The system implements a dual safety mechanism:
 
 For a deep dive into the state transitions and safety logic, refer to the **[State Machine Documentation](docs/state_machine.md)**.
 
----
-*Developed for SME - Advanced Agentic Coding Project.*
+
+
+## 🛠️ Roadmap & Upcoming Features
+
+The project is currently under active development. The following features are pending implementation or validation:
+
+- [ ] **Kinematics Validation**: Testing of kinematic movement models on real hardware.
+- [ ] **USB/Joystick Support**: Implementation of a USB interface for direct joystick control.
+- [ ] **Radio Control (SBUS)**: Integration of RC receivers using the SBUS protocol.
+- [ ] **Robotic Arm**: Full integration and servo motor control for the robotic arm.
