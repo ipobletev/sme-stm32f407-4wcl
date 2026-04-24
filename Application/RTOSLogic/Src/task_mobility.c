@@ -4,6 +4,8 @@
 
 #define LOG_TAG "MOBILITY_TASK"
 
+#include "app_config.h"
+
 void StartMobilityTask(void *argument)
 {
     LOG_INFO(LOG_TAG, "Mobility Logic Task Started.\r\n");
@@ -13,16 +15,13 @@ void StartMobilityTask(void *argument)
 
     for(;;)
     {
-        /* 1. Process Mobility Subsystem Logic at 50Hz (20ms loop) */
+        /* 1. Process Mobility Subsystem Logic at 50Hz (20ms loop) 
+         * The FSM handles inputs (Joystick) internally within its state handlers. */
         FSM_Mobility_ProcessLogic();
         
-        /* 2. Update Shared Robot State telemetry */
-        RobotState_SetMobilityState(FSM_Mobility_GetCurrentState());
-
-        /* 3. Heartbeat: Tell the Supervisor we are alived */
+        /* 2. Heartbeat: Tell the Supervisor we are alive */
         RobotState_UpdateMobilityHeartbeat();
 
         osal_delay(20);
-
     }
 }

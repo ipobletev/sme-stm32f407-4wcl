@@ -82,6 +82,11 @@
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config/Inc"/>
+									<listOptionValue builtIn="false" value="../Application/Modules/USBJoystick/Inc"/>
+									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Class/HID/Inc"/>
+									<listOptionValue builtIn="false" value="../USB_HOST/App"/>
+									<listOptionValue builtIn="false" value="../USB_HOST/Target"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/FlashStorage/Inc"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1344186489" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
@@ -116,6 +121,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Application"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -198,7 +204,12 @@
 									<listOptionValue builtIn="false" value="../Application/Modules/ConsoleDebug/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config/Inc"/>
+									<listOptionValue builtIn="false" value="../Application/Modules/USBJoystick/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/FlashStorage/Inc"/>
+									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Core/Inc"/>
+									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Class/HID/Inc"/>
+									<listOptionValue builtIn="false" value="../USB_HOST/App"/>
+									<listOptionValue builtIn="false" value="../USB_HOST/Target"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1624256107" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -232,6 +243,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Application"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

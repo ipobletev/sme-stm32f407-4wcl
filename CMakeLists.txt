@@ -42,6 +42,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Application/Modules/ConsoleDebug/Inc
     Application/Modules/Buzzer/Inc
     Application/Config/Inc
+    Application/Modules/USBJoystick/Inc
+    USB_HOST/App
+    USB_HOST/Target
 )
 
 # Custom Application Source Files
@@ -55,10 +58,16 @@ file(GLOB_RECURSE BSP_SOURCES CONFIGURE_DEPENDS
     "Drivers/BSP/*.c"
 )
 
+# USB Host Source Files
+file(GLOB_RECURSE USB_SOURCES CONFIGURE_DEPENDS
+    "USB_HOST/*.c"
+)
+
 # Add custom sources to the target
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${APP_SOURCES}
     ${BSP_SOURCES}
+    ${USB_SOURCES}
 )
 
 # Include the STM32CubeMX generated CMake logic

@@ -21,8 +21,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh_core.h"
 
-/* USER CODE BEGIN Includes */
 
+/* USER CODE BEGIN Includes */
+#include "debug_module.h"
+#define LOG_TAG "USBH_CONF"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -459,9 +461,18 @@ USBH_URBStateTypeDef USBH_LL_GetURBState(USBH_HandleTypeDef *phost, uint8_t pipe
   */
 USBH_StatusTypeDef USBH_LL_DriverVBUS(USBH_HandleTypeDef *phost, uint8_t state)
 {
-
   /* USER CODE BEGIN 0 */
-
+  /* Drive the VBUS enable pin based on the requested state */
+  if (state == 0)
+  {
+    /* VBUS Inactive */
+    LOG_INFO(LOG_TAG, "USB Host: Power OFF requested (Software Only)\r\n");
+  }
+  else
+  {
+    /* VBUS Active */
+    LOG_INFO(LOG_TAG, "USB Host: Power ON requested (Software Only)\r\n");
+  }
   /* USER CODE END 0*/
 
   if (phost->id == HOST_HS)

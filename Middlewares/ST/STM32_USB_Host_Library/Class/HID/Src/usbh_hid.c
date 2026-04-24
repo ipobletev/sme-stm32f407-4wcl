@@ -104,6 +104,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost);
 static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost);
 static void USBH_HID_ParseHIDDesc(HID_DescTypeDef *desc, uint8_t *buf);
 
+static USBH_StatusTypeDef USBH_HID_GamepadInit(USBH_HandleTypeDef *phost);
+
 extern USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost);
 extern USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost);
 
@@ -143,7 +145,12 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit(USBH_HandleTypeDef *phost)
   uint8_t num = 0U;
   uint8_t interface;
 
-  interface = USBH_FindInterface(phost, phost->pActiveClass->ClassCode, HID_BOOT_CODE, 0xFFU);
+  /* Wildcard search for HID (0x03) or Vendor Specific (0xFF) interfaces */
+  interface = USBH_FindInterface(phost, 0x03U, 0xFFU, 0xFFU);
+  if (interface == 0xFFU)
+  {
+      interface = USBH_FindInterface(phost, 0xFFU, 0xFFU, 0xFFU);
+  }
 
   if ((interface == 0xFFU) || (interface >= USBH_MAX_NUM_INTERFACES)) /* No Valid Interface */
   {
@@ -172,27 +179,31 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit(USBH_HandleTypeDef *phost)
 
   HID_Handle->state = USBH_HID_ERROR;
 
-  /*Decode Bootclass Protocol: Mouse or Keyboard*/
-  if (phost->device.CfgDesc.Itf_Desc[interface].bInterfaceProtocol == HID_KEYBRD_BOOT_CODE)
+  /*Decode Bootclass Protocol: Mouse or Keyboard (ONLY for standard HID class) */
+  if ((phost->device.CfgDesc.Itf_Desc[interface].bInterfaceClass == 0x03U) && 
+      (phost->device.CfgDesc.Itf_Desc[interface].bInterfaceProtocol == HID_KEYBRD_BOOT_CODE))
   {
     USBH_UsrLog("KeyBoard device found!");
     HID_Handle->Init = USBH_HID_KeybdInit;
   }
-  else if (phost->device.CfgDesc.Itf_Desc[interface].bInterfaceProtocol  == HID_MOUSE_BOOT_CODE)
+  else if ((phost->device.CfgDesc.Itf_Desc[interface].bInterfaceClass == 0x03U) && 
+           (phost->device.CfgDesc.Itf_Desc[interface].bInterfaceProtocol == HID_MOUSE_BOOT_CODE))
   {
     USBH_UsrLog("Mouse device found!");
     HID_Handle->Init = USBH_HID_MouseInit;
   }
   else
   {
-    USBH_UsrLog("Protocol not supported.");
-    return USBH_FAIL;
+    USBH_UsrLog("Gamepad/Generic HID device found! (Class: 0x%02X, Protocol: %d)", 
+                phost->device.CfgDesc.Itf_Desc[interface].bInterfaceClass,
+                phost->device.CfgDesc.Itf_Desc[interface].bInterfaceProtocol);
+    HID_Handle->Init = USBH_HID_GamepadInit;
   }
 
   HID_Handle->state     = USBH_HID_INIT;
   HID_Handle->ctl_state = USBH_HID_REQ_INIT;
   HID_Handle->ep_addr   = phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[0].bEndpointAddress;
-  HID_Handle->length    = phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[0].wMaxPacketSize;
+  HID_Handle->length    = 0; /* Will be set below from IN endpoint */
   HID_Handle->poll      = phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[0].bInterval;
 
   if (HID_Handle->poll < HID_MIN_POLL)
@@ -215,6 +226,11 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit(USBH_HandleTypeDef *phost)
       HID_Handle->InEp = (phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[num].bEndpointAddress);
       HID_Handle->InPipe = USBH_AllocPipe(phost, HID_Handle->InEp);
       ep_mps = phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[num].wMaxPacketSize;
+      HID_Handle->length = ep_mps; /* Use IN endpoint size as report length */
+      HID_Handle->poll = phost->device.CfgDesc.Itf_Desc[interface].Ep_Desc[num].bInterval;
+
+      USBH_UsrLog("HID IN Endpoint found: Addr 0x%02X, Size %d, Interval %d", 
+                  HID_Handle->InEp, ep_mps, HID_Handle->poll);
 
       /* Open pipe for IN endpoint */
       (void)USBH_OpenPipe(phost, HID_Handle->InPipe, HID_Handle->InEp, phost->device.address,
@@ -236,6 +252,22 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit(USBH_HandleTypeDef *phost)
     }
   }
 
+  return USBH_OK;
+}
+
+__ALIGN_BEGIN static uint8_t gamepad_report_data[64] __ALIGN_END;
+__ALIGN_BEGIN static uint8_t gamepad_fifo_buf[128] __ALIGN_END;
+
+/**
+  * @brief  Dummy init for generic gamepads
+  * @param  phost: Host handle
+  * @retval USBH Status
+  */
+static USBH_StatusTypeDef USBH_HID_GamepadInit(USBH_HandleTypeDef *phost)
+{
+  HID_HandleTypeDef *HID_Handle = (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  HID_Handle->pData = gamepad_report_data;
+  USBH_HID_FifoInit(&HID_Handle->fifo, gamepad_fifo_buf, sizeof(gamepad_fifo_buf));
   return USBH_OK;
 }
 
@@ -285,6 +317,13 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
   USBH_StatusTypeDef status         = USBH_BUSY;
   USBH_StatusTypeDef classReqStatus = USBH_BUSY;
   HID_HandleTypeDef *HID_Handle = (HID_HandleTypeDef *) phost->pActiveClass->pData;
+
+  /* If this is our generic gamepad, bypass standard HID requests */
+  if (HID_Handle->Init == USBH_HID_GamepadInit)
+  {
+      phost->pUser(phost, HOST_USER_CLASS_ACTIVE);
+      return USBH_OK;
+  }
 
   /* Switch HID state machine */
   switch (HID_Handle->ctl_state)
@@ -378,6 +417,14 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   HID_HandleTypeDef *HID_Handle = (HID_HandleTypeDef *) phost->pActiveClass->pData;
   uint32_t XferSize;
 
+  // /* Diagnostic Heartbeat */
+  // static uint32_t last_hid_heartbeat = 0;
+  // if (phost->Timer - last_hid_heartbeat > 2000) {
+  //     USBH_UsrLog("[HID Process] State: %d, URB State: %d", 
+  //                 HID_Handle->state, USBH_LL_GetURBState(phost, HID_Handle->InPipe));
+  //     last_hid_heartbeat = phost->Timer;
+  // }
+
   switch (HID_Handle->state)
   {
     case USBH_HID_INIT:
@@ -400,32 +447,41 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
       break;
 
     case USBH_HID_IDLE:
-      status = USBH_HID_GetReport(phost, 0x01U, 0U, HID_Handle->pData, (uint8_t)HID_Handle->length);
-
-      if (status == USBH_OK)
+      if (HID_Handle->Init == USBH_HID_GamepadInit) 
       {
-        HID_Handle->state = USBH_HID_SYNC;
-      }
-      else if (status == USBH_BUSY)
-      {
-        HID_Handle->state = USBH_HID_IDLE;
-        status = USBH_OK;
-      }
-      else if (status == USBH_NOT_SUPPORTED)
-      {
-        HID_Handle->state = USBH_HID_SYNC;
-        status = USBH_OK;
+          HID_Handle->state = USBH_HID_SYNC;
+          status = USBH_OK;
       }
       else
       {
-        HID_Handle->state = USBH_HID_ERROR;
-        status = USBH_FAIL;
+        status = USBH_HID_GetReport(phost, 0x01U, 0U, HID_Handle->pData, (uint8_t)HID_Handle->length);
+
+        if (status == USBH_OK)
+        {
+          HID_Handle->state = USBH_HID_SYNC;
+        }
+        else if (status == USBH_BUSY)
+        {
+          HID_Handle->state = USBH_HID_IDLE;
+          status = USBH_OK;
+        }
+        else if (status == USBH_NOT_SUPPORTED)
+        {
+          HID_Handle->state = USBH_HID_SYNC;
+          status = USBH_OK;
+        }
+        else
+        {
+          HID_Handle->state = USBH_HID_ERROR;
+          status = USBH_FAIL;
+        }
       }
 
 #if (USBH_USE_OS == 1U)
       USBH_OS_PutMessage(phost, USBH_URB_EVENT, 0U, 0U);
 #endif /* (USBH_USE_OS == 1U) */
       break;
+
 
     case USBH_HID_SYNC:
       /* Sync with start of Even Frame */
@@ -744,14 +800,16 @@ HID_TypeTypeDef USBH_HID_GetDeviceType(USBH_HandleTypeDef *phost)
 
   if (phost->gState == HOST_CLASS)
   {
+    uint8_t itf_class = phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceClass;
     InterfaceProtocol = phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol;
-    if (InterfaceProtocol == HID_KEYBRD_BOOT_CODE)
+
+    if (itf_class == 0x03U) /* Standard HID Class */
     {
-      type = HID_KEYBOARD;
-    }
-    else
-    {
-      if (InterfaceProtocol == HID_MOUSE_BOOT_CODE)
+      if (InterfaceProtocol == HID_KEYBRD_BOOT_CODE)
+      {
+        type = HID_KEYBOARD;
+      }
+      else if (InterfaceProtocol == HID_MOUSE_BOOT_CODE)
       {
         type = HID_MOUSE;
       }

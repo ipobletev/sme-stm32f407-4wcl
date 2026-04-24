@@ -671,9 +671,20 @@ USBH_StatusTypeDef USBH_Process(USBH_HandleTypeDef *phost)
       {
         phost->pActiveClass = NULL;
 
+        USBH_UsrLog("Device has %d interfaces.", phost->device.CfgDesc.bNumInterfaces);
+        for(uint8_t i=0; i < phost->device.CfgDesc.bNumInterfaces; i++) {
+            USBH_UsrLog(" Interface[%d]: Class=0x%02X, SubClass=0x%02X, Protocol=0x%02X", 
+                        i, 
+                        phost->device.CfgDesc.Itf_Desc[i].bInterfaceClass,
+                        phost->device.CfgDesc.Itf_Desc[i].bInterfaceSubClass,
+                        phost->device.CfgDesc.Itf_Desc[i].bInterfaceProtocol);
+        }
+
         for (idx = 0U; idx < USBH_MAX_NUM_SUPPORTED_CLASS; idx++)
         {
-          if (phost->pClass[idx]->ClassCode == phost->device.CfgDesc.Itf_Desc[0].bInterfaceClass)
+          uint8_t itf_class = phost->device.CfgDesc.Itf_Desc[0].bInterfaceClass;
+          if ((phost->pClass[idx]->ClassCode == itf_class) ||
+              (phost->pClass[idx]->ClassCode == 0x03U && itf_class == 0xFFU))
           {
             phost->pActiveClass = phost->pClass[idx];
             break;

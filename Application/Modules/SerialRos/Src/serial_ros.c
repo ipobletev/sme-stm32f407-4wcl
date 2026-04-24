@@ -87,12 +87,12 @@ static void handle_mobility_mode(const SysConfigMsg_t *msg)
 static void handle_cmd_vel(const CmdVelMsg_t *msg)
 {
     SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_SUPERVISOR_AUTO) {
+    if (current_sup == STATE_SUPERVISOR_AUTO || current_sup == STATE_SUPERVISOR_MANUAL) {
         RobotState_SetTargetVelocity(msg->linear_x, msg->angular_z);
         LOG_INFO(LOG_TAG, "CmdVel ACCEPTED: x=%.3f z=%.3f\r\n", msg->linear_x, msg->angular_z);
     } else {
-        /* Ignore commands if not in Auto mode */
-        LOG_WARNING(LOG_TAG, "CmdVel REJECTED: SUP is %d (Need AUTO)\r\n", current_sup);
+        /* Ignore commands if not in Auto or Manual mode */
+        LOG_WARNING(LOG_TAG, "CmdVel REJECTED: SUP is %d (Need AUTO or MANUAL)\r\n", current_sup);
     }
 }
 
@@ -110,12 +110,12 @@ static void handle_cmd_vel(const CmdVelMsg_t *msg)
 static void handle_arm_goal(const ArmGoalMsg_t *msg)
 {
     SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_SUPERVISOR_AUTO) {
+    if (current_sup == STATE_SUPERVISOR_AUTO || current_sup == STATE_SUPERVISOR_MANUAL) {
         RobotState_SetTargetArmPose(msg->j1, msg->j2, msg->j3);
         LOG_INFO(LOG_TAG, "ArmGoal ACCEPTED: j1=%.2f j2=%.2f j3=%.2f\r\n", msg->j1, msg->j2, msg->j3);
     } else {
-        /* Ignore commands if not in Auto mode */
-        LOG_WARNING(LOG_TAG, "ArmGoal REJECTED: SUP is %d (Need AUTO)\r\n", current_sup);
+        /* Ignore commands if not in Auto or Manual mode */
+        LOG_WARNING(LOG_TAG, "ArmGoal REJECTED: SUP is %d (Need AUTO or MANUAL)\r\n", current_sup);
     }
 }
 

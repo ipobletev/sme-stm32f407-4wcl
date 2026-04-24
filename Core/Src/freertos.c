@@ -30,6 +30,7 @@
 #include "usart.h"
 #include "adc.h"
 #include "app_rtos.h"
+#include "usb_host.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,7 +56,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 256 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -125,7 +126,8 @@ __weak void StartDefaultTask(void *argument)
   /* Logic moved to Application/Main/Src/app_main.c */
   for(;;)
   {
-    osDelay(1000);
+    USBH_Process(&hUsbHostHS);
+    osDelay(10);
   }
   /* USER CODE END StartDefaultTask */
 }

@@ -1,12 +1,14 @@
 #include "States/state_handlers.h"
 #include "debug_module.h"
+#include "usb_joystick.h"
+#include "supervisor_fsm.h"
 
 void State_Idle_OnEnter(void) {
-    LOG_INFO(LOG_TAG, "Entering STATE_IDLE\r\n");
+    LOG_INFO(LOG_TAG, "Entering STATE_IDLE. Press START on Joystick to enable.\r\n");
 }
 
 void State_Idle_Run(void) {
-    /* Logic */
+    /* Logic: Waiting for START event (handled by supervisor_hw_joy_input.c) */
 }
 
 void State_Idle_OnExit(void) {

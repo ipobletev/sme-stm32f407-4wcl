@@ -1,6 +1,7 @@
 #include "States/mob_state_handlers.h"
 #include "mobility_fsm_internal.h"
 #include "debug_module.h"
+#include "robot_state.h"
 #include <math.h>
 
 void MobState_Break_OnEnter(void) {
@@ -13,6 +14,9 @@ void MobState_Break_OnEnter(void) {
 }
 
 void MobState_Break_Run(void) {
+    /* 1. Check for new targets to allow interrupting the brake (e.g. from Joystick via Supervisor or ROS) */
+    RobotState_GetTargetVelocity(&target_linear_x, &target_angular_z);
+
     bool all_stopped = true;
     
     /* Run PID loop for all motors and check if they have stopped */

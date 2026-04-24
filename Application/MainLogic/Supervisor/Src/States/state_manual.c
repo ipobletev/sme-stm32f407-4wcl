@@ -1,6 +1,11 @@
 #include "States/state_handlers.h"
 #include "robot_state.h"
 #include "debug_module.h"
+#include "usb_joystick.h"
+#include "app_config.h"
+#include "supervisor_fsm.h"
+
+#define JOYSTICK_DEADZONE 10
 
 void State_Manual_OnEnter(void) {
     LOG_INFO(LOG_TAG, "Entering MANUAL State (Operator Control)\r\n");
@@ -8,7 +13,30 @@ void State_Manual_OnEnter(void) {
 }
 
 void State_Manual_Run(void) {
-    /* Logic */
+    /* 1. Process Hardware USB Joystick */
+    if (USB_Joystick_IsConnected()) {
+        USB_Joystick_State_t *js = USB_Joystick_GetState();
+
+        //Debug
+        LOG_DEBUG(LOG_TAG, "Joy: LX=%d, LY=%d, RX=%d, RY=%d, BTN=0x%04X\r\n", 
+                  js->lx, js->ly, js->rx, js->ry, js->buttons);
+        
+        float target_lx = 0;
+        float target_az = 0;
+        
+        /* Mapping Joy 1 Y axis to Linear X (Forward/Backward) */
+        if (js->ly > JOYSTICK_DEADZONE || js->ly < -JOYSTICK_DEADZONE) {
+            target_lx = -((float)js->ly / 127.0f) * AppConfig->motor_speed_limit;
+        }
+        
+        /* Mapping Joy 2 X axis to Angular Z (Rotation) */
+        if (js->rx > JOYSTICK_DEADZONE || js->rx < -JOYSTICK_DEADZONE) {
+            target_az = -((float)js->rx / 127.0f) * AppConfig->motor_angular_speed_limit;
+        }
+        
+        /* Send commands to RobotState (MobilityTask will consume them) */
+        RobotState_SetTargetVelocity(target_lx, target_az);
+    }
 }
 
 

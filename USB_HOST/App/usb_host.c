@@ -25,7 +25,7 @@
 #include "usbh_hid.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "usb_joystick.h"
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN PV */
@@ -98,24 +98,40 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   switch(id)
   {
   case HOST_USER_SELECT_CONFIGURATION:
+  printf("USB Host: Select Configuration\r\n");
   break;
 
   case HOST_USER_DISCONNECTION:
+  printf("USB Host: Device Disconnected\r\n");
   Appli_state = APPLICATION_DISCONNECT;
+  USB_Joystick_Init(); /* Reset state on disconnect */
   break;
 
   case HOST_USER_CLASS_ACTIVE:
+  printf("USB Host: HID Class Active (Enumeration Complete!)\r\n");
   Appli_state = APPLICATION_READY;
   break;
 
   case HOST_USER_CONNECTION:
+  printf("USB Host: Device Physically Connected\r\n");
   Appli_state = APPLICATION_START;
+  USB_Joystick_Init();
   break;
 
   default:
   break;
   }
   /* USER CODE END CALL_BACK_1 */
+}
+
+/**
+  * @brief  HID Event callback.
+  * @param  phost: Host handle
+  * @retval None
+  */
+void USBH_HID_EventCallback(USBH_HandleTypeDef *phost)
+{
+  USB_Joystick_Process(phost);
 }
 
 /**

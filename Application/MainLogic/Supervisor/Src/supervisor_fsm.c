@@ -1,21 +1,22 @@
 #include "supervisor_fsm.h"
 #include "States/state_handlers.h"
 #include "arm_fsm.h"
+#include "osal.h"
 #include "robot_state.h"
 #include "debug_module.h"
-#include "osal.h"
-#include <stdio.h>
-#include "error_codes.h"
-//Subsystem
+#include "usb_joystick.h"
 #include "mobility_fsm.h"
 #include "arm_fsm.h"
-
+#include "supervisor_hw_joy_input.h"
 
 /* Internal Private State */
 static SystemState_t current_state = STATE_SUPERVISOR_INIT;
 static SystemState_t previous_mode = STATE_SUPERVISOR_INIT;  /* To restore after Pause */
 static uint8_t pause_auth_level = 0;                          /* Authority level that triggered the pause */
 
+/**
+ * @brief Convert state enum to string for logging.
+ */
 const char* Supervisor_StateToStr(SystemState_t state) {
     switch(state) {
         case STATE_SUPERVISOR_INIT:   return "INIT";
@@ -28,6 +29,7 @@ const char* Supervisor_StateToStr(SystemState_t state) {
         default:           return "UNKNOWN";
     }
 }
+
 /**
  * @brief Standard safety checks (Watchdogs and Global Errors).
  * This logic has been centralized here from the legacy task_manager.c.
@@ -77,9 +79,6 @@ void Supervisor_RunStandardChecks(void) {
             FSM_Arm_ProcessEvent(EVENT_ARM_ABORT);
         }
     }
-
-    
-    
 }
 
 /**
@@ -139,6 +138,7 @@ SystemState_t Supervisor_GetCurrentState(void) {
  * @brief Process an incoming event and update the supervisor state machine.
  */
 void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
+    LOG_INFO(LOG_TAG, "Event Received: %d from Source: %d (Current State: %s)\r\n", event, source, Supervisor_StateToStr(current_state));
     SystemState_t next_state = current_state;
 
     /* Transition Table Logic */
@@ -213,14 +213,15 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     }
 }
 
-#include "bsp_buzzer.h"
-
 /**
  * @brief periodic logic for the supervisor. Called by RTOS Task.
  */
 void Supervisor_ProcessLogic(void) {
     /* Feed Supervisor heartbeat to let subsystems know we are alive */
     RobotState_UpdateSupervisorHeartbeat();
+
+    /* 0. Handle Joystick Inputs */
+    Supervisor_HandleJoystickInput();
 
     /* 1. Global Safety Checks (Standard for all operational states) */
     if (current_state != STATE_SUPERVISOR_INIT && current_state != STATE_SUPERVISOR_FAULT) {

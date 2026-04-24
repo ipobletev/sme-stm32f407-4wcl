@@ -84,7 +84,7 @@
 #define USBH_MAX_DATA_BUFFER      512U
 
 /*----------   -----------*/
-#define USBH_DEBUG_LEVEL      0U
+#define USBH_DEBUG_LEVEL      3U
 
 /*----------   -----------*/
 #define USBH_USE_OS      1U
@@ -96,6 +96,7 @@
 
 #if (USBH_USE_OS == 1)
   #include "cmsis_os.h"
+  #include "FreeRTOS.h"
   #define USBH_PROCESS_PRIO          osPriorityNormal
   #define USBH_PROCESS_STACK_SIZE    ((uint16_t)2048)
 #endif /* (USBH_USE_OS == 1) */
@@ -112,10 +113,10 @@
 /* Memory management macros */
 
 /** Alias for memory allocation. */
-#define USBH_malloc         malloc
+#define USBH_malloc         pvPortMalloc
 
 /** Alias for memory release. */
-#define USBH_free           free
+#define USBH_free           vPortFree
 
 /** Alias for memory set. */
 #define USBH_memset         memset
