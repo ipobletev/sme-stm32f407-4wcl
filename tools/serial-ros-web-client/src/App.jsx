@@ -94,6 +94,7 @@ export default function App() {
           isMaster={isMaster}
           linkActive={linkActive}
           sysStatus={telemetry.sysStatus}
+          appConfig={telemetry.appConfig}
           onConnect={connect} 
           onDisconnect={disconnect} 
           sendPacket={sendPacket}

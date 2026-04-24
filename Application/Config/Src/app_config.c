@@ -6,7 +6,7 @@
 #include "debug_module.h"
 #include "mobility_fsm.h"
 
-#define CONFIG_MAGIC_NUMBER     0xABCD1234
+#define CONFIG_MAGIC_NUMBER     0xABCD1235
 #define LOG_TAG                 "APP_CONFIG"
 #define MAX_CONFIG_CALLBACKS    8
 
@@ -85,6 +85,10 @@ void AppConfig_ResetToDefaults(void) {
     g_current_config.joy_angular_deadzone = DEFAULT_JOY_ANGULAR_DEADZONE;
     g_current_config.joy_linear_gain      = DEFAULT_JOY_LINEAR_GAIN;
     g_current_config.joy_angular_gain     = DEFAULT_JOY_ANGULAR_GAIN;
+
+    /* Battery */
+    g_current_config.batt_min             = DEFAULT_BATT_MIN;
+    g_current_config.batt_max             = DEFAULT_BATT_MAX;
 
     g_current_config.crc = AppConfig_CalculateChecksum(&g_current_config);
     
@@ -228,6 +232,10 @@ bool AppConfig_UpdateParam(uint8_t id, float value) {
         case CONF_JOY_ANGULAR_DEADZONE: g_current_config.joy_angular_deadzone = value; break;
         case CONF_JOY_LINEAR_GAIN:      g_current_config.joy_linear_gain = value; break;
         case CONF_JOY_ANGULAR_GAIN:     g_current_config.joy_angular_gain = value; break;
+
+        /* Battery Configuration */
+        case CONF_BATT_MIN:             g_current_config.batt_min = value; break;
+        case CONF_BATT_MAX:             g_current_config.batt_max = value; break;
 
         default:
             LOG_ERROR(LOG_TAG, "Unknown Param ID 0x%02X\r\n", id);

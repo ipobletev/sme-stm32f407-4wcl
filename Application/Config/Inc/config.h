@@ -37,6 +37,10 @@
 #define DEFAULT_JOY_LINEAR_GAIN                 1.0f
 #define DEFAULT_JOY_ANGULAR_GAIN                1.0f
 
+/* Battery Defaults */
+#define DEFAULT_BATT_MIN                        10.0f
+#define DEFAULT_BATT_MAX                        12.6f
+
 /**
  * MEMORY CONFIGURATION TOGGLE
  * Enable PESISTENT_CONFIG in the build system or here to load parameters from Flash (Persistent Memory).

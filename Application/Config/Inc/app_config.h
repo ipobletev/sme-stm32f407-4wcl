@@ -51,6 +51,10 @@ typedef struct {
     float    joy_angular_deadzone;
     float    joy_linear_gain;
     float    joy_angular_gain;
+
+    /* Battery Configuration */
+    float    batt_min;
+    float    batt_max;
     
     uint32_t crc;                   /* CRC32 or simple checksum for integrity */
 } AppConfig_t;
@@ -114,6 +118,10 @@ typedef enum {
     CONF_JOY_ANGULAR_DEADZONE   = 0x61,
     CONF_JOY_LINEAR_GAIN        = 0x62,
     CONF_JOY_ANGULAR_GAIN       = 0x63,
+
+    /* Battery Configuration (0x70 - 0x7F) */
+    CONF_BATT_MIN               = 0x70,
+    CONF_BATT_MAX               = 0x71,
 } AppConfigParamId_t;
 
 /**

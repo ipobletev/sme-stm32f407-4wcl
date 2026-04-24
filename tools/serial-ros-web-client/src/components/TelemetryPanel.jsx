@@ -11,8 +11,9 @@ import {
   getMobilityModeName,
 } from '../utils/fsmLabels';
 
-function getBatteryPercent(voltage) {
-  const min = 10.0, max = 12.6;
+function getBatteryPercent(voltage, appConfig) {
+  const min = appConfig?.batt_min || 10.0;
+  const max = appConfig?.batt_max || 12.6;
   return Math.max(0, Math.min(100, ((voltage - min) / (max - min)) * 100));
 }
 
@@ -32,9 +33,9 @@ function fmt(v, d = 2) {
 }
 
 const TelemetryPanel = memo(function TelemetryPanel({ telemetry, frequencies }) {
-  const { sysStatus, imu, odometry } = telemetry;
+  const { sysStatus, imu, odometry, appConfig } = telemetry;
 
-  const batPct = sysStatus ? getBatteryPercent(sysStatus.v_batt) : 0;
+  const batPct = sysStatus ? getBatteryPercent(sysStatus.v_batt, appConfig) : 0;
   const batColor = getBatteryColor(batPct);
 
   return (

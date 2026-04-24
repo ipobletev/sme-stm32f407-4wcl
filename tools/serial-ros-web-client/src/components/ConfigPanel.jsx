@@ -21,6 +21,14 @@ const PARAM_GROUPS = [
     ]
   },
   {
+    category: 'system',
+    title: 'Battery Configuration',
+    params: [
+      { id: 0x70, key: 'batt_min', label: 'Min Voltage (Fault)', type: 'number', step: 0.1, min: 5.0, max: 30.0 },
+      { id: 0x71, key: 'batt_max', label: 'Max Voltage (100%)', type: 'number', step: 0.1, min: 5.0, max: 30.0 },
+    ]
+  },
+  {
     category: 'motor',
     title: 'Motor Control',
     params: [

@@ -119,6 +119,22 @@ void StartTelemetryTask(void *argument) {
             RobotState_SetBatteryVoltage(batt_v);
             RobotState_SetUCTemperature(mcu_t);
 
+            /* Battery Safety Reader: Trigger Fault if voltage is below threshold */
+            if (batt_v < AppConfig->batt_min) {
+                RobotState_SetErrorFlag(ERR_BATT_LOW);
+                // LOG_ERROR is handled by supervisor once flag is set, 
+                // but we can add a local notification for immediate visibility in console
+                static uint32_t last_batt_warn = 0;
+                if (osal_get_tick() - last_batt_warn > 5000) {
+                    LOG_ERROR(LOG_TAG, "CRITICAL: Battery Low (%.2fV < %.2fV)\r\n", batt_v, AppConfig->batt_min);
+                    last_batt_warn = osal_get_tick();
+                }
+            } else {
+                /* If voltage recovered (e.g. charger connected), we could clear the flag, 
+                   but usually FAULT requires a manual RESET for safety. */
+                // RobotState_ClearErrorFlag(ERR_BATT_LOW); 
+            }
+
             /* Pack and Send */
             SystemStatusMsg_t status_msg;
             status_msg.error_flags     = RobotState_GetErrorFlags();

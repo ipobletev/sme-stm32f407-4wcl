@@ -2,7 +2,7 @@ import React, { useState, memo } from 'react';
 import { 
   Plug, Unplug, AlertTriangle, Menu, ShieldCheck, 
   Share2, Anchor, Cpu, RotateCcw, Coffee, 
-  Gamepad2, Play, Pause, Target 
+  Gamepad2, Play, Pause, Target, Battery 
 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
@@ -11,6 +11,7 @@ const Header = memo(function Header({
   isMaster,
   linkActive,
   sysStatus,
+  appConfig,
   onConnect, 
   onDisconnect, 
   sendPacket, 
@@ -18,6 +19,18 @@ const Header = memo(function Header({
   setSidebarCollapsed 
 }) {
   const [baudRate, setBaudRate] = useState(230400);
+
+  const getBatteryPercent = (voltage, config) => {
+    const min = config?.batt_min || 10.0;
+    const max = config?.batt_max || 12.6;
+    return Math.max(0, Math.min(100, ((voltage - min) / (max - min)) * 100));
+  };
+
+  const getBatteryColor = (pct) => {
+    if (pct > 60) return 'var(--accent-emerald)';
+    if (pct > 25) return 'var(--accent-amber)';
+    return 'var(--accent-rose)';
+  };
 
   const STATE_MAP = {
     0: { label: 'INIT', color: 'var(--accent-amber)', icon: RotateCcw },
@@ -32,6 +45,9 @@ const Header = memo(function Header({
   const currentState = sysStatus?.state ?? 1;
   const stateInfo = STATE_MAP[currentState] || STATE_MAP[1];
   const StateIcon = stateInfo.icon;
+
+  const batPct = sysStatus ? getBatteryPercent(sysStatus.v_batt, appConfig) : 0;
+  const batColor = getBatteryColor(batPct);
   
   const handleEmergencyStop = () => {
     if (!connected || !sendPacket) return;
@@ -65,6 +81,19 @@ const Header = memo(function Header({
       </div>
 
       <div className="header-actions">
+        {/* Battery Status */}
+        {connected && sysStatus && (
+          <div className="battery-status-header" title={`Battery: ${sysStatus.v_batt.toFixed(2)}V`}>
+            <div className="battery-icon-wrapper" style={{ color: batColor }}>
+              <Battery size={14} className={batPct < 20 ? 'icon-pulse' : ''} />
+              <span className="battery-value">{batPct.toFixed(0)}%</span>
+            </div>
+            <div className="battery-mini-bar">
+              <div className="battery-mini-fill" style={{ width: `${batPct}%`, backgroundColor: batColor }}></div>
+            </div>
+          </div>
+        )}
+
         {/* System State Badge */}
         {connected && (
           <div className="system-state-badge" style={{ '--state-color': stateInfo.color }}>
