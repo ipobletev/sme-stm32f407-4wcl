@@ -73,9 +73,9 @@ The system centralizes all state changes through the Supervisor. Each request is
 | Role ID | Source Name | Description | Priority | Main Restriction |
 | :---: | :--- | :--- | :---: | :--- |
 | **0** | **Internal System** | Critical errors (Watchdogs, Motor Faults). | **Absolute** | Bypasses queue for immediate safety. |
-| **1** | **Physical HW** | On-board buttons (K1 E-Stop, K2 Reset). | **Emergency** | Always active (Direct control). |
-| **2** | **Gamepad (Joy)** | USB Gamepad (Manual driving). | **Manual** | **Prohibited** during AUTO mode. |
-| **3** | **External Client** | Remote ROS/UART3 Commands. | **Auto** | **Prohibited** during MANUAL mode. |
+| **1** | **Physical HW** | On-board buttons (K1, K2, etc.). | **High** | Direct physical interaction layer. |
+| **2** | **Gamepad (Joy)** | USB Gamepad (Manual driving). | **Normal** | **Prohibited** during AUTO mode. |
+| **3** | **External Client** | Remote ROS/UART3 Commands. | **Standard** | **Prohibited** during MANUAL mode. |
 
 #### Operational Restrictions (Enforced by Supervisor)
 
