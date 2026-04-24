@@ -131,7 +131,7 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
       // Map to velocities
       // Forward (linear_x) is negative dy (up), Left (angular_z) is negative dx (left)
       lx = (-rdy / maxRadius) * limitsRef.current.linear;
-      az = (-rdx / maxRadius) * limitsRef.current.angular;
+      az = (rdx / maxRadius) * limitsRef.current.angular;
     } else {
       // Inside deadzone, velocity is zero
       lx = 0;
@@ -176,14 +176,14 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
     switch(direction) {
       case 'up': lx = lin; break;
       case 'down': lx = -lin; break;
-      case 'left': az = ang; break;
-      case 'right': az = -ang; break;
-      case 'rotate-left': az = ang; break;
-      case 'rotate-right': az = -ang; break;
-      case 'up-left': lx = diagLin; az = diagAng; break;
-      case 'up-right': lx = diagLin; az = -diagAng; break;
-      case 'down-left': lx = -diagLin; az = diagAng; break;
-      case 'down-right': lx = -diagLin; az = -diagAng; break;
+      case 'left': az = -ang; break;
+      case 'right': az = ang; break;
+      case 'rotate-left': az = -ang; break;
+      case 'rotate-right': az = ang; break;
+      case 'up-left': lx = diagLin; az = -diagAng; break;
+      case 'up-right': lx = diagLin; az = diagAng; break;
+      case 'down-left': lx = -diagLin; az = -diagAng; break;
+      case 'down-right': lx = -diagLin; az = diagAng; break;
     }
     velRef.current = { x: lx, z: az };
   };
@@ -230,10 +230,6 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
     sendPacket(buildPacket(TOPIC_IDS.RX.SYS_EVENT, Encoders.sysEvent(0x05))); // RESET
   };
 
-  const handleSetAuto = () => {
-    sendPacket(buildPacket(TOPIC_IDS.RX.AUTONOMOUS, Encoders.autonomous(true)));
-  };
-
   return (
     <div className="operator-control-panel">
       <div className="control-header">
@@ -249,10 +245,6 @@ export default function OperatorControl({ sendPacket, connected, sysStatus, appC
           <button className="action-btn start" onClick={handleStart} title="Start System">
             <Play size={18} />
             <span>START</span>
-          </button>
-          <button className="action-btn auto" onClick={handleSetAuto} title="Switch to AUTO mode">
-            <Zap size={18} />
-            <span>MODE: AUTO</span>
           </button>
           <button className="action-btn reset" onClick={handleReset} title="Reset System">
             <RotateCcw size={18} />
