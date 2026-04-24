@@ -31,6 +31,7 @@
 #include "adc.h"
 #include "app_rtos.h"
 #include "usb_host.h"
+#include "usbh_core.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

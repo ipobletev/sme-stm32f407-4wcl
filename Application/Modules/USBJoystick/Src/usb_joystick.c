@@ -27,9 +27,16 @@ void USB_Joystick_Process(USBH_HandleTypeDef *phost) {
     //     last_joy_heartbeat = HAL_GetTick();
     // }
 
-    /* Check if the device is actually a joystick. 
-     * In many cases, if it's not a keyboard or mouse, it might be a generic HID joystick.
-     */
+    // /* Diagnostic Log (Throttle to avoid spam) */
+    // static uint32_t last_diag_tick = 0;
+    // if (HAL_GetTick() - last_diag_tick > 2000) {
+    //     HID_TypeTypeDef dev_type = USBH_HID_GetDeviceType(phost);
+    //     LOG_INFO(LOG_TAG, "Process - Type: %d, Len: %d, Connected: %d\r\n", 
+    //             (int)dev_type, (int)HID_Handle->length, (int)joystick_state.connected);
+    //     last_diag_tick = HAL_GetTick();
+    // }
+
+    /* Check if the device is actually a joystick. */
     if (USBH_HID_GetDeviceType(phost) == HID_UNKNOWN) {
         /* If it's unknown to the standard driver, we can try to parse it as generic joystick */
         if (HID_Handle->length > 0 && HID_Handle->length <= sizeof(joystick_report)) {

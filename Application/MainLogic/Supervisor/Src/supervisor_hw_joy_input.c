@@ -12,18 +12,27 @@ static uint32_t reset_combo_start_time = 0;
 
 
 void Supervisor_HandleJoystickInput(void) {
+    USB_Joystick_State_t *js = USB_Joystick_GetState();
+    SystemState_t current_state = Supervisor_GetCurrentState();
+
+    // /* Diagnostic log for connection status */
+    // static uint32_t last_joy_status_tick = 0;
+    // if (osal_get_tick() - last_joy_status_tick > 2000) {
+    //     LOG_INFO(LOG_TAG, "Joystick Status: %s, Buttons: 0x%04X, State: %s\r\n", 
+    //             USB_Joystick_IsConnected() ? "CONNECTED" : "DISCONNECTED",
+    //             js->buttons, Supervisor_StateToStr(current_state));
+    //     last_joy_status_tick = osal_get_tick();
+    // }
+
     if (!USB_Joystick_IsConnected()) {
         reset_combo_start_time = 0;
         return;
     }
 
-    USB_Joystick_State_t *js = USB_Joystick_GetState();
-    SystemState_t current_state = Supervisor_GetCurrentState();
-
     /* 1. EMERGENCY STOP (MODE Button) - Global */
     if (js->buttons & JOY_BTN_MODE) {
         if (current_state != STATE_SUPERVISOR_FAULT) {
-            LOG_ERROR(LOG_TAG, "Joystick EMERGENCY STOP (MODE) pressed!\r\n");
+            //LOG_ERROR(LOG_TAG, "Joystick EMERGENCY STOP (MODE) pressed!\r\n");
             Supervisor_SendEvent(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
         }
     }
@@ -33,7 +42,7 @@ void Supervisor_HandleJoystickInput(void) {
         if (current_state == STATE_SUPERVISOR_MANUAL || 
             current_state == STATE_SUPERVISOR_AUTO || 
             current_state == STATE_SUPERVISOR_PAUSED) {
-            LOG_INFO(LOG_TAG, "Joystick STOP (SELECT) pressed\r\n");
+            //LOG_INFO(LOG_TAG, "Joystick STOP (SELECT) pressed\r\n");
             Supervisor_SendEvent(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
         }
     }
@@ -41,7 +50,7 @@ void Supervisor_HandleJoystickInput(void) {
     /* 3. START (START Button) - Only in IDLE */
     if (js->buttons & JOY_BTN_START) {
         if (current_state == STATE_SUPERVISOR_IDLE) {
-            LOG_INFO(LOG_TAG, "Joystick START pressed -> Starting system\r\n");
+            //LOG_INFO(LOG_TAG, "Joystick START pressed -> Starting system\r\n");
             Supervisor_SendEvent(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
         }
     }
@@ -55,10 +64,10 @@ void Supervisor_HandleJoystickInput(void) {
     if (reset_pressed) {
         if (reset_combo_start_time == 0) {
             reset_combo_start_time = osal_get_tick();
-            LOG_INFO(LOG_TAG, "Reset combo detected... hold for 2s\r\n");
+            //LOG_INFO(LOG_TAG, "Reset combo detected... hold for 2s\r\n");
         } else if (osal_get_tick() - reset_combo_start_time > 2000) {
             if (current_state == STATE_SUPERVISOR_FAULT) {
-                LOG_INFO(LOG_TAG, "Joystick RESET combo triggered!\r\n");
+                //LOG_INFO(LOG_TAG, "Joystick RESET combo triggered!\r\n");
                 Supervisor_SendEvent(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
             }
             reset_combo_start_time = 0; 

@@ -19,12 +19,15 @@ static uint8_t pause_auth_level = 0;                          /* Authority level
  * @brief Unified interface to request a state change (Asynchronous).
  */
 void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
+    /* Log received event request */
+    LOG_INFO(LOG_TAG, "Event Received: %s (Source:%s)\r\n", Supervisor_EventToStr(event), Supervisor_SourceToStr(source));
+
     /* 1. Basic Business Rules / Filtering */
     
     /* Gamepad (SRC_PHYSICAL) is only allowed in MANUAL/IDLE/FAULT */
     if (source == SRC_PHYSICAL) {
         if (current_state == STATE_SUPERVISOR_AUTO) {
-            LOG_WARNING(LOG_TAG, "Joystick command ignored while in AUTO mode\r\n");
+            LOG_WARNING(LOG_TAG, "Joystick command %s ignored while in AUTO mode\r\n", Supervisor_EventToStr(event));
             return;
         }
     }
@@ -33,12 +36,12 @@ void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
     if (source == SRC_EXT_CLIENT) {
         /* Absolute Isolation Check: Is Autonomous Mode allowed by HW? */
         if (!RobotState_GetEnableAutonomous()) {
-            LOG_WARNING(LOG_TAG, "EXTERNAL COMMAND REJECTED: Autonomous Mode is HARDWARE ISOLATED\r\n");
+            LOG_WARNING(LOG_TAG, "EXTERNAL COMMAND %s REJECTED: Autonomous Mode is HARDWARE ISOLATED (Check SW3)\r\n", Supervisor_EventToStr(event));
             return;
         }
 
         if (current_state == STATE_SUPERVISOR_MANUAL) {
-            LOG_WARNING(LOG_TAG, "External command ignored while in MANUAL mode\r\n");
+            LOG_WARNING(LOG_TAG, "External command %s ignored while in MANUAL mode\r\n", Supervisor_EventToStr(event));
             return;
         }
     }
@@ -50,7 +53,7 @@ void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
     msg.source = source;
 
     if (osal_queue_put(stateMsgQueueHandle, &msg, 0U) != OSAL_OK) {
-        LOG_ERROR(LOG_TAG, "Supervisor: Failed to queue event %d from source %d\r\n", event, source);
+        LOG_ERROR(LOG_TAG, "Supervisor: Failed to queue event %s from source %d\r\n", Supervisor_EventToStr(event), source);
     }
 }
 
@@ -67,6 +70,42 @@ const char* Supervisor_StateToStr(SystemState_t state) {
         case STATE_SUPERVISOR_FAULT:  return "FAULT";
         case STATE_SUPERVISOR_TESTING:return "TESTING";
         default:           return "UNKNOWN";
+    }
+}
+
+/**
+ * @brief Convert event enum to string for logging.
+ */
+const char* Supervisor_EventToStr(SystemEvent_t event) {
+    switch(event) {
+        case EVENT_SUPERVISOR_NONE:         return "NONE";
+        case EVENT_SUPERVISOR_INIT:         return "INIT";
+        case EVENT_SUPERVISOR_READY:        return "READY";
+        case EVENT_SUPERVISOR_START:        return "START";
+        case EVENT_SUPERVISOR_STOP:         return "STOP";
+        case EVENT_SUPERVISOR_TESTING:      return "TESTING";
+        case EVENT_SUPERVISOR_ERROR:        return "ERROR";
+        case EVENT_SUPERVISOR_RESET:        return "RESET";
+        case EVENT_SUPERVISOR_MODE_MANUAL:  return "MODE_MANUAL";
+        case EVENT_SUPERVISOR_MODE_AUTO:    return "MODE_AUTO";
+        case EVENT_SUPERVISOR_PAUSE:        return "PAUSE";
+        case EVENT_SUPERVISOR_RESUME:       return "RESUME";
+        default:                 return "UNKNOWN_EVENT";
+    }
+}
+
+/**
+ * @brief Convert source enum to string for logging.
+ */
+const char* Supervisor_SourceToStr(uint8_t source) {
+    switch(source) {
+        case SRC_UNKNOWN:             return "UNKNOWN";
+        case SRC_EXT_CLIENT:         return "EXT_CLIENT";
+        case SRC_LOCAL_CONSOLE:      return "LOCAL_CONSOLE";
+        case SRC_PHYSICAL:           return "PHYSICAL";
+        case SRC_PHYSICAL_CRITICAL:  return "PHYSICAL_CRITICAL";
+        case SRC_INTERNAL_SUPERVISOR:return "INTERNAL";
+        default:                     return "UNKNOWN_SRC";
     }
 }
 
@@ -178,7 +217,8 @@ SystemState_t Supervisor_GetCurrentState(void) {
  * @brief Process an incoming event and update the supervisor state machine.
  */
 void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
-    LOG_INFO(LOG_TAG, "Event Received: %d from Source: %d (Current State: %s)\r\n", event, source, Supervisor_StateToStr(current_state));
+    LOG_INFO(LOG_TAG, "Processing Event: %s from Source: %s (Current State: %s)\r\n", 
+             Supervisor_EventToStr(event), Supervisor_SourceToStr(source), Supervisor_StateToStr(current_state));
     SystemState_t next_state = current_state;
 
     /* Transition Table Logic */
@@ -232,7 +272,8 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
                 if (source >= pause_auth_level) {
                     next_state = previous_mode; // Restore where we were
                 } else {
-                    LOG_WARNING(LOG_TAG, "Supervisor: Resume REJECTED. Source (%d) lower than Auth (%d)\r\n", source, pause_auth_level);
+                    LOG_WARNING(LOG_TAG, "Supervisor: Resume REJECTED. Source (%s) lower than Auth (%s)\r\n", 
+                                Supervisor_SourceToStr(source), Supervisor_SourceToStr(pause_auth_level));
                 }
             }
             break;
@@ -256,6 +297,12 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
     if (next_state != current_state) {
         LOG_INFO(LOG_TAG, "Supervisor: Transitioning from %s to %s\r\n", Supervisor_StateToStr(current_state), Supervisor_StateToStr(next_state));
         TransitionToState(next_state);
+    } else {
+        /* If no transition happened and it's not a 'none' event, warn about it */
+        if (event != EVENT_SUPERVISOR_NONE) {
+            LOG_WARNING(LOG_TAG, "Supervisor: Event %s IGNORED in state %s\r\n", 
+                        Supervisor_EventToStr(event), Supervisor_StateToStr(current_state));
+        }
     }
 }
 

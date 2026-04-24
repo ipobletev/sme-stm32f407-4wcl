@@ -6,7 +6,7 @@
 #include "debug_module.h"
 #include "mobility_fsm.h"
 
-#define CONFIG_MAGIC_NUMBER     0xABCD1235
+#define CONFIG_MAGIC_NUMBER     0xABCD1234
 #define LOG_TAG                 "APP_CONFIG"
 #define MAX_CONFIG_CALLBACKS    8
 

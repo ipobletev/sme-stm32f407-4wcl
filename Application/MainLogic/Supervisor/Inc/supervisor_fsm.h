@@ -51,6 +51,8 @@ typedef struct {
 
 /* Supervisor FSM Interface */
 const char* Supervisor_StateToStr(SystemState_t state);
+const char* Supervisor_EventToStr(SystemEvent_t event);
+const char* Supervisor_SourceToStr(uint8_t source);
 void Supervisor_Init(void);
 
 /**

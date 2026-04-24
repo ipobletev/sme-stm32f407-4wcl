@@ -63,7 +63,7 @@ const osal_thread_attr_t armTask_attributes = {
 const osal_thread_attr_t serialRosTask_attributes = {
   .name = "SerialRosTask",
   .stack_size = 768 * 4,
-  .priority = OSAL_PRIO_HIGH,
+  .priority = OSAL_PRIO_NORMAL,
 };
 
 const osal_thread_attr_t telemetryTask_attributes = {

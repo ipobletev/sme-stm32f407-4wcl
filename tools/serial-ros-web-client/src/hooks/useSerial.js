@@ -520,7 +520,6 @@ export function useSerial() {
       if (port.writable) writerRef.current = port.writable.getWriter();
       freqTrackerRef.current.start();
       setConnected(true);
-      setSharedConnected(true);
 
       // Fetch config immediately
       console.log('[Connection] Triggering initial GET_CONFIG...');
@@ -551,6 +550,9 @@ export function useSerial() {
       if (portRef.current) await portRef.current.close();
     } catch (e) {}
     setConnected(false);
+    setSharedConnected(false);
+    setNetworkConnected(false);
+    lastHeartbeatRef.current = 0;
     setFrequencies({});
     frequenciesBufferRef.current = {};
     telemetryBufferRef.current = { 
