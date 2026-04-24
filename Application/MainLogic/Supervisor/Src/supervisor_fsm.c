@@ -191,7 +191,13 @@ void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source) {
 
         case STATE_SUPERVISOR_IDLE:
             if (event == EVENT_SUPERVISOR_ERROR) next_state = STATE_SUPERVISOR_FAULT;
-            else if (event == EVENT_SUPERVISOR_START) next_state = STATE_SUPERVISOR_MANUAL;
+            else if (event == EVENT_SUPERVISOR_START) {
+                if (source == SRC_EXT_CLIENT) {
+                    next_state = STATE_SUPERVISOR_AUTO;
+                } else {
+                    next_state = STATE_SUPERVISOR_MANUAL;
+                }
+            }
             break;
         
         case STATE_SUPERVISOR_MANUAL:
