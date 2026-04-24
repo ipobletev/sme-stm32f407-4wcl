@@ -3224,3 +3224,184 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: white;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
+
+/* ===== LIVE GAMEPAD MONITOR ===== */
+.live-monitor-card {
+  background: rgba(17, 24, 39, 0.4);
+  border: 1px dashed rgba(34, 211, 238, 0.3);
+  margin-top: 16px;
+}
+.monitor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.monitor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 10px 0;
+}
+.joystick-visualizers {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+.stick-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.stick-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+.stick-area {
+  width: 120px;
+  height: 120px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stick-guide-x, .stick-guide-y {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.05);
+}
+.stick-guide-x { width: 100%; height: 1px; }
+.stick-guide-y { width: 1px; height: 100%; }
+.stick-pointer {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+  z-index: 2;
+  transition: background 0.1s ease;
+}
+.stick-values {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.buttons-triggers {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.joy-btn-chip {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  transition: all 0.1s ease;
+}
+.joy-btn-chip.active {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #000;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+.trigger-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.trigger-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.trigger-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  min-width: 24px;
+}
+.trigger-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.trigger-bar-fill {
+  height: 100%;
+  background: var(--gradient-cyan);
+  transition: width 0.05s ease;
+}
+
+/* ===== CONFIG CARD GROUP ACTIONS ===== */
+.card-header-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.card-header-with-actions h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.group-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-group-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+.btn-group-action:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.btn-group-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.btn-group-action.btn-send-all {
+  border-color: rgba(34, 211, 238, 0.3);
+  color: var(--accent-cyan);
+}
+.btn-group-action.btn-send-all:hover:not(:disabled) {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: var(--accent-cyan);
+}
+.btn-group-action.btn-refresh:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-indigo);
+}

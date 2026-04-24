@@ -171,6 +171,7 @@ export default function App() {
             <div className="settings-view full-width-view" style={{ margin: '0 auto', width: '100%' }}>
               <ConfigPanel 
                 appConfig={telemetry.appConfig} 
+                joystick={telemetry.joystick}
                 sendPacket={sendPacket} 
                 connected={connected} 
               />

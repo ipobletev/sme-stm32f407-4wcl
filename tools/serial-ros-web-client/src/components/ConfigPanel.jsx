@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2, Send, CheckCircle } from 'lucide-react';
+import { Settings, Save, RefreshCw, AlertTriangle, ShieldCheck, Undo2, Send, CheckCircle, Gamepad2, MousePointer2 } from 'lucide-react';
 import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 const PARAM_GROUPS = [
@@ -90,7 +90,13 @@ const PARAM_GROUPS = [
   }
 ];
 
-export default function ConfigPanel({ appConfig, sendPacket, connected }) {
+const JOY_BTN_L1     = 0x0100;
+const JOY_BTN_R1     = 0x0200;
+const JOY_BTN_MODE   = 0x0400;
+const JOY_BTN_START  = 0x0010;
+const JOY_BTN_SELECT = 0x0020;
+
+export default function ConfigPanel({ appConfig, joystick, sendPacket, connected }) {
   const [localConfig, setLocalConfig] = useState(null);
   const [pendingChanges, setPendingChanges] = useState({});
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle', 'saving', 'success'
@@ -110,6 +116,21 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
   const handleLocalParamChange = (key, value) => {
     // Update only local UI state
     setLocalConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSendGroup = (group) => {
+    group.params.forEach(p => {
+      // We check if the local value is different from the confirmed appConfig value
+      // or if it was already marked as a pending change.
+      // But let's just send everything in the group to be sure.
+      handleSendParam(p.id, p.key);
+    });
+  };
+
+  const handleRevertGroup = (group) => {
+    group.params.forEach(p => {
+      handleRevertParam(p.id, p.key);
+    });
   };
 
   const handleSendParam = (id, key) => {
@@ -274,7 +295,28 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
       <div className="groups-container">
         {PARAM_GROUPS.filter(g => g.category === activeTab).map(group => (
           <div className="config-card" key={group.title}>
-            <h3>{group.title}</h3>
+            <div className="card-header-with-actions">
+              <h3>{group.title}</h3>
+              <div className="group-actions">
+                <button 
+                  className="btn-group-action btn-refresh" 
+                  onClick={() => handleRevertGroup(group)}
+                  title="Revert all in group"
+                >
+                  <RefreshCw size={14} />
+                  <span>Revert</span>
+                </button>
+                <button 
+                  className="btn-group-action btn-send-all" 
+                  onClick={() => handleSendGroup(group)}
+                  title="Send all dirty in group to RAM"
+                  disabled={!group.params.some(p => pendingChanges[p.key])}
+                >
+                  <Send size={14} />
+                  <span>Send All</span>
+                </button>
+              </div>
+            </div>
             <div className="params-list">
               {group.params.map(p => (
                 <div className="param-item" key={p.id}>
@@ -342,6 +384,90 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
             </div>
           </div>
         ))}
+
+        {activeTab === 'gamepad' && (
+          <div className="config-card live-monitor-card">
+            <div className="card-header-simple">
+              <Gamepad2 size={18} style={{ color: 'var(--accent-cyan)' }} />
+              <h3>Live Gamepad Monitor (Real-time)</h3>
+            </div>
+            
+            {!joystick || !joystick.connected ? (
+              <div className="monitor-empty">
+                <AlertTriangle size={24} style={{ opacity: 0.3 }} />
+                <p>Physical Gamepad not detected by Robot.</p>
+                <span style={{ fontSize: '0.7rem' }}>Check USB Host connection on STM32.</span>
+              </div>
+            ) : (
+              <div className="monitor-grid">
+                <div className="joystick-visualizers">
+                  <div className="stick-box">
+                    <span className="stick-label">JOY 1 (Linear)</span>
+                    <div className="stick-area">
+                      <div className="stick-guide-x"></div>
+                      <div className="stick-guide-y"></div>
+                      <div 
+                        className="stick-pointer" 
+                        style={{ 
+                          transform: `translate(${joystick.lx * 0.4}px, ${-joystick.ly * 0.4}px)`,
+                          background: (localConfig && Math.abs(joystick.ly) > (localConfig.joy_linear_deadzone || 10)) ? 'var(--accent-emerald)' : 'var(--accent-cyan)'
+                        }}
+                      ></div>
+                    </div>
+                    <div className="stick-values">
+                      <span>X: {joystick.lx}</span>
+                      <span>Y: {joystick.ly}</span>
+                    </div>
+                  </div>
+
+                  <div className="stick-box">
+                    <span className="stick-label">JOY 2 (Angular)</span>
+                    <div className="stick-area">
+                      <div className="stick-guide-x"></div>
+                      <div className="stick-guide-y"></div>
+                      <div 
+                        className="stick-pointer" 
+                        style={{ 
+                          transform: `translate(${joystick.rx * 0.4}px, ${-joystick.ry * 0.4}px)`,
+                          background: (localConfig && Math.abs(joystick.rx) > (localConfig.joy_angular_deadzone || 10)) ? 'var(--accent-emerald)' : 'var(--accent-cyan)'
+                        }}
+                      ></div>
+                    </div>
+                    <div className="stick-values">
+                      <span>X: {joystick.rx}</span>
+                      <span>Y: {joystick.ry}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="buttons-triggers">
+                  <div className="button-group">
+                    <div className={`joy-btn-chip ${(joystick.buttons & JOY_BTN_MODE) ? 'active' : ''}`}>MODE</div>
+                    <div className={`joy-btn-chip ${(joystick.buttons & JOY_BTN_START) ? 'active' : ''}`}>START</div>
+                    <div className={`joy-btn-chip ${(joystick.buttons & JOY_BTN_SELECT) ? 'active' : ''}`}>SELECT</div>
+                    <div className={`joy-btn-chip ${(joystick.buttons & JOY_BTN_L1) ? 'active' : ''}`}>L1</div>
+                    <div className={`joy-btn-chip ${(joystick.buttons & JOY_BTN_R1) ? 'active' : ''}`}>R1</div>
+                  </div>
+                  
+                  <div className="trigger-group">
+                    <div className="trigger-item">
+                      <span className="trigger-label">L2</span>
+                      <div className="trigger-bar-bg">
+                        <div className="trigger-bar-fill" style={{ width: `${(joystick.l2 / 255) * 100}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="trigger-item">
+                      <span className="trigger-label">R2</span>
+                      <div className="trigger-bar-bg">
+                        <div className="trigger-bar-fill" style={{ width: `${(joystick.r2 / 255) * 100}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {activeTab === 'gamepad' && (

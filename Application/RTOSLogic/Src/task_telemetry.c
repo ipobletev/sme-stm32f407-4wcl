@@ -7,6 +7,7 @@
 #include "debug_module.h"
 #include "bsp_battery.h"
 #include "bsp_mcu_sensors.h"
+#include "usb_joystick.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include <stdio.h>
@@ -30,6 +31,7 @@ void StartTelemetryTask(void *argument) {
     uint32_t last_imu_tick = 0;
     uint32_t last_odom_tick = 0;
     uint32_t last_sys_tick = 0;
+    uint32_t last_joy_tick = 0;
     uint32_t cycle_counter = 0;
 
     for (;;) {
@@ -191,6 +193,27 @@ void StartTelemetryTask(void *argument) {
                 AppConfig->motor2_kp, AppConfig->motor2_ki, AppConfig->motor2_kd, AppConfig->motor2_deadzone,
                 AppConfig->motor3_kp, AppConfig->motor3_ki, AppConfig->motor3_kd, AppConfig->motor3_deadzone,
                 AppConfig->motor4_kp, AppConfig->motor4_ki, AppConfig->motor4_kd, AppConfig->motor4_deadzone);
+        }
+        
+        /* --- 4. JOYSTICK STATE (10Hz) --- */
+        if (current_tick - last_joy_tick >= 100) {
+            last_joy_tick = current_tick;
+            
+            if (USB_Joystick_IsConnected()) {
+                USB_Joystick_State_t *js = USB_Joystick_GetState();
+                JoystickStateMsg_t joy_msg;
+                
+                joy_msg.lx = js->lx;
+                joy_msg.ly = js->ly;
+                joy_msg.rx = js->rx;
+                joy_msg.ry = js->ry;
+                joy_msg.l2 = js->l2;
+                joy_msg.r2 = js->r2;
+                joy_msg.buttons = js->buttons;
+                joy_msg.connected = js->connected;
+                
+                SerialRos_EnqueueTx(TOPIC_ID_JOYSTICK_DATA, &joy_msg, sizeof(JoystickStateMsg_t));
+            }
         }
 
         cycle_counter++;

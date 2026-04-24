@@ -40,6 +40,7 @@ export const TOPIC_IDS = {
     ODOMETRY: 0x83,
     APP_CONFIG_DATA: 0x84,
     PID_DEBUG: 0x85,
+    JOYSTICK_DATA: 0x86,
   }
 };
 
@@ -182,7 +183,23 @@ export function parsePayload(topicId, data) {
           motor3_kp: readFloat32(view, 104), motor3_ki: readFloat32(view, 108), motor3_kd: readFloat32(view, 112), motor3_deadzone: readFloat32(view, 116),
           motor4_kp: readFloat32(view, 120), motor4_ki: readFloat32(view, 124), motor4_kd: readFloat32(view, 128), motor4_deadzone: readFloat32(view, 132),
           mobility_mode: readUint32(view, 136),
-          crc: readUint32(view, 140)
+          joy_linear_deadzone: readFloat32(view, 140),
+          joy_angular_deadzone: readFloat32(view, 144),
+          joy_linear_gain: readFloat32(view, 148),
+          joy_angular_gain: readFloat32(view, 152),
+          crc: readUint32(view, 156)
+        };
+
+      case TOPIC_IDS.TX.JOYSTICK_DATA: // 0x86
+        return {
+          lx: view.getInt8(0),
+          ly: view.getInt8(1),
+          rx: view.getInt8(2),
+          ry: view.getInt8(3),
+          l2: view.getUint8(4),
+          r2: view.getUint8(5),
+          buttons: view.getUint16(6, true),
+          connected: view.getUint8(8)
         };
 
 

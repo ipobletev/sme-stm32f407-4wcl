@@ -141,6 +141,7 @@ export function useSerial() {
     odometry: null,
     appConfig: null,
     pidDebug: null,
+    joystick: null,
   });
   const [frequencies, setFrequencies] = useState({});
   const [history, setHistory] = useState([]);
@@ -343,6 +344,9 @@ export function useSerial() {
         break;
       case TOPIC_IDS.TX.APP_CONFIG_DATA:
         telemetryBufferRef.current.appConfig = parsed;
+        break;
+      case TOPIC_IDS.TX.JOYSTICK_DATA:
+        telemetryBufferRef.current.joystick = parsed;
         break;
     }
   }, [addLog]);
@@ -560,7 +564,8 @@ export function useSerial() {
       imu: null, 
       odometry: null, 
       appConfig: null, 
-      pidDebug: null 
+      pidDebug: null,
+      joystick: null 
     };
     setTelemetry({ ...telemetryBufferRef.current });
     setHistory([]);

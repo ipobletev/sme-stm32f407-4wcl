@@ -26,6 +26,7 @@
 #define TOPIC_ID_IMU            0x82    /* Tx: IMU data */
 #define TOPIC_ID_ODOMETRY       0x83    /* Tx: High-frequency Odometry & Wheel State */
 #define TOPIC_ID_APP_CONFIG_DATA 0x84   /* Tx: Full configuration structure */
+#define TOPIC_ID_JOYSTICK_DATA  0x86   /* Tx: Real-time Joystick/Gamepad state */
 
 #define TX_BUFFER_SIZE          192
 
@@ -150,6 +151,20 @@ typedef struct {
     uint8_t emergency_active;   /* 1-byte emergency status (at offset 21) */
     /* float battery_current; */ /* Unsupported by hardware */
 } SystemStatusMsg_t;
+
+/**
+ * @brief Message: joystick_state [Topic 0x86]
+ */
+typedef struct {
+    int8_t lx;          /* Joy1 X - Left/Right */
+    int8_t ly;          /* Joy1 Y - Up/Down */
+    int8_t rx;          /* Joy2 X - Left/Right */
+    int8_t ry;          /* Joy2 Y - Up/Down */
+    uint8_t l2;         /* L2 Trigger (0-255) */
+    uint8_t r2;         /* R2 Trigger (0-255) */
+    uint16_t buttons;   /* 16 buttons bitmask */
+    uint8_t connected;  /* 1 if joystick is connected */
+} JoystickStateMsg_t;
 
 #pragma pack(pop)
 
