@@ -24,7 +24,7 @@
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
+#include "usb_host.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -115,7 +115,6 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM11_Init();
   MX_USART6_UART_Init();
-  MX_USB_OTG_HS_HCD_Init();
   MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   /* App Configuration Init */
