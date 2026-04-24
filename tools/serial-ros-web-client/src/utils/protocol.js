@@ -187,7 +187,9 @@ export function parsePayload(topicId, data) {
           joy_angular_deadzone: readFloat32(view, 144),
           joy_linear_gain: readFloat32(view, 148),
           joy_angular_gain: readFloat32(view, 152),
-          crc: readUint32(view, 156)
+          batt_min: readFloat32(view, 156),
+          batt_max: readFloat32(view, 160),
+          crc: readUint32(view, 164)
         };
 
       case TOPIC_IDS.TX.JOYSTICK_DATA: // 0x86
