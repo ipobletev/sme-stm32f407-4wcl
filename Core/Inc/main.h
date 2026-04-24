@@ -95,6 +95,8 @@ void Error_Handler(void);
 #define BUZZER_GPIO_Port GPIOA
 #define ENC2_A_TIM2_CH1_Pin GPIO_PIN_15
 #define ENC2_A_TIM2_CH1_GPIO_Port GPIOA
+#define SBUS_UART5_RX_Pin GPIO_PIN_2
+#define SBUS_UART5_RX_GPIO_Port GPIOD
 #define USER_SW3_Pin GPIO_PIN_3
 #define USER_SW3_GPIO_Port GPIOD
 #define ENC2_B_TIM2_CH2_Pin GPIO_PIN_3

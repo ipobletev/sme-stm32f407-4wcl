@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    usart.h
+  * @file    usb_otg.h
   * @brief   This file contains all the function prototypes for
-  *          the usart.c file
+  *          the usb_otg.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USART_H__
-#define __USART_H__
+#ifndef __USB_OTG_H__
+#define __USB_OTG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,31 +32,21 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern UART_HandleTypeDef huart5;
-
-extern UART_HandleTypeDef huart1;
-
-extern UART_HandleTypeDef huart3;
-
-extern UART_HandleTypeDef huart6;
+extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_UART5_Init(void);
-void MX_USART1_UART_Init(void);
-void MX_USART3_UART_Init(void);
-void MX_USART6_UART_Init(void);
+void MX_USB_OTG_HS_HCD_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void UART_Printf_DMA(UART_HandleTypeDef *huart, const char *fmt, ...);
-void UART_DMA_Write(UART_HandleTypeDef *huart, uint8_t *data, uint16_t len);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __USART_H__ */
+#endif /* __USB_OTG_H__ */
 
