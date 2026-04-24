@@ -3,23 +3,10 @@
 #include "debug_module.h"
 #include <stdio.h>
 #include <string.h>
+#include "supervisor_fsm.h"
 
 #define LOG_TAG "CONTROLLER"
 
-/* Helper to publish events */
-static void publish_event(SystemEvent_t event, EventSource_t source)
-{
-    StateChangeMsg_t msg;
-    msg.event = event;
-    msg.timestamp = osal_get_tick();
-    msg.source = source;
-
-    
-    osal_status_t status = osal_queue_put(stateMsgQueueHandle, &msg, 0U);
-    if (status != OSAL_OK) {
-        LOG_ERROR(LOG_TAG, "Failed to publish event %d\r\n", event);
-    }
-}
 
 void StartControllerTask(void *argument)
 {
@@ -31,19 +18,10 @@ void StartControllerTask(void *argument)
 
     for(;;)
     {
-        StateChangeMsg_t uart_msg;
         /* 
-         * Wait for events from UART Listener with a 100ms timeout.
-         * This timeout acts as our polling interval for buttons.
+         * Periodical polling for buttons (100ms interval)
          */
-        osal_status_t status = osal_queue_get(uartEventQueueHandle, &uart_msg, 100U);
-        
-        if (status == OSAL_OK)
-        {
-            LOG_INFO(LOG_TAG, "Centralized Event Received from UART: %d\r\n", uart_msg.event);
-            /* Forward the event with its original source attached by the UART Listener */
-            publish_event(uart_msg.event, uart_msg.source);
-        }
+        osal_delay(100);
 
 
         /* Read Current Button States through BSP */
@@ -56,10 +34,10 @@ void StartControllerTask(void *argument)
         {
             if (Supervisor_GetCurrentState() == STATE_SUPERVISOR_PAUSED) {
                 LOG_INFO(LOG_TAG, "K1 pressed, requesting RESUME\r\n");
-                publish_event(EVENT_SUPERVISOR_RESUME, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_RESUME, SRC_PHYSICAL);
             } else {
                 LOG_INFO(LOG_TAG, "K1 pressed, requesting MANUAL mode\r\n");
-                publish_event(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
             }
         }
         k1_prev = k1_pressed;
@@ -70,12 +48,12 @@ void StartControllerTask(void *argument)
             k2_press_ticks++;
             if (k2_press_ticks == 10) { /* 10 ticks * 100ms = 1 second */
                 LOG_INFO(LOG_TAG, "K2 SAFETY long press (>1s), E-STOP triggered\r\n");
-                publish_event(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
             }
         } else {
             if (k2_press_ticks > 0 && k2_press_ticks < 10) {
                 LOG_INFO(LOG_TAG, "K2 short press, PAUSE requested\r\n");
-                publish_event(EVENT_SUPERVISOR_PAUSE, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_PAUSE, SRC_PHYSICAL);
             }
             k2_press_ticks = 0;
         }
@@ -87,11 +65,11 @@ void StartControllerTask(void *argument)
             static uint8_t error_flag = 0;
             if (!error_flag) {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_ERROR\r\n");
-                publish_event(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
                 error_flag = 1;
             } else {
                 LOG_INFO(LOG_TAG, "SW3 pressed, publishing EVENT_RESET\r\n");
-                publish_event(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
                 error_flag = 0;
             }
         }

@@ -3,26 +3,12 @@
 #include "usb_joystick.h"
 #include "debug_module.h"
 #include "osal.h"
-#include "app_rtos.h"
 
 #define LOG_TAG "SUP_JOY"
 
 /* Internal timer for the 4-button RESET combo */
 static uint32_t reset_combo_start_time = 0;
 
-/**
- * @brief Helper to publish events to the global supervisor queue.
- */
-static void publish_event(SystemEvent_t event, EventSource_t source) {
-    StateChangeMsg_t msg;
-    msg.event = event;
-    msg.timestamp = osal_get_tick();
-    msg.source = source;
-
-    if (osal_queue_put(stateMsgQueueHandle, &msg, 0U) != OSAL_OK) {
-        LOG_ERROR(LOG_TAG, "Failed to queue event %d\r\n", event);
-    }
-}
 
 void Supervisor_HandleJoystickInput(void) {
     if (!USB_Joystick_IsConnected()) {
@@ -37,7 +23,7 @@ void Supervisor_HandleJoystickInput(void) {
     if (js->buttons & JOY_BTN_MODE) {
         if (current_state != STATE_SUPERVISOR_FAULT) {
             LOG_ERROR(LOG_TAG, "Joystick EMERGENCY STOP (MODE) pressed!\r\n");
-            publish_event(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
+            Supervisor_SendEvent(EVENT_SUPERVISOR_ERROR, SRC_PHYSICAL);
         }
     }
 
@@ -47,7 +33,7 @@ void Supervisor_HandleJoystickInput(void) {
             current_state == STATE_SUPERVISOR_AUTO || 
             current_state == STATE_SUPERVISOR_PAUSED) {
             LOG_INFO(LOG_TAG, "Joystick STOP (SELECT) pressed\r\n");
-            publish_event(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
+            Supervisor_SendEvent(EVENT_SUPERVISOR_STOP, SRC_PHYSICAL);
         }
     }
 
@@ -55,7 +41,7 @@ void Supervisor_HandleJoystickInput(void) {
     if (js->buttons & JOY_BTN_START) {
         if (current_state == STATE_SUPERVISOR_IDLE) {
             LOG_INFO(LOG_TAG, "Joystick START pressed -> Starting system\r\n");
-            publish_event(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
+            Supervisor_SendEvent(EVENT_SUPERVISOR_START, SRC_PHYSICAL);
         }
     }
 
@@ -72,7 +58,7 @@ void Supervisor_HandleJoystickInput(void) {
         } else if (osal_get_tick() - reset_combo_start_time > 2000) {
             if (current_state == STATE_SUPERVISOR_FAULT) {
                 LOG_INFO(LOG_TAG, "Joystick RESET combo triggered!\r\n");
-                publish_event(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
+                Supervisor_SendEvent(EVENT_SUPERVISOR_RESET, SRC_PHYSICAL);
             }
             reset_combo_start_time = 0; 
         }

@@ -7,12 +7,46 @@
 #include "usb_joystick.h"
 #include "mobility_fsm.h"
 #include "arm_fsm.h"
+#include "app_rtos.h"
 #include "supervisor_hw_joy_input.h"
 
 /* Internal Private State */
 static SystemState_t current_state = STATE_SUPERVISOR_INIT;
 static SystemState_t previous_mode = STATE_SUPERVISOR_INIT;  /* To restore after Pause */
 static uint8_t pause_auth_level = 0;                          /* Authority level that triggered the pause */
+
+/**
+ * @brief Unified interface to request a state change (Asynchronous).
+ */
+void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
+    /* 1. Basic Business Rules / Filtering */
+    
+    /* Gamepad (SRC_PHYSICAL) is only allowed in MANUAL/IDLE/FAULT */
+    if (source == SRC_PHYSICAL) {
+        if (current_state == STATE_SUPERVISOR_AUTO) {
+            LOG_WARNING(LOG_TAG, "Joystick command ignored while in AUTO mode\r\n");
+            return;
+        }
+    }
+
+    /* External Client (SRC_EXT_CLIENT) is only allowed in AUTO/IDLE/FAULT */
+    if (source == SRC_EXT_CLIENT) {
+        if (current_state == STATE_SUPERVISOR_MANUAL) {
+            LOG_WARNING(LOG_TAG, "External command ignored while in MANUAL mode\r\n");
+            return;
+        }
+    }
+
+    /* 2. Enqueue the event */
+    StateChangeMsg_t msg;
+    msg.event = event;
+    msg.timestamp = osal_get_tick();
+    msg.source = source;
+
+    if (osal_queue_put(stateMsgQueueHandle, &msg, 0U) != OSAL_OK) {
+        LOG_ERROR(LOG_TAG, "Supervisor: Failed to queue event %d from source %d\r\n", event, source);
+    }
+}
 
 /**
  * @brief Convert state enum to string for logging.

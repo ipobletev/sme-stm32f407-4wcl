@@ -12,21 +12,6 @@
 
 static osal_thread_h listener_task_id;
 
-/**
- * @brief Helper to publish events to the central controller
- */
-static void publish_event(SystemEvent_t event, EventSource_t source)
-{
-    StateChangeMsg_t msg;
-    msg.event = event;
-    msg.timestamp = osal_get_tick();
-    msg.source = source;
-    
-    osal_status_t status = osal_queue_put(uartEventQueueHandle, &msg, 0U);
-    if (status != OSAL_OK) {
-        LOG_ERROR(LOG_TAG, "Failed to publish event %d", event);
-    }
-}
 
 /**
  * @brief Bridge between BSP callback and RTOS Task
@@ -75,13 +60,13 @@ void StartUARTListenerTask(void *argument)
                     char *cmd = &cmd_buffer[6];
                     strtok(cmd, "\r\n ");
 
-                    if (strcmp(cmd, "START") == 0)      publish_event(EVENT_SUPERVISOR_START, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "STOP") == 0)  publish_event(EVENT_SUPERVISOR_STOP, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "MANUAL") == 0) publish_event(EVENT_SUPERVISOR_MODE_MANUAL, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "AUTO") == 0)   publish_event(EVENT_SUPERVISOR_MODE_AUTO, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "PAUSE") == 0)  publish_event(EVENT_SUPERVISOR_PAUSE, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "RESUME") == 0) publish_event(EVENT_SUPERVISOR_RESUME, SRC_LOCAL_CONSOLE);
-                    else if (strcmp(cmd, "RESET") == 0)  publish_event(EVENT_SUPERVISOR_RESET, SRC_LOCAL_CONSOLE);
+                    if (strcmp(cmd, "START") == 0)      Supervisor_SendEvent(EVENT_SUPERVISOR_START, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "STOP") == 0)  Supervisor_SendEvent(EVENT_SUPERVISOR_STOP, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "MANUAL") == 0) Supervisor_SendEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "AUTO") == 0)   Supervisor_SendEvent(EVENT_SUPERVISOR_MODE_AUTO, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "PAUSE") == 0)  Supervisor_SendEvent(EVENT_SUPERVISOR_PAUSE, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "RESUME") == 0) Supervisor_SendEvent(EVENT_SUPERVISOR_RESUME, SRC_EXT_CLIENT);
+                    else if (strcmp(cmd, "RESET") == 0)  Supervisor_SendEvent(EVENT_SUPERVISOR_RESET, SRC_EXT_CLIENT);
 
                     LOG_INFO(LOG_TAG, "ConsoleDebug: Event %s published\n", cmd);
                 }

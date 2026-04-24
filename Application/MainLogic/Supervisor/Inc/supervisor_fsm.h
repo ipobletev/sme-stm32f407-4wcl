@@ -52,7 +52,8 @@ typedef struct {
 /* Supervisor FSM Interface */
 const char* Supervisor_StateToStr(SystemState_t state);
 void Supervisor_Init(void);
-void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source);
+void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source); /* Direct execution */
+void Supervisor_SendEvent(SystemEvent_t event, uint8_t source);    /* Queued execution */
 void Supervisor_ProcessLogic(void); /* Called periodically from Task Manager */
 SystemState_t Supervisor_GetCurrentState(void);
 
