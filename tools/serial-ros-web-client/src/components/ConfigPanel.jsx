@@ -4,6 +4,7 @@ import { TOPIC_IDS, Encoders, buildPacket } from '../utils/protocol';
 
 const PARAM_GROUPS = [
   {
+    category: 'system',
     title: 'System & Debug',
     params: [
       { id: 0x01, key: 'debug_level', label: 'Debug Level', type: 'select', options: [
@@ -20,6 +21,7 @@ const PARAM_GROUPS = [
     ]
   },
   {
+    category: 'motor',
     title: 'Motor Control',
     params: [
       { id: 0x10, key: 'pid_enabled', label: 'PID Enabled by default', type: 'boolean' },
@@ -30,6 +32,7 @@ const PARAM_GROUPS = [
     ]
   },
   {
+    category: 'system',
     title: 'Kinematics & Chassis',
     params: [
       { id: 0x20, key: 'wheel_diameter', label: 'Wheel Diameter (m)', type: 'number', step: 0.001, min: 0.01 },
@@ -44,6 +47,7 @@ const PARAM_GROUPS = [
     ]
   },
   {
+    category: 'motor',
     title: 'Motor Multipliers (Inversion)',
     params: [
       { id: 0x31, key: 'motor1_inv', label: 'Motor 1 Dir', type: 'select', options: [{label: 'Normal (1)', value: 1}, {label: 'Inverted (-1)', value: -1}] },
@@ -53,39 +57,35 @@ const PARAM_GROUPS = [
     ]
   },
   {
-    title: 'Motor 1 Calibration',
+    category: 'motor',
+    title: 'Motor Calibration',
     params: [
       { id: 0x40, key: 'motor1_kp', label: 'M1 Kp', type: 'number', step: 0.1 },
       { id: 0x41, key: 'motor1_ki', label: 'M1 Ki', type: 'number', step: 0.1 },
       { id: 0x42, key: 'motor1_kd', label: 'M1 Kd', type: 'number', step: 0.1 },
       { id: 0x43, key: 'motor1_deadzone', label: 'M1 Deadzone', type: 'number', min: 0, max: 65535 },
-    ]
-  },
-  {
-    title: 'Motor 2 Calibration',
-    params: [
       { id: 0x44, key: 'motor2_kp', label: 'M2 Kp', type: 'number', step: 0.1 },
       { id: 0x45, key: 'motor2_ki', label: 'M2 Ki', type: 'number', step: 0.1 },
       { id: 0x46, key: 'motor2_kd', label: 'M2 Kd', type: 'number', step: 0.1 },
       { id: 0x47, key: 'motor2_deadzone', label: 'M2 Deadzone', type: 'number', min: 0, max: 65535 },
-    ]
-  },
-  {
-    title: 'Motor 3 Calibration',
-    params: [
       { id: 0x48, key: 'motor3_kp', label: 'M3 Kp', type: 'number', step: 0.1 },
       { id: 0x49, key: 'motor3_ki', label: 'M3 Ki', type: 'number', step: 0.1 },
       { id: 0x4A, key: 'motor3_kd', label: 'M3 Kd', type: 'number', step: 0.1 },
       { id: 0x4B, key: 'motor3_deadzone', label: 'M3 Deadzone', type: 'number', min: 0, max: 65535 },
-    ]
-  },
-  {
-    title: 'Motor 4 Calibration',
-    params: [
       { id: 0x4C, key: 'motor4_kp', label: 'M4 Kp', type: 'number', step: 0.1 },
       { id: 0x4D, key: 'motor4_ki', label: 'M4 Ki', type: 'number', step: 0.1 },
       { id: 0x4E, key: 'motor4_kd', label: 'M4 Kd', type: 'number', step: 0.1 },
       { id: 0x4F, key: 'motor4_deadzone', label: 'M4 Deadzone', type: 'number', min: 0, max: 65535 },
+    ]
+  },
+  {
+    category: 'gamepad',
+    title: 'Gamepad Calibration',
+    params: [
+      { id: 0x60, key: 'joy_linear_deadzone', label: 'Linear Deadzone', type: 'number', min: 0, max: 50 },
+      { id: 0x61, key: 'joy_angular_deadzone', label: 'Angular Deadzone', type: 'number', min: 0, max: 50 },
+      { id: 0x62, key: 'joy_linear_gain', label: 'Linear Gain (Multiplier)', type: 'number', step: 0.01, min: 0.1, max: 5.0 },
+      { id: 0x63, key: 'joy_angular_gain', label: 'Angular Gain (Multiplier)', type: 'number', step: 0.01, min: 0.1, max: 5.0 },
     ]
   }
 ];
@@ -94,6 +94,7 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
   const [localConfig, setLocalConfig] = useState(null);
   const [pendingChanges, setPendingChanges] = useState({});
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle', 'saving', 'success'
+  const [activeTab, setActiveTab] = useState('system'); // 'system', 'gamepad'
 
   useEffect(() => {
     if (appConfig) {
@@ -249,8 +250,29 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
         </div>
       )}
 
+      <div className="config-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'system' ? 'active' : ''}`}
+          onClick={() => setActiveTab('system')}
+        >
+          System Config
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'motor' ? 'active' : ''}`}
+          onClick={() => setActiveTab('motor')}
+        >
+          Motor Config
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'gamepad' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gamepad')}
+        >
+          Gamepad Config
+        </button>
+      </div>
+
       <div className="groups-container">
-        {PARAM_GROUPS.map(group => (
+        {PARAM_GROUPS.filter(g => g.category === activeTab).map(group => (
           <div className="config-card" key={group.title}>
             <h3>{group.title}</h3>
             <div className="params-list">
@@ -321,6 +343,43 @@ export default function ConfigPanel({ appConfig, sendPacket, connected }) {
           </div>
         ))}
       </div>
+
+      {activeTab === 'gamepad' && (
+        <div className="config-card gamepad-mapping-card">
+          <div className="card-header-simple">
+            <Send size={18} style={{ color: 'var(--accent-cyan)' }} />
+            <h3>Gamepad Logic Mapping (Indicator Only)</h3>
+          </div>
+          <div className="mapping-container">
+            <div className="mapping-item danger">
+              <span className="btn-shape mode">MODE</span>
+              <span className="mapping-arrow">→</span>
+              <span className="mapping-function">EMERGENCY STOP (Global Error)</span>
+            </div>
+            <div className="mapping-item warning">
+              <span className="btn-shape">SELECT</span>
+              <span className="mapping-arrow">→</span>
+              <span className="mapping-function">SOFT STOP / IDLE</span>
+            </div>
+            <div className="mapping-item success">
+              <span className="btn-shape">START</span>
+              <span className="mapping-arrow">→</span>
+              <span className="mapping-function">START SYSTEM (MANUAL MODE)</span>
+            </div>
+            <div className="mapping-item info">
+              <div className="combo-btns">
+                <span className="btn-shape sm">L1</span> + <span className="btn-shape sm">R1</span> + <span className="btn-shape sm">L2</span> + <span className="btn-shape sm">R2</span>
+              </div>
+              <span className="mapping-arrow">→</span>
+              <span className="mapping-function">FAULT RESET (Hold 2s)</span>
+            </div>
+            <div className="mapping-note">
+              <AlertTriangle size={12} />
+              <span>Note: Linear speed is Joy1 (Y-Axis) and Angular is Joy2 (X-Axis).</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="config-footer">
         <div className="security-tag">

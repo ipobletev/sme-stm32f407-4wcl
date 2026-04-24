@@ -25,13 +25,13 @@ void State_Manual_Run(void) {
         float target_az = 0;
         
         /* Mapping Joy 1 Y axis to Linear X (Forward/Backward) */
-        if (js->ly > JOYSTICK_DEADZONE || js->ly < -JOYSTICK_DEADZONE) {
-            target_lx = -((float)js->ly / 127.0f) * AppConfig->motor_speed_limit;
+        if (js->ly > AppConfig->joy_linear_deadzone || js->ly < -AppConfig->joy_linear_deadzone) {
+            target_lx = -((float)js->ly / 127.0f) * AppConfig->motor_speed_limit * AppConfig->joy_linear_gain;
         }
         
         /* Mapping Joy 2 X axis to Angular Z (Rotation) */
-        if (js->rx > JOYSTICK_DEADZONE || js->rx < -JOYSTICK_DEADZONE) {
-            target_az = -((float)js->rx / 127.0f) * AppConfig->motor_angular_speed_limit;
+        if (js->rx > AppConfig->joy_angular_deadzone || js->rx < -AppConfig->joy_angular_deadzone) {
+            target_az = -((float)js->rx / 127.0f) * AppConfig->motor_angular_speed_limit * AppConfig->joy_angular_gain;
         }
         
         /* Send commands to RobotState (MobilityTask will consume them) */

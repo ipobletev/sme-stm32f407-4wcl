@@ -101,6 +101,10 @@ typedef struct {
         float gyro_x, gyro_y, gyro_z;   /* Rad/s */
         float accel_x, accel_y, accel_z; /* m/s^2 */
 
+        /* Hardware Inputs */
+        uint8_t enable_autonomous;      /* State of SW3 (0: Off, 1: On) - Hardware Gate */
+        uint8_t emergency_active;       /* 1: Emergency Stop active */
+
     } Telemetry;
 
     /* 3. Internal Controls (Not sent to ROS) */
@@ -173,8 +177,10 @@ void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float meas
 
 /* IMU Setters */
 void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea);
-/* Safety and Mode Permissivity */
-void RobotState_SetAutoPermissivity(bool allowed);
-bool RobotState_GetAutoPermissivity(void);
+/* Button and Emergency Setters/Getters */
+void RobotState_SetEnableAutonomous(uint8_t enable);
+uint8_t RobotState_GetEnableAutonomous(void);
+void RobotState_SetEmergencyActive(uint8_t active);
+uint8_t RobotState_GetEmergencyActive(void);
 
 #endif /* __ROBOT_STATE_H */

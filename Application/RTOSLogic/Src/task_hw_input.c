@@ -29,6 +29,7 @@ void StartHWInputTask(void *argument)
         bool sw3_pressed = BSP_Button_GetState(BSP_BTN_SW3);
 
         /* 1. K1: Emergency Stop */
+        RobotState_SetEmergencyActive(k1_pressed);
         if (k1_pressed && !k1_prev)
         {
             LOG_ERROR(LOG_TAG, "PHYSICAL E-STOP (K1) TRIGGERED!\r\n");
@@ -44,14 +45,14 @@ void StartHWInputTask(void *argument)
         }
         k2_prev = k2_pressed;
 
-        /* 3. SW3: Autonomous Mode Permissivity */
+        /* 3. SW3: Autonomous Hardware Enable */
         /* If SW3 is ON (pressed in this case), allow Auto Mode */
+        RobotState_SetEnableAutonomous(sw3_pressed);
         if (sw3_pressed != sw3_prev) {
-            RobotState_SetAutoPermissivity(sw3_pressed);
             if (sw3_pressed) {
-                LOG_INFO(LOG_TAG, "Autonomous Mode: ENABLED (Permissivity ON)\r\n");
+                LOG_INFO(LOG_TAG, "Autonomous Mode: HARDWARE ENABLED\r\n");
             } else {
-                LOG_WARNING(LOG_TAG, "Autonomous Mode: ISOLATED (Permissivity OFF)\r\n");
+                LOG_WARNING(LOG_TAG, "Autonomous Mode: HARDWARE ISOLATED\r\n");
             }
         }
         sw3_prev = sw3_pressed;

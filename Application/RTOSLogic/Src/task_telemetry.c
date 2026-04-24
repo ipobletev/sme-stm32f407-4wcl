@@ -126,9 +126,11 @@ void StartTelemetryTask(void *argument) {
             status_msg.mobility_state  = (uint8_t)RobotState_GetMobilityState();
             status_msg.arm_state       = (uint8_t)RobotState_GetArmState();
             status_msg.mobility_mode    = (uint8_t)RobotState_GetTargetMobilityMode();
+            status_msg.enable_autonomous = RobotState_GetEnableAutonomous();
+            status_msg.emergency_active = RobotState_GetEmergencyActive();
 
             SerialRos_EnqueueTx(TOPIC_ID_SYS_STATUS, &status_msg, sizeof(SystemStatusMsg_t));
-            //LOG_INFO(LOG_TAG, "MCU Heartbeat (Status) Sent\r\n");
+            // LOG_INFO(LOG_TAG, "MCU Heartbeat (Status) Sent. Size: %d\r\n", (int)sizeof(SystemStatusMsg_t));
 
             uint64_t errs = RobotState_GetErrorFlags();
             char err_str[19];
@@ -141,7 +143,9 @@ void StartTelemetryTask(void *argument) {
             RobotState_GetTargetVelocity(&cmd_lx, &cmd_az);
 
             /* Report basic status to INFO level (Native float support) */
-            LOG_INFO(LOG_TAG, "State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%.2f, %.2f, %s] | Batt: %.2fV | MCU: %.1fC | Errors: %s\r\n", 
+            LOG_INFO(LOG_TAG, "HW: [EMGY:%d AUT:%d] | State: [SUP:%s MOB:%s ARM:%s] | CmdVel: [%.2f, %.2f, %s] | BATT/TEMP: [%.2fV %.1fC] | Errors: %s\r\n", 
+                RobotState_GetEmergencyActive(),
+                RobotState_GetEnableAutonomous(),
                 Supervisor_StateToStr(RobotState_GetSystemState()),
                 FSM_Mobility_StateToStr(RobotState_GetMobilityState()),
                 FSM_Arm_StateToStr(RobotState_GetArmState()),

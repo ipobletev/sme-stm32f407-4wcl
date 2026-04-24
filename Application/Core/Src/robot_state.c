@@ -583,24 +583,48 @@ void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea) {
     }
 }
 
-void RobotState_SetAutoPermissivity(bool allowed) {
+
+void RobotState_SetEnableAutonomous(uint8_t enable) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        RobotState_4wcl.Telemetry.is_autonomous = allowed; // Using existing field or could add new one
+        RobotState_4wcl.Telemetry.enable_autonomous = enable;
     } else {
         taskENTER_CRITICAL();
-        RobotState_4wcl.Telemetry.is_autonomous = allowed;
+        RobotState_4wcl.Telemetry.enable_autonomous = enable;
         taskEXIT_CRITICAL();
     }
 }
 
-bool RobotState_GetAutoPermissivity(void) {
-    bool allowed;
+uint8_t RobotState_GetEnableAutonomous(void) {
+    uint8_t enable;
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
-        allowed = RobotState_4wcl.Telemetry.is_autonomous;
+        enable = RobotState_4wcl.Telemetry.enable_autonomous;
     } else {
         taskENTER_CRITICAL();
-        allowed = RobotState_4wcl.Telemetry.is_autonomous;
+        enable = RobotState_4wcl.Telemetry.enable_autonomous;
         taskEXIT_CRITICAL();
     }
-    return allowed;
+    return enable;
 }
+
+void RobotState_SetEmergencyActive(uint8_t active) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.emergency_active = active;
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.emergency_active = active;
+        taskEXIT_CRITICAL();
+    }
+}
+
+uint8_t RobotState_GetEmergencyActive(void) {
+    uint8_t active;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        active = RobotState_4wcl.Telemetry.emergency_active;
+    } else {
+        taskENTER_CRITICAL();
+        active = RobotState_4wcl.Telemetry.emergency_active;
+        taskEXIT_CRITICAL();
+    }
+    return active;
+}
+

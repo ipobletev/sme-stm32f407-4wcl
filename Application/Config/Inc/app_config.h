@@ -45,6 +45,12 @@ typedef struct {
 
     /* Mobility Model */
     uint32_t mobility_mode;         /* 0: Direct, 1: Diff, 2: Ackermann, 3: Mecanum */
+
+    /* Gamepad Calibration */
+    float    joy_linear_deadzone;
+    float    joy_angular_deadzone;
+    float    joy_linear_gain;
+    float    joy_angular_gain;
     
     uint32_t crc;                   /* CRC32 or simple checksum for integrity */
 } AppConfig_t;
@@ -102,6 +108,12 @@ typedef enum {
     CONF_MOTOR4_KI              = 0x4D,
     CONF_MOTOR4_KD              = 0x4E,
     CONF_MOTOR4_DEADZONE        = 0x4F,
+
+    /* Gamepad Calibration (0x60 - 0x6F) */
+    CONF_JOY_LINEAR_DEADZONE    = 0x60,
+    CONF_JOY_ANGULAR_DEADZONE   = 0x61,
+    CONF_JOY_LINEAR_GAIN        = 0x62,
+    CONF_JOY_ANGULAR_GAIN       = 0x63,
 } AppConfigParamId_t;
 
 /**

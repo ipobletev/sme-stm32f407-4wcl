@@ -104,7 +104,9 @@ export function parsePayload(topicId, data) {
           state: view.getUint8(16),
           mobility_state: view.getUint8(17),
           arm_state: view.getUint8(18),
-          mobility_mode: view.getUint8(19)
+          mobility_mode: view.getUint8(19),
+          enable_autonomous: view.getUint8(20),
+          emergency_active: view.getUint8(21)
         };
 
       case TOPIC_IDS.TX.IMU: // 0x82

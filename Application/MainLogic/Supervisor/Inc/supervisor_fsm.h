@@ -52,8 +52,20 @@ typedef struct {
 /* Supervisor FSM Interface */
 const char* Supervisor_StateToStr(SystemState_t state);
 void Supervisor_Init(void);
-void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source); /* Direct execution */
-void Supervisor_SendEvent(SystemEvent_t event, uint8_t source);    /* Queued execution */
+
+/**
+ * @brief Directly executes the state machine logic.
+ * @warning SHOULD ONLY BE CALLED BY THE MANAGER TASK or internal Supervisor logic.
+ *          Calling this from other tasks bypasses the queue and safety filters.
+ */
+void Supervisor_ProcessEvent(SystemEvent_t event, uint8_t source);
+
+/**
+ * @brief Thread-safe asynchronous event request.
+ * @note This is the PUBLIC API for all external modules (UART, ROS, Buttons).
+ *       Events are queued and processed by the Manager Task with proper filtering.
+ */
+void Supervisor_SendEvent(SystemEvent_t event, uint8_t source);
 void Supervisor_ProcessLogic(void); /* Called periodically from Task Manager */
 SystemState_t Supervisor_GetCurrentState(void);
 

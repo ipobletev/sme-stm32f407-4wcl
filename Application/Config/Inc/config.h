@@ -31,6 +31,11 @@
 #define DEFAULT_MOTOR2_INVERT                   1
 #define DEFAULT_MOTOR3_INVERT                   1
 #define DEFAULT_MOTOR4_INVERT                   1
+/* Gamepad Defaults */
+#define DEFAULT_JOY_LINEAR_DEADZONE             10.0f
+#define DEFAULT_JOY_ANGULAR_DEADZONE            10.0f
+#define DEFAULT_JOY_LINEAR_GAIN                 1.0f
+#define DEFAULT_JOY_ANGULAR_GAIN                1.0f
 
 /**
  * MEMORY CONFIGURATION TOGGLE

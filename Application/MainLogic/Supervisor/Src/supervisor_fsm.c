@@ -32,8 +32,8 @@ void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
     /* External Client (SRC_EXT_CLIENT) logic */
     if (source == SRC_EXT_CLIENT) {
         /* Absolute Isolation Check: Is Autonomous Mode allowed by HW? */
-        if (!RobotState_GetAutoPermissivity()) {
-            LOG_WARNING(LOG_TAG, "EXTERNAL COMMAND REJECTED: Autonomous Permissivity is OFF (Hardware Isolated)\r\n");
+        if (!RobotState_GetEnableAutonomous()) {
+            LOG_WARNING(LOG_TAG, "EXTERNAL COMMAND REJECTED: Autonomous Mode is HARDWARE ISOLATED\r\n");
             return;
         }
 

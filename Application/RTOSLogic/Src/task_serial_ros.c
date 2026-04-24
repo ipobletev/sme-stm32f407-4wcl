@@ -95,6 +95,7 @@ void StartSerialRosTask(void *argument) {
             osal_queue_put(rosRxQueueHandle, &rx_packet, 0); 
         }
 
+
         /* 3. Handle TX Packets */
         if (!has_pending_tx) {
             /* Non-blocking check for new data to send from other tasks */

@@ -4,7 +4,7 @@
  *
  * Rx topic dispatch strategy:
  *   - Simple state writes  → RobotState_* API (direct, thread-safe)
- *   - Supervisor events    → Supervisor_ProcessEvent()
+ *   - Supervisor events    → Supervisor_SendEvent()
  *   - Complex control      → Dedicated dummy handlers (TODO stubs)
  */
 
@@ -29,109 +29,30 @@ static uint32_t last_rx_tick = 0;
  * Private: Rx Topic Handlers (dummy stubs for complex control)
  * ========================================================================= */
 
-/**
- * @brief [TOPIC 0x01] Handle autonomous mode toggle.
- *
- * Translates the binary flag into a Supervisor FSM event so the state machine
- * controls the actual mode transition (instead of writing state directly).
- *
- * @param msg Pointer to the parsed AutonomousMsg payload.
- */
-static void handle_autonomous(const AutonomousMsg_t *msg)
-{
-    uint8_t current_auto = RobotState_IsAutonomous();
+#include "command_dispatcher.h"
 
-    if (msg->is_autonomous != current_auto) 
-    {
-        RobotState_SetAutonomous(msg->is_autonomous);
+/* =========================================================================
+ * Private: Rx Topic Handlers
+ * ========================================================================= */
 
-        if (msg->is_autonomous) {
-            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_AUTO, SRC_EXT_CLIENT);
-            LOG_INFO(LOG_TAG, "Autonomous ON (Direct Handover)\r\n");
-        } else {
-            Supervisor_ProcessEvent(EVENT_SUPERVISOR_MODE_MANUAL, SRC_EXT_CLIENT);
-            LOG_INFO(LOG_TAG, "Autonomous OFF -> Manual Takeover\r\n");
-        }
-    }
+static void handle_autonomous(const AutonomousMsg_t *msg) {
+    CmdDispatcher_SetMobilityConfig(RobotState_GetTargetMobilityMode(), msg->is_autonomous, SRC_EXT_CLIENT);
 }
 
-/**
- * @brief [TOPIC 0x02] Handle mobility mode + autonomous flag config packet.
- *
- * Mobility mode selection is forwarded to RobotState. The is_autonomous flag
- * mirrors the 0x01 topic logic for convenience when both are sent together.
- *
- * @param msg Pointer to the parsed SysConfigMsg_t payload.
- */
-static void handle_mobility_mode(const SysConfigMsg_t *msg)
-{
-    MobilityMode_t current_mode = RobotState_GetTargetMobilityMode();
-    uint8_t current_auto = RobotState_IsAutonomous();
-
-    if ((MobilityMode_t)msg->mobility_mode != current_mode || msg->is_autonomous != current_auto)
-    {
-        RobotState_SetTargetMobilityMode((MobilityMode_t)msg->mobility_mode);
-        RobotState_SetAutonomous(msg->is_autonomous);
-        LOG_INFO(LOG_TAG, "Config Change: Mode=%u, Auto=%u\r\n", msg->mobility_mode, msg->is_autonomous);
-    }
+static void handle_mobility_mode(const SysConfigMsg_t *msg) {
+    CmdDispatcher_SetMobilityConfig(msg->mobility_mode, msg->is_autonomous, SRC_EXT_CLIENT);
 }
 
-/**
- * @brief [TOPIC 0x03] Handle cmd_vel setpoints.
- *
- * Writes the velocity command into the shared Commands block.
- * The MobilityTask reads this on its control cycle.
- *
- * @param msg Pointer to the parsed CmdVelMsg_t payload.
- */
-static void handle_cmd_vel(const CmdVelMsg_t *msg)
-{
-    SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_SUPERVISOR_AUTO || current_sup == STATE_SUPERVISOR_MANUAL) {
-        RobotState_SetTargetVelocity(msg->linear_x, msg->angular_z);
-        LOG_INFO(LOG_TAG, "CmdVel ACCEPTED: x=%.3f z=%.3f\r\n", msg->linear_x, msg->angular_z);
-    } else {
-        /* Ignore commands if not in Auto or Manual mode */
-        LOG_WARNING(LOG_TAG, "CmdVel REJECTED: SUP is %d (Need AUTO or MANUAL)\r\n", current_sup);
-    }
+static void handle_cmd_vel(const CmdVelMsg_t *msg) {
+    CmdDispatcher_SetVelocity(msg->linear_x, msg->angular_z, SRC_EXT_CLIENT);
 }
 
-/**
- * @brief [TOPIC 0x04] Handle arm joint goal.
- *
- * Writes the target joint positions into the shared Commands block.
- * The ArmTask reads this on its control cycle.
- *
- * @param msg Pointer to the parsed ArmGoalMsg_t payload.
- *
- * @todo Validate joint limits before writing.
- * @todo Implement trajectory interpolation in ArmTask.
- */
-static void handle_arm_goal(const ArmGoalMsg_t *msg)
-{
-    SystemState_t current_sup = Supervisor_GetCurrentState();
-    if (current_sup == STATE_SUPERVISOR_AUTO || current_sup == STATE_SUPERVISOR_MANUAL) {
-        RobotState_SetTargetArmPose(msg->j1, msg->j2, msg->j3);
-        LOG_INFO(LOG_TAG, "ArmGoal ACCEPTED: j1=%.2f j2=%.2f j3=%.2f\r\n", msg->j1, msg->j2, msg->j3);
-    } else {
-        /* Ignore commands if not in Auto or Manual mode */
-        LOG_WARNING(LOG_TAG, "ArmGoal REJECTED: SUP is %d (Need AUTO or MANUAL)\r\n", current_sup);
-    }
+static void handle_arm_goal(const ArmGoalMsg_t *msg) {
+    CmdDispatcher_SetArmGoal(msg->j1, msg->j2, msg->j3, SRC_EXT_CLIENT);
 }
 
-/**
- * @brief [TOPIC 0x05] Handle system events from ROS.
- *
- * Maps the protocol event_id to the Supervisor FSM event enum and
- * dispatches it with SRC_ROS as the originating source.
- *
- * @param msg Pointer to the parsed SysEventMsg_t payload.
- */
-static void handle_sys_event(const SysEventMsg_t *msg)
-{
-    SystemEvent_t event;
-    bool event_to_process = true;
-
+static void handle_sys_event(const SysEventMsg_t *msg) {
+    SystemEvent_t event = EVENT_SUPERVISOR_NONE;
     switch (msg->event_id) {
         case SYS_EVENT_START:   event = EVENT_SUPERVISOR_START;       break;
         case SYS_EVENT_STOP:    event = EVENT_SUPERVISOR_STOP;        break;
@@ -140,87 +61,36 @@ static void handle_sys_event(const SysEventMsg_t *msg)
         case SYS_EVENT_RESET:   event = EVENT_SUPERVISOR_RESET;       break;
         case SYS_EVENT_FAULT:   event = EVENT_SUPERVISOR_ERROR;       break;
         case SYS_EVENT_TEST:    event = EVENT_SUPERVISOR_TESTING;     break;
-        default:
-            LOG_WARNING(LOG_TAG, "Unknown sys_event id=0x%02X\r\n", msg->event_id);
-            event_to_process=false;
-            break;
+        default: break;
     }
-
-    if (event_to_process) {
-        Supervisor_ProcessEvent(event, SRC_EXT_CLIENT);
+    if (event != EVENT_SUPERVISOR_NONE) {
+        CmdDispatcher_TriggerEvent(event, SRC_EXT_CLIENT);
     }
 }
 
-/**
- * @brief [TOPIC 0x08] Handle remote configuration set.
- *
- * @param msg Pointer to the parsed SetConfigMsg_t payload.
- */
-static void handle_set_config(const SetConfigMsg_t *msg)
-{
-    AppConfig_UpdateParam(msg->id, msg->value);
-    
-    /* Broadcast back the full current config to keep all clients in sync (RAM state) */
+static void handle_set_config(const SetConfigMsg_t *msg) {
+    CmdDispatcher_UpdateConfig(msg->id, msg->value, SRC_EXT_CLIENT);
+    /* Broadcast back the full current config to keep all clients in sync */
     AppConfig_t* config = AppConfig_Get();
     SerialRos_EnqueueTx(TOPIC_ID_APP_CONFIG_DATA, config, sizeof(AppConfig_t));
 }
 
-/**
- * @brief [TOPIC 0x09] Handle remote configuration get request.
- *
- * Triggers a full dump of the current AppConfig_t to the client.
- */
-static void handle_get_config(void)
-{
-    /* REFRESH logic: Load from Flash to RAM before sending so the client gets 
-     * the persisted values (Discarding unsaved RAM changes). */
+static void handle_get_config(void) {
 #ifdef PESISTENT_CONFIG
     AppConfig_ReloadFromFlash();
 #endif
     AppConfig_t* config = AppConfig_Get();
-    /* We send the raw struct since it is packed and contains all active fields after magic */
-    if (SerialRos_EnqueueTx(TOPIC_ID_APP_CONFIG_DATA, config, sizeof(AppConfig_t))) {
-        LOG_INFO(LOG_TAG, "Config Dump Sent to Client (%d bytes)\r\n", (int)sizeof(AppConfig_t));
-    } else {
-        LOG_ERROR(LOG_TAG, "Failed to Enqueue Config Dump (%d bytes). Buffer too small?\r\n", (int)sizeof(AppConfig_t));
-    }
+    SerialRos_EnqueueTx(TOPIC_ID_APP_CONFIG_DATA, config, sizeof(AppConfig_t));
 }
 
-/**
- * @brief [TOPIC 0x06] Handle raw actuator pulse for debugging.
- *
- * @param msg Pointer to the parsed ActuatorTestMsg_t payload.
- */
-static void handle_actuator_test(const ActuatorTestMsg_t *msg)
-{
-    if (msg->actuator_id == 0xFF) {
-        /* Broadcast to all 4 motors */
-        for (uint8_t i = 0; i < 4; i++) {
-            RobotState_SetMotorTestCommand(i, msg->pulse, 0);
-        }
-    } else if (msg->actuator_id < 4) {
-        /* Single motor control */
-        RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 0); /* 0 = PWM */
-    }
+static void handle_actuator_test(const ActuatorTestMsg_t *msg) {
+    CmdDispatcher_ActuatorTest(msg->actuator_id, msg->pulse, false, SRC_EXT_CLIENT);
 }
 
-/**
- * @brief [TOPIC 0x07] Handle raw actuator velocity for debugging.
- *
- * @param msg Pointer to the parsed ActuatorTestMsg_t payload.
- */
-static void handle_actuator_velocity(const ActuatorTestMsg_t *msg)
-{
-    if (msg->actuator_id == 0xFF) {
-        /* Broadcast to all 4 motors */
-        for (uint8_t i = 0; i < 4; i++) {
-            RobotState_SetMotorTestCommand(i, msg->pulse, 1);
-        }
-    } else if (msg->actuator_id < 4) {
-        /* Single motor control */
-        RobotState_SetMotorTestCommand(msg->actuator_id, msg->pulse, 1); /* 1 = Velocity */
-    }
+static void handle_actuator_velocity(const ActuatorTestMsg_t *msg) {
+    CmdDispatcher_ActuatorTest(msg->actuator_id, msg->pulse, true, SRC_EXT_CLIENT);
 }
+
 
 /* =========================================================================
  * Public API

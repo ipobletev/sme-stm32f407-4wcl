@@ -83,6 +83,7 @@
 									<listOptionValue builtIn="false" value="../Application/Modules/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/USBJoystick/Inc"/>
+									<listOptionValue builtIn="false" value="../Application/Modules/CommandDispatcher/Inc"/>
 									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Core/Inc"/>
 									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Class/HID/Inc"/>
 									<listOptionValue builtIn="false" value="../USB_HOST/App"/>
@@ -205,6 +206,7 @@
 									<listOptionValue builtIn="false" value="../Application/Modules/Buzzer/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Config/Inc"/>
 									<listOptionValue builtIn="false" value="../Application/Modules/USBJoystick/Inc"/>
+									<listOptionValue builtIn="false" value="../Application/Modules/CommandDispatcher/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/FlashStorage/Inc"/>
 									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Core/Inc"/>
 									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Host_Library/Class/HID/Inc"/>

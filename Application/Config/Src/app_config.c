@@ -80,6 +80,12 @@ void AppConfig_ResetToDefaults(void) {
     g_current_config.motor3_kp = DEFAULT_MOTOR_KP; g_current_config.motor3_ki = DEFAULT_MOTOR_KI; g_current_config.motor3_kd = DEFAULT_MOTOR_KD; g_current_config.motor3_deadzone = DEFAULT_MOTOR_PULSE_DEADZONE;
     g_current_config.motor4_kp = DEFAULT_MOTOR_KP; g_current_config.motor4_ki = DEFAULT_MOTOR_KI; g_current_config.motor4_kd = DEFAULT_MOTOR_KD; g_current_config.motor4_deadzone = DEFAULT_MOTOR_PULSE_DEADZONE;
     
+    /* Gamepad */
+    g_current_config.joy_linear_deadzone  = DEFAULT_JOY_LINEAR_DEADZONE;
+    g_current_config.joy_angular_deadzone = DEFAULT_JOY_ANGULAR_DEADZONE;
+    g_current_config.joy_linear_gain      = DEFAULT_JOY_LINEAR_GAIN;
+    g_current_config.joy_angular_gain     = DEFAULT_JOY_ANGULAR_GAIN;
+
     g_current_config.crc = AppConfig_CalculateChecksum(&g_current_config);
     
     LOG_INFO(LOG_TAG, "Reseting to defaults from config.h\r\n");
@@ -216,6 +222,12 @@ bool AppConfig_UpdateParam(uint8_t id, float value) {
         case CONF_MOTOR4_KI:        g_current_config.motor4_ki = value; break;
         case CONF_MOTOR4_KD:        g_current_config.motor4_kd = value; break;
         case CONF_MOTOR4_DEADZONE:  g_current_config.motor4_deadzone = value; break;
+
+        /* Gamepad Calibration */
+        case CONF_JOY_LINEAR_DEADZONE:  g_current_config.joy_linear_deadzone = value; break;
+        case CONF_JOY_ANGULAR_DEADZONE: g_current_config.joy_angular_deadzone = value; break;
+        case CONF_JOY_LINEAR_GAIN:      g_current_config.joy_linear_gain = value; break;
+        case CONF_JOY_ANGULAR_GAIN:     g_current_config.joy_angular_gain = value; break;
 
         default:
             LOG_ERROR(LOG_TAG, "Unknown Param ID 0x%02X\r\n", id);

@@ -43,6 +43,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Application/Modules/Buzzer/Inc
     Application/Config/Inc
     Application/Modules/USBJoystick/Inc
+    Application/Modules/CommandDispatcher/Inc
     USB_HOST/App
     USB_HOST/Target
 )

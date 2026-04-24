@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Cpu, Gauge, RotateCcw } from 'lucide-react';
+import { Cpu, Gauge, RotateCcw, ShieldAlert, ToggleLeft } from 'lucide-react';
 import ImuVisualizer from './ImuVisualizer';
 import {
   getSupervisorStateName as getStateName,
@@ -92,6 +92,21 @@ const TelemetryPanel = memo(function TelemetryPanel({ telemetry, frequencies }) 
                       <div className="battery-fill" style={{ width: `${batPct}%`, background: batColor }}></div>
                     </div>
                   </div>
+                  <div className="telemetry-item">
+                    <div className="label">Emergency Stop</div>
+                    <span className={`state-badge ${sysStatus.emergency_active ? 'state-fault pulse-red' : 'state-ready'}`} 
+                          style={sysStatus.emergency_active ? { fontWeight: 'bold', boxShadow: '0 0 10px var(--accent-rose)' } : {}}>
+                      {sysStatus.emergency_active ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                  <div className="telemetry-item">
+                    <div className="label">Enable Autonomous</div>
+                    <span className={`state-badge ${sysStatus.enable_autonomous ? 'state-ready' : 'state-idle'}`}>
+                      {sysStatus.enable_autonomous ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                  {/* Debug only */}
+                  <div style={{ display: 'none' }}>{JSON.stringify(sysStatus)}</div>
                 </div>
               </>
             ) : (
