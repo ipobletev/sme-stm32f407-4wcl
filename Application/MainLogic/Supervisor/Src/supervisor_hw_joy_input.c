@@ -2,6 +2,7 @@
 #include "supervisor_fsm.h"
 #include "usb_joystick.h"
 #include "debug_module.h"
+#include <stdbool.h>
 #include "osal.h"
 
 #define LOG_TAG "SUP_JOY"

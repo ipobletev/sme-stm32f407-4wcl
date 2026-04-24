@@ -22,6 +22,7 @@ extern osal_thread_h armTaskHandle;
 extern osal_thread_h serialRosTaskHandle;
 extern osal_thread_h telemetryTaskHandle;
 extern osal_thread_h hwInputTaskHandle;
+extern osal_thread_h sensorsTaskHandle;
 
 /* Thread Prototypes */
 void StartHWInputTask(void *argument);

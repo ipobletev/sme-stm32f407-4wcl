@@ -153,7 +153,7 @@ void StartTelemetryTask(void *argument) {
             /* Report detailed diagnostics only to DEBUG level */
             if (AppConfig->debug_level >= LOG_LEVEL_DEBUG) {
             uint32_t s_mng  = osal_thread_get_stack_space(managerTaskHandle);
-            uint32_t s_ctl  = osal_thread_get_stack_space(controllerTaskHandle);
+            uint32_t s_ctl  = osal_thread_get_stack_space(hwInputTaskHandle);
             uint32_t s_urt  = osal_thread_get_stack_space(uartListenerTaskHandle);
             uint32_t s_mob  = osal_thread_get_stack_space(mobilityTaskHandle);
             uint32_t s_arm  = osal_thread_get_stack_space(armTaskHandle);
