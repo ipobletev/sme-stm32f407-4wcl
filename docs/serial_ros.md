@@ -40,6 +40,8 @@ The protocol uses a **Binary Framing** format to ensure the smallest possible HE
 | **0x81** | `sys_status`  | `uint64 errors, float temp, float v_batt, uint8 sup, uint8 mob, uint8 arm` | System state, health flags, and battery.  |
 | **0x82** | `imu`         | `float qx, qy, qz, qw, gx, gy, gz, ax, ay, az, roll, pitch, yaw` | Full IMU state (Rep-103: Quaternions + Radians). |
 | **0x83** | `odometry`    | `float linear_x, float angular_z, int32 enc_1/2/3/4`                      | Velocity estimates and encoder counts.    |
+| **0x84** | `app_config`  | `Full AppConfig_t struct (168 bytes)`                               | Full configuration dump.                  |
+| **0x86** | `joystick`    | `JoystickStateMsg_t`                                               | Real-time USB gamepad state.              |
 
 ---
 
@@ -76,6 +78,15 @@ typedef struct {
     float   angular_z;
     int32_t enc_1, enc_2, enc_3, enc_4;
 } OdometryMsg_t;                                                              // 0x83
+
+typedef struct {
+    uint32_t magic;
+    uint32_t debug_level;
+    /* ... (See app_config.h for full 168-byte layout) ... */
+    float    batt_min;
+    float    batt_max;
+    uint32_t crc;
+} AppConfig_t;                                                                // 0x84
 ```
 
 ---

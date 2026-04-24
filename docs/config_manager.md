@@ -45,11 +45,15 @@ typedef struct {
     uint32_t imu_publish_period_ms;
     uint32_t odom_publish_period_ms;
     
-    /* Motor Parameters */
-    uint32_t pid_enabled_default;
-    float    motor_ticks_per_circle;
-    float    motor_rps_limit;
-    ...
+    /* Gamepad Calibration */
+    float    joy_linear_deadzone;
+    float    joy_angular_deadzone;
+    float    joy_linear_gain;
+    float    joy_angular_gain;
+
+    /* Battery Configuration */
+    float    batt_min;
+    float    batt_max;
     
     uint32_t crc;                   /* Integrity Check */
 } AppConfig_t;
@@ -71,6 +75,9 @@ A unique ID is assigned to every parameter to facilitate updates via the `Serial
 | **0x10** | `CONF_PID_ENABLED` | bool | Default PID state at boot |
 | **0x11** | `CONF_MOTOR_TICKS` | float | Encoder ticks per revolution |
 | **0x31-34** | `CONF_MOTORx_INV` | int32 | Motor direction inversion (0/1) |
+| **0x60-63** | `CONF_JOY_...` | float | Gamepad deadzones and gains |
+| **0x70** | `CONF_BATT_MIN` | float | Min voltage threshold for FAULT state |
+| **0x71** | `CONF_BATT_MAX` | float | Max voltage (100% capacity) |
 
 ---
 
