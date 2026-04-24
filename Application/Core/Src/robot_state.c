@@ -582,3 +582,25 @@ void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea) {
         taskEXIT_CRITICAL();
     }
 }
+
+void RobotState_SetAutoPermissivity(bool allowed) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        RobotState_4wcl.Telemetry.is_autonomous = allowed; // Using existing field or could add new one
+    } else {
+        taskENTER_CRITICAL();
+        RobotState_4wcl.Telemetry.is_autonomous = allowed;
+        taskEXIT_CRITICAL();
+    }
+}
+
+bool RobotState_GetAutoPermissivity(void) {
+    bool allowed;
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED || IS_IN_ISR()) {
+        allowed = RobotState_4wcl.Telemetry.is_autonomous;
+    } else {
+        taskENTER_CRITICAL();
+        allowed = RobotState_4wcl.Telemetry.is_autonomous;
+        taskEXIT_CRITICAL();
+    }
+    return allowed;
+}

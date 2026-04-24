@@ -29,8 +29,14 @@ void Supervisor_SendEvent(SystemEvent_t event, uint8_t source) {
         }
     }
 
-    /* External Client (SRC_EXT_CLIENT) is only allowed in AUTO/IDLE/FAULT */
+    /* External Client (SRC_EXT_CLIENT) logic */
     if (source == SRC_EXT_CLIENT) {
+        /* Absolute Isolation Check: Is Autonomous Mode allowed by HW? */
+        if (!RobotState_GetAutoPermissivity()) {
+            LOG_WARNING(LOG_TAG, "EXTERNAL COMMAND REJECTED: Autonomous Permissivity is OFF (Hardware Isolated)\r\n");
+            return;
+        }
+
         if (current_state == STATE_SUPERVISOR_MANUAL) {
             LOG_WARNING(LOG_TAG, "External command ignored while in MANUAL mode\r\n");
             return;

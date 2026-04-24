@@ -173,5 +173,8 @@ void RobotState_SetMeasuredMotorDebug(uint8_t motor_id, float target, float meas
 
 /* IMU Setters */
 void RobotState_SetIMUOrientation(Quaternion q, EulerAngles ea);
+/* Safety and Mode Permissivity */
+void RobotState_SetAutoPermissivity(bool allowed);
+bool RobotState_GetAutoPermissivity(void);
 
 #endif /* __ROBOT_STATE_H */

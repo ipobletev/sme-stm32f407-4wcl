@@ -8,10 +8,9 @@ The following components are directly accessible to the user for control and sta
 
 | Component | Pin | Action Type | Triggered Event | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **K1 Button** | PE1 | Simple Press | `EVENT_START` / `EVENT_RESUME` | Starts **MANUAL** mode or resumes the system if paused. |
-| **K2 Button** | PE0 | Short Press (<1s) | `EVENT_PAUSE` | Pauses the robot's current execution. |
-| **K2 Button** | PE0 | Long Press (>1s) | `EVENT_STOP` | **Emergency Stop (E-STOP)**. Stops movement and locks. |
-| **SW3 Switch** | PD3 | Toggle | `EVENT_ERROR` / `EVENT_RESET` | Error Simulation (Fault) or Error Reset (Idle). |
+| **K1 Button** | PE1 | Simple Press | `EVENT_ERROR` | **Emergency Stop (E-STOP)**. Immediately locks the system. |
+| **K2 Button** | PE0 | Simple Press | `EVENT_RESET` | **System Reset**. Clears faults and returns to IDLE/INIT. |
+| **SW3 Switch** | PD3 | ON/OFF | N/A | **Autonomous Permissivity**. If OFF, UART3 commands are ignored. |
 | **User LED** | PE10 | Status Output | N/A | System Heartbeat. |
 | **Buzzer** | PA8 | Audible Output | N/A | Warning signals and state transition feedback. |
 
@@ -68,9 +67,9 @@ Below is the complete mapping of the STM32F407VET6 pins to the Hiwonder Board v1
 
 ## 3. Implementation Details
 
-- **Control Logic**: Handled by `StartControllerTask` in [task_controller.c](../Application/RTOSLogic/Src/task_controller.c).
+- **Control Logic**: Handled by `StartHWInputTask` in [task_hw_input.c](../Application/RTOSLogic/Src/task_hw_input.c).
 - **Sampling Rate**: Inputs are polled every 100ms for debouncing.
-- **Safety Priority**: Button **K2** long press (E-STOP) is handled with the highest logic priority.
+- **Safety Priority**: Button **K1** (E-STOP) and **SW3** (Permissivity) are the primary safety layers.
 - **Hardware Config**: Pins are configured in the BSP layer using internal **Pull-Up** resistors (Active-LOW).
 
 > [!NOTE]

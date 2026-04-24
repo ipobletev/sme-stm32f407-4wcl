@@ -66,24 +66,27 @@ To ensure the Supervisor is always aware of slave status without allowing slaves
 2.  **Heartbeats (Watchdogs)**: Each slave increments a heartbeat counter at 50Hz.
 3.  **Cyclic Polling**: The Supervisor Manager task polls the error registry and heartbeat counters every 20ms. If a hardware error is set, or a slave heartbeat stalls for >500ms, the Supervisor transitions to `STATE_FAULT` (which then triggers the Top-Down shutdown).
 
-### 4.3 Command Source & Authority Hierarchy
+### 4.3 Control Sources & Business Rules
 
-To prevent conflicting commands from different sources (e.g., a localized technician being overridden by a remote autonomous command), the system implements a **Hierarchical Authority Check**.
+The system centralizes all state changes through the Supervisor. Each request is categorized into one of **4 Primary Roles**, each with specific priorities and operational restrictions.
 
-Each event sent to the Supervisor includes an `EventSource_t` identifier with an assigned priority level.
+| Role ID | Source Name | Description | Priority | Main Restriction |
+| :---: | :--- | :--- | :---: | :--- |
+| **0** | **Internal System** | Critical errors (Watchdogs, Motor Faults). | **Absolute** | Bypasses queue for immediate safety. |
+| **1** | **Physical HW** | On-board buttons (K1 E-Stop, K2 Reset). | **Emergency** | Always active (Direct control). |
+| **2** | **Gamepad (Joy)** | USB Gamepad (Manual driving). | **Manual** | **Prohibited** during AUTO mode. |
+| **3** | **External Client** | Remote ROS/UART3 Commands. | **Auto** | **Prohibited** during MANUAL mode. |
 
-| Source | Level | Description | Authority |
-| :--- | :---: | :--- | :--- |
-| **SRC_INTERNAL_SUPERVISOR** | 4 | Internal safety monitors (watchdogs, temp). | **CRITICAL**: Highest priority. |
-| **SRC_PHYSICAL** | 3 | On-board physical buttons (K1, K2). | **SAFETY**: Physical operator control. |
-| **SRC_LOCAL_CONSOLE** | 2 | Local Operator Console (UART1/USB). | **DEBUG**: Technician/Field control. |
-| **SRC_EXT_CLIENT** | 1 | Remote Autonomous Control (UART3). | **AUTO**: Standard operation. |
-| **SRC_UNKNOWN** | 0 | Unidentified sources. | Lowest priority. |
+#### Operational Restrictions (Enforced by Supervisor)
 
-#### Resume Logic (Safety Guard)
-When the system is in `STATE_PAUSED`, it records the authority level of the source that triggered the pause. A `RESUME` event will only be accepted if it comes from a source with **equal or higher authority**.
+1.  **Isolation Switch (SW3)**: A physical switch on the board governs "Permissivity". If **SW3 is OFF**, the system enters **Absolute Isolation mode**, rejecting all commands from the **External Client (Role 3)** regardless of the system state.
+2.  **Mode Protection**:
+    -   To prevent remote interference during manual operations, **External Commands** are ignored while in `STATE_MANUAL`.
+    -   To prevent accidental manual overrides during autonomous tasks, **Gamepad Commands** are ignored while in `STATE_AUTO`.
+3.  **Authority Guard (Resume Logic)**:
+    When the system is in `STATE_PAUSED`, it records the role ID that triggered the pause. A `RESUME` event will only be accepted if it comes from a role with **equal or higher priority**.
 
-*Example: If a technician pauses the robot via the **Local Console (Level 2)**, a remote **ROS command (Level 1)** cannot resume operation. Only the Console (Level 2) or a Physical Button (Level 3) can do so.*
+---
 
 ---
 

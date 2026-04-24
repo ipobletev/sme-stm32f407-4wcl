@@ -10,7 +10,6 @@
 
 /* Message Queues */
 osal_queue_h stateMsgQueueHandle;
-osal_queue_h uartEventQueueHandle;
 osal_queue_h rosTxQueueHandle;
 osal_queue_h rosRxQueueHandle;
 osal_queue_h consoleTxQueueHandle;
@@ -18,7 +17,7 @@ osal_queue_h consoleRxQueueHandle;
 
 /* Thread Handles */
 osal_thread_h managerTaskHandle;
-osal_thread_h controllerTaskHandle;
+osal_thread_h hwInputTaskHandle;
 osal_thread_h uartListenerTaskHandle;
 osal_thread_h mobilityTaskHandle;
 osal_thread_h armTaskHandle;
@@ -36,8 +35,8 @@ const osal_thread_attr_t managerTask_attributes = {
   .priority = OSAL_PRIO_NORMAL,
 };
 
-const osal_thread_attr_t controllerTask_attributes = {
-  .name = "ControllerTask",
+const osal_thread_attr_t hwInputTask_attributes = {
+  .name = "HWInputTask",
   .stack_size = 512 * 4,
   .priority = OSAL_PRIO_NORMAL,
 };
@@ -88,8 +87,6 @@ void App_RTOS_Init(void) {
     stateMsgQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
     if (stateMsgQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
 
-    uartEventQueueHandle = osal_queue_create(10, sizeof(StateChangeMsg_t));
-    if (uartEventQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
     
     rosTxQueueHandle = osal_queue_create(50, sizeof(SerialRos_Packet_t));
     if (rosTxQueueHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_QUEUE);
@@ -107,8 +104,8 @@ void App_RTOS_Init(void) {
     managerTaskHandle      = osal_thread_create(StartManagerTask,      NULL, &managerTask_attributes);
     if (managerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
-    controllerTaskHandle   = osal_thread_create(StartControllerTask,   NULL, &controllerTask_attributes);
-    if (controllerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
+    hwInputTaskHandle   = osal_thread_create(StartHWInputTask,   NULL, &hwInputTask_attributes);
+    if (hwInputTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);
 
     uartListenerTaskHandle = osal_thread_create(StartUARTListenerTask, NULL, &uartListenerTask_attributes);
     if (uartListenerTaskHandle == NULL) RobotState_SetErrorFlag(ERR_RTOS_TASK);

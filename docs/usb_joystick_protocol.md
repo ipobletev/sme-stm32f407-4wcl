@@ -74,3 +74,17 @@ The joysticks use 16-bit signed values (two's complement), transmitted in **Litt
 *   **Range:** `0x8000` (-32768) to `0x7FFF` (32767).
 *   **Neutral:** `0x0000`.
 *   **Y-Axis Inversion:** Typically, "Up" returns positive values (`7FFF`) and "Down" returns negative values (`8000`), although this depends on the normalization applied in software.
+
+## 5. System Logic (Button Functions)
+
+The system maps these physical buttons to supervisor events:
+
+| Button / Combo | Triggered Event | Description |
+| :--- | :--- | :--- |
+| **MODE** | `EVENT_ERROR` | **Emergency Stop**. Immediate fault state. |
+| **SELECT** | `EVENT_STOP` | **Soft Stop**. Returns to IDLE if moving. |
+| **START** | `EVENT_START` | **System Start**. Enters MANUAL mode from IDLE. |
+| **L1+R1+L2+R2** | `EVENT_RESET` | **Reset sequence**. Hold for 2 seconds to clear FAULT. |
+
+> [!NOTE]
+> Joystick commands are only accepted in **MANUAL** or **IDLE** states. They are automatically ignored by the Supervisor if the system is in **AUTO** mode or if the Hardware Permissivity Switch (SW3) is OFF.
