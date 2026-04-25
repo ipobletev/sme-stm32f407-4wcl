@@ -10,7 +10,7 @@
 #define DEFAULT_IMU_PUBLISH_PERIOD_MS           10
 #define DEFAULT_ODOM_PUBLISH_PERIOD_MS          20
 /* Motor Parameters */
-#define DEFAULT_ROBOT_STATE_PID_ENABLED         0
+#define DEFAULT_ROBOT_STATE_PID_ENABLED         1
 #define DEFAULT_MOTOR_TICKS_PER_CIRCLE          654.0f
 #define DEFAULT_MOTOR_SPEED_LIMIT               1.26f
 #define DEFAULT_ROBOT_MAX_ANGULAR_SPEED         2.50f
@@ -27,9 +27,9 @@
 #define DEFAULT_ROBOT_WHEELBASE_LENGTH          0.200f  // Distance between front and rear wheels
 #define DEFAULT_ROBOT_MOBILITY_MODE             0       // 0: Direct, 1: Differential, 2: Ackermann, 3: Mecanum
 /* Motor Directions */
-#define DEFAULT_MOTOR1_INVERT                   1
+#define DEFAULT_MOTOR1_INVERT                   -1
 #define DEFAULT_MOTOR2_INVERT                   1
-#define DEFAULT_MOTOR3_INVERT                   1
+#define DEFAULT_MOTOR3_INVERT                   -1
 #define DEFAULT_MOTOR4_INVERT                   1
 /* Gamepad Defaults */
 #define DEFAULT_JOY_LINEAR_DEADZONE             10.0f
